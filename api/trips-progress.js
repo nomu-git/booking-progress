@@ -11,7 +11,7 @@ const RECENT_WINDOW_MS = 26 * 60 * 60 * 1000;
 // Corporate/charter departures aren't retail sales, so they'd distort the target.
 // Also where a departure goes once it's been called off.
 const EXCLUDED = new Set(
-  (process.env.EXCLUDED_TRIP_UUIDS || '8612103268,9638755524,10127626')
+  (process.env.EXCLUDED_TRIP_UUIDS || '8612103268,9638755524,10127626,14919204,5174196515,3489299932')
     .split(',').map((s) => s.trim()).filter(Boolean)
 );
 
