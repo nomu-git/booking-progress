@@ -1,54 +1,92 @@
-# WeTravel Pro booking dashboard, backed by Google Sheets
+# Booking Progress — WeTravel dashboard + Slack notifier
 
-Bookings from WeTravel land as rows in a Google Sheet. The dashboard checks the sheet every 5 seconds and updates when a new row appears. Everything runs on Vercel, no separate server to manage.
+A wall dashboard for Nomu's booking pipeline. Everything is read live from the
+**WeTravel Partner API** — there is no database, no Google Sheet, no webhook to
+register. A once-daily Vercel cron posts a summary to Slack.
 
 ## What's in here
-- `api/webhook.js` — Vercel function WeTravel's webhook calls, appends a row to your sheet
-- `api/bookings.js` — Vercel function the dashboard polls to read current rows
-- `index.html` — the dashboard your team leaves open on a screen
-- `package.json` — dependencies (just `googleapis`)
 
-## Step 1: Create the Google Sheet
-Make a new Google Sheet with a tab named exactly `Bookings`, and a header row:
+| File | Role |
+| --- | --- |
+| `index.html` | The dashboard. Polls `/api/trips-progress` every 30s, plus a Report tab backed by `/api/booking-report`. |
+| `api/wetravel.js` | Shared WeTravel client. Exchanges the Partner API key (a *refresh* token) for a 1-hour access token, caches it, retries on 429/401. |
+| `api/trips-progress.js` | Per-departure / per-week booking bars for the Dashboard tab. |
+| `api/booking-report.js` | Flat list of booking events (last 300 days) for the Report tab. Also exports `build()` for the Slack job. |
+| `api/slack-notify.js` | Cron target. Posts the day's new bookings to Slack. `?preview=1` renders the message without posting. |
+| `api/announcement.js` | Serves the banner text from env vars, so it can be changed without a code edit. |
+| `vercel.json` | One cron: `/api/slack-notify` daily at `04:00 UTC` = **08:00 Muscat**. |
+
+## Environment variables
+
+Set these in **Vercel → Project → Settings → Environment Variables** (tick
+Production, Preview and Development), then **redeploy** — Vercel only picks up
+env-var changes on a new deployment.
+
+### Required
+
+| Variable | Where to get it |
+| --- | --- |
+| `WETRAVEL_API_KEY` | WeTravel Pro → **Account → Profile → Partner API key**. This is a refresh token; `api/wetravel.js` trades it for access tokens. Without it every endpoint returns `500 {"error":"WETRAVEL_API_KEY is not set"}` and the board is blank. |
+| `SLACK_WEBHOOK_URL` | api.slack.com/apps → your app → **Incoming Webhooks** → Add New Webhook to Workspace → pick the living-room channel. Looks like `https://hooks.slack.com/services/T…/B…/…`. |
+
+### Strongly recommended
+
+| Variable | Why |
+| --- | --- |
+| `CRON_SECRET` | Any long random string. Vercel sends it as `Authorization: Bearer <value>` on cron calls, and `slack-notify` rejects anything else. **If it is unset the check is skipped entirely** and anyone who knows the URL can post to the channel. |
+| `DASHBOARD_URL` | The deployment URL used in the Slack message's "Open dashboard" link. Defaults to `https://bookingprogress.vercel.app`; change it if the project's domain changed. |
+
+### Optional — all have working defaults baked into the code
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `WETRAVEL_API_BASE` | `https://api.wetravel.com/v2` | Override only if WeTravel moves the API. |
+| `SEASON_END` | `2026-12-31` | Latest departure date shown on the board. |
+| `BOOKING_TARGET` | `10` | Seats-per-week target marker on each bar. |
+| `WEEKLY_BOOKING_TARGET` | `12` | New bookings/week target in the Report tab (Sun–Sat, Muscat). |
+| `EXCLUDED_TRIP_UUIDS` | `8612103268,9638755524,10127626` | Departures hidden from the board. |
+| `CANCELLED_TRIP_UUIDS` | *(empty)* | Departures kept on the board but stamped CANCELLED. |
+| `CHARTER_TRIP_UUIDS` | `8612103268,9638755524,0885576464` | Counted separately and left out of the Slack total. |
+| `REPORT_SKIP_UUIDS` | `10127626,17245052` | Broken/duplicated records dropped from every view. |
+| `REPORT_LOOKBACK_DAYS` | `300` | How far back the Report tab scans. |
+| `CACHE_TTL_MS` | `60000` | Dashboard cache. |
+| `REPORT_CACHE_TTL_MS` | `180000` | Report cache. |
+| `ANNOUNCEMENT_TITLE` / `ANNOUNCEMENT_BODY` | *(empty)* | Banner at the top of the dashboard. Empty = "No current announcement". |
+
+## Verifying the setup
+
+After deploying with the env vars in place:
+
+```bash
+# 1. WeTravel — should return JSON with a "trips" array, not an error
+curl -s https://<your-domain>/api/trips-progress | head -c 400
+
+# 2. Report data — should return "events"
+curl -s https://<your-domain>/api/booking-report | head -c 400
+
+# 3. Slack message, rendered but NOT posted
+curl -s "https://<your-domain>/api/slack-notify?preview=1"
+
+# 4. Slack for real — only if the preview above looked right.
+#    Needs the CRON_SECRET header if you set one.
+curl -X POST https://<your-domain>/api/slack-notify \
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
-Timestamp | Participant | Trip | Status | Amount
-```
-Copy the spreadsheet ID out of the URL, the long string between `/d/` and `/edit`.
 
-## Step 2: Create a Google service account
-This lets the webhook write to the sheet without anyone's personal login.
-1. Go to console.cloud.google.com, create a project (or use an existing one)
-2. Enable the "Google Sheets API" for that project
-3. Go to Credentials, create a Service Account
-4. Open the service account, go to Keys, create a new key, choose JSON, download it
-5. Open that JSON file, you'll need the `client_email` and `private_key` values
+`{"error":"WETRAVEL_API_KEY is not set"}` on step 1 means the variable is
+missing **or** was added without redeploying afterwards.
 
-## Step 3: Share the sheet with the service account
-In your Google Sheet, click Share, and add the `client_email` from the JSON as an Editor.
+## Notes
 
-## Step 4: Set environment variables in Vercel
-In your Vercel project settings, add:
-```
-GOOGLE_SERVICE_ACCOUNT_EMAIL = the client_email from the JSON
-GOOGLE_PRIVATE_KEY = the private_key from the JSON (keep the \n characters as-is)
-SPREADSHEET_ID = the ID you copied from the sheet's URL
-WETRAVEL_WEBHOOK_SECRET = optional, only if WeTravel gives you a signing secret
-```
-
-## Step 5: Deploy
-Push this folder to a GitHub repo and import it into Vercel, or run `vercel` from this folder if you have the CLI installed. Vercel auto-detects the `api/` folder as serverless functions and serves `index.html` as the homepage.
-
-## Step 6: Register the webhook with WeTravel
-Once deployed, your webhook URL will be:
-```
-https://your-project.vercel.app/api/webhook
-```
-Add that in WeTravel Pro's Webhooks / Partner API settings as the endpoint for booking events.
-
-## Two things to double check once real data is flowing
-1. **Field names** — `api/webhook.js` guesses at field names like `participant_name`. Trigger a real test booking and check WeTravel's payload to confirm what they actually send, then adjust the `TODO` lines.
-2. **Timing** — the dashboard checks every 5 seconds. If that's too slow or too chatty for your traffic, change `POLL_INTERVAL_MS` in `index.html`.
-
-## Fees
-- Google Sheets API: free within Google's standard quota, far more than this will ever use
-- Vercel: free tier works for personal projects only, per their terms; for Nomuhub's use, the Pro plan (roughly $20/user/month) is the appropriate one, and this workload is small enough to stay well within its included usage
+- **Cron on Hobby vs Pro** — Vercel's Hobby plan runs cron jobs once a day at an
+  approximate time. The single 04:00 UTC job here fits, and `slack-notify`
+  tolerates ±30 min of drift when picking its reporting window. Pro runs it on
+  the minute.
+- **No double-posting** — each run reports exactly the 24h since the previous
+  scheduled boundary, so consecutive messages tile the day without overlap.
+  There's no stored state; the windows simply never repeat.
+- **Timezone** — Oman is UTC+4 year-round. Day and week boundaries are computed
+  against Muscat's calendar, not the server's UTC clock.
+- **`node_modules/` is committed but unused** — leftover `googleapis` packages
+  from an earlier Google Sheets version. Nothing imports them; the functions use
+  Node's built-in `fetch`. Safe to delete along with adding a `.gitignore`.
