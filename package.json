@@ -1,0 +1,5 @@
+{
+  "name": "wetravel-booking-progress",
+  "version": "1.0.0",
+  "description": "Live booking-progress dashboard reading directly from the WeTravel Partner API"
+}
