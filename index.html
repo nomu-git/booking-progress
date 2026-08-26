@@ -479,6 +479,18 @@
   [hidden] { display: none !important; }
   .msg { padding: 24px 4px; color: var(--text-2); font-size: 14px; }
   .msg.err { color: #ffbfa8; }
+  /* Not an error — the numbers are real, one of them just needs a human eye. */
+  .msg.warn {
+    color: #ffd9a3; background: rgba(239,139,60,.10);
+    border: 1px solid rgba(239,139,60,.35); border-radius: 8px;
+    padding: 10px 13px; font-size: 12px; line-height: 1.55; margin-bottom: 12px;
+  }
+  .msg.warn b { color: var(--target); }
+  .flag {
+    display: inline-block; min-width: 15px; padding: 0 4px; border-radius: 4px;
+    background: rgba(239,139,60,.20); color: var(--target);
+    font-size: 10px; font-weight: 700; text-align: center; cursor: help;
+  }
 
   /* ---------- shared tooltip (report bars + day cells) ---------- */
   .tip {
@@ -1429,8 +1441,6 @@
     const cpm = cpmOf(c.spend, c.impressions);
     const freq = ratio(c.impressions, c.reach);
     const share = ratio(c.spend, totalSpend) || 0;
-    const remaining = c.allocated == null ? null : c.allocated - c.spend;
-    const used = c.allocated == null ? null : ratio(c.spend, c.allocated);
     const range = c.firstMonth
       ? `${c.firstMonth}${c.lastMonth && c.lastMonth !== c.firstMonth ? ' – ' + c.lastMonth : ''}`
       : '';
@@ -1442,11 +1452,9 @@
           <div class="cobj"><i class="odot" style="background:${objColor(c.objective)}"></i>${esc(c.objective)}${range ? ' · ' + esc(range) : ''}</div>
         </td>
         <td><span class="cpill ${c.status === 'Active' ? 'on' : 'off'}">${esc(c.status)}</span></td>
-        <td class="num">${show(c.allocated, money)}</td>
+        <td class="num">${c.dailyBudget ? money(c.dailyBudget) + '<div class="cobj">' + (c.activeAdSets || 0) + ' ad set' + (c.activeAdSets === 1 ? '' : 's') + '</div>' : '—'}</td>
         <td class="num">${money(c.spend)}</td>
-        <td class="num">${show(remaining, money)}</td>
-        <td class="num">${show(used, pct)}</td>
-        <td class="num">${int(c.results)}</td>
+        <td class="num">${int(c.results)}${c.noResults ? ' <span class="flag" title="Spend recorded but no results attributed">!</span>' : ''}</td>
         <td class="num">${show(cpr, money)}</td>
         <td class="num">${int(c.impressions)}</td>
         <td class="num">${int(c.reach)}</td>
@@ -1470,9 +1478,11 @@
     const totalCpr = ratio(t.spend, t.results);
     const totalCpm = cpmOf(t.spend, t.impressions);
     const totalFreq = ratio(t.impressions, t.reach);
-    const remaining = t.allocated == null ? null : t.allocated - t.spend;
-    const used = t.allocated == null ? null : ratio(t.spend, t.allocated);
-    const active = p.campaigns.filter((c) => c.status === 'Active').length;
+    const active = t.active != null ? t.active : p.campaigns.filter((c) => c.status === 'Active').length;
+    // Daily commitment projected out, so the tile answers "what does this cost
+    // us a month if nothing changes" rather than making everyone multiply.
+    const monthlyRun = t.dailyBudget == null ? null : t.dailyBudget * 30;
+    const flagged = p.noResultCampaigns || [];
 
     const monthPoints = (p.months || []).map((m) => ({
       v: m.spend,
@@ -1529,7 +1539,7 @@
       <tr>
         <td class="cname"><i class="odot" style="background:${objColor(o.objective)}"></i>${esc(o.objective)}</td>
         <td class="num">${int(o.campaigns)}</td>
-        <td class="num">${show(o.allocated, money)}</td>
+        <td class="num">${show(o.dailyBudget, money)}</td>
         <td class="num">${money(o.spend)}</td>
         <td class="num">${int(o.impressions)}</td>
         <td class="num">${show(cpmOf(o.spend, o.impressions), dec)}</td>
@@ -1551,6 +1561,13 @@
         </div>
       </div>
 
+      ${flagged.length ? `
+      <div class="msg warn">
+        <b>${flagged.length} campaign${flagged.length === 1 ? '' : 's'} recorded spend but no attributed results:</b>
+        ${flagged.map((n) => esc(n)).join(', ')}.
+        Usually means the objective's result event isn't one this board knows how to count yet, rather than a campaign that genuinely achieved nothing — worth checking against Ads Manager.
+      </div>` : ''}
+
       <div class="panel skpi-panel mkpi">
         <div class="skpi">
           <div class="skpi-n">${int(t.results)}</div><div class="skpi-l">Results</div>
@@ -1569,12 +1586,12 @@
           <div class="skpi-sub">across all campaigns</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${show(t.allocated, money)}</div><div class="skpi-l">Allocated</div>
-          <div class="skpi-sub">${t.allocated == null ? 'not configured' : cur}</div>
+          <div class="skpi-n">${show(t.dailyBudget, money)}</div><div class="skpi-l">Daily Budget</div>
+          <div class="skpi-sub">${t.dailyBudget == null ? 'no active ad sets' : 'across ' + active + ' active campaign' + (active === 1 ? '' : 's')}</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${show(remaining, money)}</div><div class="skpi-l">Remaining</div>
-          <div class="skpi-sub">${show(used, pct)} of budget used</div>
+          <div class="skpi-n">${show(monthlyRun, money)}</div><div class="skpi-l">At This Rate</div>
+          <div class="skpi-sub">${t.dailyBudget == null ? '—' : 'per 30 days'}</div>
         </div>
       </div>
 
@@ -1601,18 +1618,16 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Campaign</th><th>Status</th><th>Allocated</th><th>Spend</th>
-              <th>Remaining</th><th>Used</th><th>Results</th><th>Cost/Result</th>
+              <th>Campaign</th><th>Status</th><th>Daily Budget</th><th>Spend</th>
+              <th>Results</th><th>Cost/Result</th>
               <th>Impressions</th><th>Reach</th><th>CPM</th><th>Freq</th>
               <th>Purchases</th><th>% Spend</th>
             </tr></thead>
             <tbody>${p.campaigns.map((c) => campaignRow(c, t.spend)).join('')}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL / AVERAGE</td><td></td>
-              <td class="num">${show(t.allocated, money)}</td>
+              <td class="num">${show(t.dailyBudget, money)}</td>
               <td class="num">${money(t.spend)}</td>
-              <td class="num">${show(remaining, money)}</td>
-              <td class="num">${show(used, pct)}</td>
               <td class="num">${int(t.results)}</td>
               <td class="num">${show(totalCpr, money)}</td>
               <td class="num">${int(t.impressions)}</td>
@@ -1631,7 +1646,7 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Objective</th><th>Campaigns</th><th>Allocated</th><th>Spend</th>
+              <th>Objective</th><th>Campaigns</th><th>Daily Budget</th><th>Spend</th>
               <th>Impressions</th><th>CPM</th><th>Reach</th><th>Purchases</th>
               <th>Results</th><th>Cost/Result</th><th>% of Spend</th>
             </tr></thead>

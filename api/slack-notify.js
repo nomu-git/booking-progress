@@ -1,4 +1,5 @@
 const { build } = require('./booking-report');
+const { graphGet, AD_ACCOUNTS } = require('./meta-ads');
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://bookingprogress.vercel.app';
@@ -38,6 +39,20 @@ function runWindow(nowMs) {
   return { start: boundaries[index - 1], end: boundaries[index] };
 }
 
+// One trivial Graph call, not a full campaign pull: the failure this needs to
+// catch is a revoked or expired token, and that shows up on any call at all.
+// A broken Meta connection otherwise sits unnoticed behind cached figures for
+// as long as the board keeps serving them.
+async function metaHealth() {
+  if (!AD_ACCOUNTS.length) return null;
+  try {
+    await graphGet(`/${AD_ACCOUNTS[0]}`, { fields: 'name' });
+    return null;
+  } catch (err) {
+    return err.message;
+  }
+}
+
 const omanDate = (ms) => new Date(ms).toLocaleDateString('en-GB', {
   timeZone: 'Asia/Muscat', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
 });
@@ -45,7 +60,7 @@ const omanTime = (ms) => new Date(ms).toLocaleTimeString('en-US', {
   timeZone: 'Asia/Muscat', hour: 'numeric', minute: '2-digit', hour12: true,
 });
 
-function buildMessage(payload, windowStart, windowEnd) {
+function buildMessage(payload, windowStart, windowEnd, metaError) {
   const byTrip = new Map();
   let total = 0;
 
@@ -69,16 +84,35 @@ function buildMessage(payload, windowStart, windowEnd) {
     ? `*${total} new booking${total === 1 ? '' : 's'}*\n${lines.join('\n')}`
     : '_No new bookings in this period._';
 
+  const blocks = [
+    { type: 'header', text: { type: 'plain_text', text: heading, emoji: true } },
+    { type: 'context', elements: [{ type: 'mrkdwn', text: `Bookings taken between *${since}* (Muscat time)` }] },
+    { type: 'section', text: { type: 'mrkdwn', text: body } },
+  ];
+
+  // Bookings are the point of this message, so the Meta warning goes under
+  // them rather than displacing them — but it does go in, every day it's
+  // true, because the dashboard itself will happily show stale ad figures.
+  if (metaError) {
+    blocks.push({ type: 'divider' });
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `:warning: *Meta Ads connection is failing.* The Campaigns and History tabs are showing the last figures they managed to fetch, not current ones.\n\`${String(metaError).slice(0, 300)}\``,
+      },
+    });
+  }
+
+  blocks.push({ type: 'divider' });
+  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `<${DASHBOARD_URL}|📊 Open Booking Progress dashboard>` } });
+
+  const headline = total ? `${total} new booking${total === 1 ? '' : 's'} — ${heading}` : `No new bookings — ${heading}`;
   return {
-    text: total ? `${total} new booking${total === 1 ? '' : 's'} — ${heading}` : `No new bookings — ${heading}`,
-    blocks: [
-      { type: 'header', text: { type: 'plain_text', text: heading, emoji: true } },
-      { type: 'context', elements: [{ type: 'mrkdwn', text: `Bookings taken between *${since}* (Muscat time)` }] },
-      { type: 'section', text: { type: 'mrkdwn', text: body } },
-      { type: 'divider' },
-      { type: 'section', text: { type: 'mrkdwn', text: `<${DASHBOARD_URL}|📊 Open Booking Progress dashboard>` } },
-    ],
+    text: metaError ? `${headline} · Meta Ads connection failing` : headline,
+    blocks,
     total,
+    metaError: metaError || null,
   };
 }
 
@@ -97,8 +131,10 @@ module.exports = async (req, res) => {
 
   try {
     const { start, end } = runWindow(nowMs);
-    const payload = await build();
-    const message = buildMessage(payload, start, end);
+    // Run together — the health check is one request and shouldn't add a leg
+    // to the cron's critical path.
+    const [payload, metaError] = await Promise.all([build(), metaHealth()]);
+    const message = buildMessage(payload, start, end, metaError);
 
     if (preview) {
       return res.status(200).json({
@@ -107,6 +143,7 @@ module.exports = async (req, res) => {
         windowEndUTC: new Date(end).toISOString(),
         windowOman: `${omanTime(start)} → ${omanTime(end)}`,
         total: message.total,
+        metaError: message.metaError,
         wouldPost: { text: message.text, blocks: message.blocks },
       });
     }
@@ -126,7 +163,7 @@ module.exports = async (req, res) => {
       throw new Error(`Slack rejected the message (${slackRes.status}): ${detail}`);
     }
 
-    res.status(200).json({ posted: true, total: message.total });
+    res.status(200).json({ posted: true, total: message.total, metaError: message.metaError });
   } catch (err) {
     // Deliberately not posting failures to Slack — a broken upstream would
     // otherwise turn into repeated noise in the channel. Surfaced in Vercel logs.

@@ -1,4 +1,7 @@
-const { graphGetAll, getAccountMeta, toReportCurrency, AD_ACCOUNTS, REPORT_CURRENCY } = require('./meta-ads');
+const {
+  graphGetAll, getAccountMeta, toReportCurrency, budgetToReportCurrency,
+  AD_ACCOUNTS, REPORT_CURRENCY,
+} = require('./meta-ads');
 const { mapWithConcurrency } = require('./wetravel');
 
 const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
@@ -6,18 +9,6 @@ const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
 // The sheet this replaces is "2026 figures only". Year is overridable so the
 // board rolls into 2027 without a code change.
 const YEAR = Number(process.env.META_YEAR || new Date().getUTCFullYear());
-
-// Meta has no concept of NomuHub's internal budget allocation, so it stays a
-// manual figure — "Campaign Name=5000,Other Campaign=3000". Anything not named
-// here reports no allocation rather than guessing one.
-const ALLOCATED = new Map(
-  (process.env.META_ALLOCATED_BUDGETS || '')
-    .split(',')
-    .map((pair) => pair.split('='))
-    .filter((parts) => parts.length === 2)
-    .map(([name, amount]) => [name.trim().toLowerCase(), Number(amount)])
-    .filter(([, amount]) => Number.isFinite(amount))
-);
 
 let cache = { at: 0, payload: null };
 
@@ -85,9 +76,9 @@ async function loadAccount(accountId, since, until) {
 
   // Campaign records carry status and start date; insights carry the numbers.
   // They're separate edges, so both are fetched and joined on campaign id.
-  const [campaigns, insights, monthly] = await Promise.all([
+  const [campaigns, insights, monthly, adsets] = await Promise.all([
     graphGetAll(`/${accountId}/campaigns`, {
-      fields: 'id,name,objective,status,effective_status,start_time,stop_time',
+      fields: 'id,name,objective,status,effective_status,start_time,stop_time,daily_budget,lifetime_budget',
     }).catch((err) => {
       console.error(`campaigns failed for ${accountId}: ${err.message}`);
       return [];
@@ -108,9 +99,17 @@ async function loadAccount(accountId, since, until) {
       time_increment: 'monthly',
       fields: 'campaign_id,spend,impressions,date_start',
     }).catch(() => []),
+    // Campaign Budget Optimization is off on these accounts, so the campaign's
+    // own budget field comes back empty and the real numbers sit on the ad sets.
+    graphGetAll(`/${accountId}/adsets`, {
+      fields: 'id,campaign_id,name,daily_budget,lifetime_budget,effective_status',
+    }).catch((err) => {
+      console.error(`adsets failed for ${accountId}: ${err.message}`);
+      return [];
+    }),
   ]);
 
-  return { accountId, account, campaigns, insights, monthly };
+  return { accountId, account, campaigns, insights, monthly, adsets };
 }
 
 async function build() {
@@ -143,6 +142,22 @@ async function build() {
     .sort((a, b) => a.month.localeCompare(b.month))
     .map((m) => ({ ...m, label: MONTHS[Number(m.month.slice(5, 7)) - 1] }));
 
+  // Only ad sets that are actually live carry a budget worth reporting — a
+  // paused ad set still has a daily_budget on it, but it isn't spending, so
+  // counting it would overstate the campaign's real daily commitment.
+  const budgetByCampaign = new Map();
+  for (const { account, adsets } of loaded) {
+    for (const set of adsets || []) {
+      if (set.effective_status !== 'ACTIVE') continue;
+      const key = set.campaign_id;
+      if (!budgetByCampaign.has(key)) budgetByCampaign.set(key, { daily: 0, lifetime: 0, adsets: 0 });
+      const b = budgetByCampaign.get(key);
+      b.daily += budgetToReportCurrency(set.daily_budget, account);
+      b.lifetime += budgetToReportCurrency(set.lifetime_budget, account);
+      b.adsets += 1;
+    }
+  }
+
   const campaigns = [];
   for (const { accountId, account, campaigns: meta, insights } of loaded) {
     const byId = new Map(meta.map((c) => [c.id, c]));
@@ -167,7 +182,14 @@ async function build() {
       else results = customConversionValue(row.actions);
 
       const monthKeys = [...(monthsByCampaign.get(row.campaign_id) || [])].sort();
-      const allocated = ALLOCATED.get(String(row.campaign_name || '').trim().toLowerCase());
+
+      // With CBO on, the campaign owns the budget; with it off, the ad sets do.
+      // Prefer whichever one actually carries a figure.
+      const cboDaily = budgetToReportCurrency(record.daily_budget, account);
+      const cboLifetime = budgetToReportCurrency(record.lifetime_budget, account);
+      const fromSets = budgetByCampaign.get(row.campaign_id) || { daily: 0, lifetime: 0, adsets: 0 };
+      const dailyBudget = cboDaily || fromSets.daily || null;
+      const lifetimeBudget = cboLifetime || fromSets.lifetime || null;
 
       campaigns.push({
         id: row.campaign_id,
@@ -182,12 +204,19 @@ async function build() {
         firstMonth: monthKeys.length ? monthLabel(monthKeys[0]) : null,
         lastMonth: monthKeys.length ? monthLabel(monthKeys[monthKeys.length - 1]) : null,
         monthsLive: monthKeys.length,
-        allocated: allocated == null ? null : allocated,
+        dailyBudget,
+        lifetimeBudget,
+        budgetSource: cboDaily || cboLifetime ? 'campaign' : (fromSets.adsets ? 'adsets' : null),
+        activeAdSets: fromSets.adsets,
         spend,
         results,
         impressions,
         reach,
         purchases: actionValue(row.actions, PURCHASE_ACTIONS),
+        // Money went out but nothing came back. Almost always a gap in
+        // RESULT_ACTIONS rather than a genuinely fruitless campaign, so it's
+        // surfaced on the board instead of quietly reading as a zero.
+        noResults: spend > 0 && results === 0,
       });
     }
   }
@@ -197,17 +226,24 @@ async function build() {
 
   const sum = (key) => campaigns.reduce((total, c) => total + (c[key] || 0), 0);
   const totalSpend = sum('spend');
-  const totalAllocated = campaigns.reduce((total, c) => total + (c.allocated || 0), 0);
+  const active = campaigns.filter((c) => c.status === 'Active');
 
   const totals = {
     campaigns: campaigns.length,
-    allocated: totalAllocated || null,
+    active: active.length,
     spend: totalSpend,
+    // What the account is committed to spending per day right now, across
+    // live ad sets only — the closest thing to a budget these accounts have,
+    // since nothing here runs on a lifetime cap.
+    dailyBudget: active.reduce((total, c) => total + (c.dailyBudget || 0), 0) || null,
     results: sum('results'),
     impressions: sum('impressions'),
     reach: sum('reach'),
     purchases: sum('purchases'),
   };
+
+  // Named so the board can say which campaigns are affected, not just how many.
+  const noResultCampaigns = campaigns.filter((c) => c.noResults).map((c) => c.name);
 
   // Grouped exactly like the sheet's "Performance by Campaign Objective" block.
   const byObjective = [];
@@ -218,7 +254,8 @@ async function build() {
     byObjective.push({
       objective: label,
       campaigns: group.length,
-      allocated: group.reduce((total, c) => total + (c.allocated || 0), 0) || null,
+      dailyBudget: group.filter((c) => c.status === 'Active')
+        .reduce((total, c) => total + (c.dailyBudget || 0), 0) || null,
       spend: gSum('spend'),
       impressions: gSum('impressions'),
       reach: gSum('reach'),
@@ -240,6 +277,7 @@ async function build() {
     months,
     byObjective,
     campaigns,
+    noResultCampaigns,
   };
 }
 

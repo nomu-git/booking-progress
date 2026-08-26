@@ -92,6 +92,12 @@ const USD_SAR = Number(process.env.META_USD_SAR || 3.75);
 
 let accountMetaCache = new Map();
 
+// Budget fields come back as integer strings in the currency's minor unit —
+// SAR 50.00/day arrives as "5000". Most currencies are hundredths; these few
+// have no minor unit at all, so their raw value is already the real amount.
+const ZERO_DECIMAL = new Set(['JPY', 'KRW', 'CLP', 'VND', 'ISK', 'HUF', 'TWD', 'UGX', 'PYG']);
+const minorUnits = (currency) => (ZERO_DECIMAL.has(currency) ? 1 : 100);
+
 async function getAccountMeta(accountId) {
   if (accountMetaCache.has(accountId)) return accountMetaCache.get(accountId);
   let meta = { id: accountId, name: accountId, currency: REPORT_CURRENCY };
@@ -101,8 +107,16 @@ async function getAccountMeta(accountId) {
   } catch (err) {
     console.error(`account meta failed for ${accountId}: ${err.message}`);
   }
+  meta.minorUnits = minorUnits(meta.currency);
   accountMetaCache.set(accountId, meta);
   return meta;
+}
+
+// A budget field -> a real amount in the reporting currency, in one step.
+function budgetToReportCurrency(raw, account) {
+  const v = Number(raw);
+  if (!Number.isFinite(v) || v <= 0) return 0;
+  return toReportCurrency(v / (account.minorUnits || 100), account.currency);
 }
 
 // Only USD is ever seen alongside SAR on these accounts, so that's the one rate
@@ -115,6 +129,6 @@ function toReportCurrency(amount, fromCurrency) {
 }
 
 module.exports = {
-  graphGet, graphGetAll, getAccountMeta, toReportCurrency,
+  graphGet, graphGetAll, getAccountMeta, toReportCurrency, budgetToReportCurrency,
   AD_ACCOUNTS, API_VERSION, TOKEN_VARS, REPORT_CURRENCY, USD_SAR,
 };

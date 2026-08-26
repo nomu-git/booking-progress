@@ -1,0 +1,4 @@
+# Internal planning documents — this repo is public.
+*.xlsx
+.DS_Store
+node_modules/
