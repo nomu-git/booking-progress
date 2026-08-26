@@ -450,6 +450,64 @@
     background: rgba(77,157,224,.14); color: var(--info); font-size: 9.5px; font-weight: 600;
   }
 
+  /* ---------- SA media plan ----------
+     A plan is read as a schedule, so it's laid out as one: month, then the
+     flights inside it. Deliberately plainer than the live tabs — there's no
+     measurement here to interrogate, just what was decided. */
+
+  .plan-split { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .plan-chip {
+    flex: 1; min-width: 150px; background: var(--track); border-radius: 8px;
+    padding: 11px 14px; border-left: 3px solid var(--fill);
+  }
+  .plan-chip .pc-n { font-size: 21px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .plan-chip .pc-l { font-size: 11px; color: var(--text-2); margin-top: 3px; font-weight: 600; }
+  .plan-chip .pc-s { font-size: 10.5px; color: var(--text-3); margin-top: 2px; }
+
+  .plan-month { margin-bottom: 18px; }
+  .plan-month:last-child { margin-bottom: 0; }
+  .pm-head {
+    display: flex; align-items: baseline; gap: 10px;
+    padding-bottom: 7px; margin-bottom: 9px; border-bottom: 1px solid var(--line);
+  }
+  .pm-name { font-size: 14px; font-weight: 700; color: var(--yellow); letter-spacing: .03em; }
+  .pm-meta { font-size: 11px; color: var(--text-3); }
+  .pm-total { margin-left: auto; font-size: 13px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+
+  /* trip | dates | est. messages | cost each | budget */
+  .pflight {
+    display: grid; grid-template-columns: minmax(0,1.7fr) 100px minmax(0,1fr) 78px 78px;
+    gap: 12px; align-items: center; padding: 7px 2px; font-size: 12.5px;
+  }
+  .pflight + .pflight { border-top: 1px solid rgba(52,81,124,.3); }
+  .pf-trip { color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pf-date { color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+  .pf-num  { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); white-space: nowrap; }
+  .pf-num b { color: #fff; font-weight: 700; }
+
+  /* Budgets are a flat $750 across every trip, so the bar tracks the estimate
+     that actually varies — expected messages — not the budget. */
+  .pf-est { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .pf-track { flex: 1; height: 7px; background: rgba(134,152,180,.12); border-radius: 4px; overflow: hidden; min-width: 30px; }
+  .pf-fill { height: 100%; background: var(--fill); border-radius: 4px; }
+  .pf-estn { font-size: 11.5px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  @media (max-width: 780px) {
+    .pflight { grid-template-columns: 1fr auto; row-gap: 4px; }
+    .pf-est { grid-column: 1 / -1; }
+  }
+
+  .plan-always { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 780px) { .plan-always { grid-template-columns: 1fr; } }
+  .pa-card { background: var(--track); border-radius: 8px; padding: 13px 15px; }
+  .pa-top { display: flex; align-items: baseline; gap: 10px; }
+  .pa-name { font-size: 13px; font-weight: 700; color: #fff; }
+  .pa-amt { margin-left: auto; font-size: 17px; font-weight: 700; color: var(--yellow); font-variant-numeric: tabular-nums; }
+  .pa-sub { font-size: 11.5px; color: var(--text-3); margin-top: 5px; line-height: 1.5; }
+
+  .plan-foot { font-size: 11.5px; color: var(--text-3); line-height: 1.6; }
+  .plan-foot b { color: var(--text-2); }
+
   /* ---------- notes ---------- */
 
   .notes { margin-top: 6px; font-size: 11.5px; color: var(--text-3); line-height: 1.6; }
@@ -1890,7 +1948,9 @@
   };
   const planObjColor = (name) => objColor(PLAN_OBJ_ALIAS[name] || name);
 
-  const usd = (n) => '$' + money(n);
+  // Plan budgets are whole dollars; money() would render $750.00. Decimals are
+  // kept if a figure ever has them, but nothing in the plan currently does.
+  const usd = (n) => '$' + (Number.isInteger(Number(n)) ? int(n) : money(n));
 
   function renderPlan() {
     const p = mediaPlan;
@@ -1901,50 +1961,53 @@
     }
 
     const t = p.totals;
-    const prospecting = p.lines.filter((l) => l.kind === 'prospecting');
+    const MONTH_FULL = {
+      Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April', May: 'May', Jun: 'June',
+      Jul: 'July', Aug: 'August', Sep: 'September', Oct: 'October', Nov: 'November', Dec: 'December',
+    };
 
-    const monthPoints = p.byMonth.map((m) => ({
-      v: m.budgetUsd,
-      label: m.month,
-      tip: tipRows(`${m.month} — planned`, [
-        ['Budget', usd(m.budgetUsd)],
-        ['In SAR', 'SAR ' + money(m.budgetUsd * p.usdSar)],
-        ['Campaign flights', int(m.campaigns)],
-        ['Est. impressions', int(m.impressions)],
-        ['Est. results', int(m.results)],
-      ]),
-    }));
+    const trips = p.lines.filter((l) => l.kind === 'prospecting');
+    const always = p.lines.filter((l) => l.kind !== 'prospecting');
+    const maxEst = Math.max(...trips.map((l) => l.resultCount || 0), 1);
 
-    const programBars = p.byProgram.map((g) => ({
-      v: g.budgetUsd,
-      label: g.program + (g.flights > 1 ? ` (×${g.flights})` : ''),
-      value: usd(g.budgetUsd),
-      tip: tipRows(g.program, [
-        ['Flights planned', int(g.flights)],
-        ['Budget', usd(g.budgetUsd)],
-        ['In SAR', 'SAR ' + money(g.budgetUsd * p.usdSar)],
-        ['Est. impressions', int(g.impressions)],
-        ['Est. messages', int(g.results)],
-      ]),
-    }));
+    // Grouped by the month each flight starts in — the order the plan runs.
+    const months = p.byMonth.map((m) => {
+      const flights = trips.filter((l) => l.startMonth === m.index);
+      if (!flights.length) return '';
+      return `
+        <div class="plan-month">
+          <div class="pm-head">
+            <span class="pm-name">${esc(MONTH_FULL[m.month] || m.month)}</span>
+            <span class="pm-meta">${flights.length} campaign${flights.length === 1 ? '' : 's'}</span>
+            <span class="pm-total">${usd(flights.reduce((sum, l) => sum + l.budgetUsd, 0))}</span>
+          </div>
+          ${flights.map((l) => `
+            <div class="pflight">
+              <div class="pf-trip">${esc(l.program)}</div>
+              <div class="pf-date">${esc(l.dates)}</div>
+              <div class="pf-est">
+                <div class="pf-track"><div class="pf-fill" style="width:${(((l.resultCount || 0) / maxEst) * 100).toFixed(1)}%"></div></div>
+                <span class="pf-estn">${int(l.resultCount)} msgs</span>
+              </div>
+              <div class="pf-num">${esc(String(l.costPerResult).replace(' / Message', ''))}</div>
+              <div class="pf-num"><b>${usd(l.budgetUsd)}</b></div>
+            </div>`).join('')}
+        </div>`;
+    }).join('');
 
-    const mixSegs = [
-      { key: 'prospecting', label: 'Prospecting', v: t.prospectingUsd },
-      { key: 'retargeting', label: 'Retargeting', v: t.retargetingUsd },
-      { key: 'traffic', label: 'Traffic / Engagement', v: t.trafficUsd },
-    ].filter((seg) => seg.v > 0).map((seg, i) => ({
-      v: seg.v,
-      label: seg.label,
-      value: usd(seg.v),
-      color: SERIES[i],
-      tip: tipRows(seg.label, [
-        ['Budget', usd(seg.v)],
-        ['In SAR', 'SAR ' + money(seg.v * p.usdSar)],
-        ['Share of plan', pct(ratio(seg.v, t.allUsd))],
-      ]),
-    }));
+    const alwaysCards = always.map((l) => `
+      <div class="pa-card">
+        <div class="pa-top">
+          <span class="pa-name">${esc(l.program)}</span>
+          <span class="pa-amt">${usd(l.budgetUsd)}</span>
+        </div>
+        <div class="pa-sub">
+          ${esc(l.dates)} · ${esc(l.objective)}<br>
+          ${esc(l.costPerResult)} · ${esc(l.results)}${l.impressions ? ` · ${int(l.impressions)} est. impressions` : ''}
+        </div>
+      </div>`).join('');
 
-    const lineRows = p.lines.map((l) => `
+    const detailRows = p.lines.map((l) => `
       <tr>
         <td class="cname">${esc(l.program)}
           <div class="cobj"><i class="odot" style="background:${planObjColor(l.objective)}"></i>${esc(l.objective)}</div>
@@ -1959,80 +2022,49 @@
         <td class="num">${esc(l.results)}</td>
       </tr>`).join('');
 
-    const summaryRows = p.summary.map((r) => `
-      <tr>
-        <td class="cname">${esc(r.label)}</td>
-        <td class="num">${esc(r.objective)}</td>
-        <td class="num">${usd(r.budgetUsd)}</td>
-        <td class="num">${money(r.budgetUsd * p.usdSar)}</td>
-        <td class="num">${r.cpm == null ? '—' : dec(r.cpm)}</td>
-        <td class="num">${r.impressions == null ? '—' : int(r.impressions)}</td>
-        <td class="num">${esc(r.costPerResult)}</td>
-        <td class="num">${esc(r.results)}</td>
-      </tr>`).join('');
+    // The document's own summary lines, quoted rather than recomputed.
+    const summaryLine = p.summary
+      .map((r) => `<b>${esc(r.label)}${r.objective && r.label.startsWith('Total Media') ? ` (${esc(r.objective)})` : ''}</b> ${usd(r.budgetUsd)}`)
+      .join(' · ');
 
     $('planWrap').innerHTML = `
-      <div class="msg warn">
-        <b>This tab is the plan, not measured results.</b>
-        Every figure below is what the Saudi Arabia media plan budgeted and estimated — none of it comes from Meta.
-        For what actually happened, use <b>Campaigns</b> (this year) or <b>History</b> (prior years).
-      </div>
-
       <div class="panel">
-        <div class="ptitle">Total planned media spend · ${esc(p.market)}</div>
+        <div class="ptitle">Saudi Arabia media plan · monthly</div>
         <div class="vhero">
           <span class="vh-c">USD</span><span class="vh-n">${money(t.allUsd)}</span>
-          <span class="vh-s">≈ SAR ${money(t.allUsd * p.usdSar)} at ${dec(p.usdSar)} · ${int(t.flights)} campaign flights across ${int(t.programs)} trips</span>
+          <span class="vh-s">per month · ≈ SAR ${money(t.allUsd * p.usdSar)} · ${int(t.flights)} campaigns · ~${int(t.results)} messages expected</span>
         </div>
-        <div class="tzbadge">📋 Transcribed verbatim from <b>${esc(p.source)}</b>. Budgets are USD as written; SAR shown at the same ${dec(p.usdSar)} rate the rest of this dashboard uses.</div>
-      </div>
-
-      <div class="panel skpi-panel mkpi">
-        <div class="skpi">
-          <div class="skpi-n">${money(t.prospectingUsd)}</div><div class="skpi-l">Prospecting</div>
-          <div class="skpi-sub">USD · ${int(prospecting.length)} flights</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${money(t.retargetingUsd)}</div><div class="skpi-l">Retargeting</div>
-          <div class="skpi-sub">USD · monthly</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${money(t.trafficUsd)}</div><div class="skpi-l">Traffic</div>
-          <div class="skpi-sub">USD · monthly</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${compact(t.impressions)}</div><div class="skpi-l">Est. Impressions</div>
-          <div class="skpi-sub">planned reach volume</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${int(t.results)}</div><div class="skpi-l">Est. Results</div>
-          <div class="skpi-sub">mostly messages</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${show(ratio(t.allUsd, t.results), (v) => '$' + dec(v))}</div><div class="skpi-l">Est. Cost / Result</div>
-          <div class="skpi-sub">blended across the plan</div>
-        </div>
-      </div>
-
-      <div class="vgrid2">
-        <div class="panel">
-          <div class="ptitle">Planned budget by launch month (USD)</div>
-          ${columnChart(monthPoints, { fmt: (v) => '$' + compact(v) })}
-          <div class="vzlegend"><span>Recurring monthly lines (retargeting, traffic) sit outside this chart — they have no single launch month.</span></div>
-        </div>
-        <div class="panel">
-          <div class="ptitle">Budget mix</div>
-          ${stackedBar(mixSegs, t.allUsd)}
+        <div class="plan-split">
+          <div class="plan-chip">
+            <div class="pc-n">${usd(t.prospectingUsd)}</div>
+            <div class="pc-l">Prospecting</div>
+            <div class="pc-s">${trips.length} trip campaigns × ${usd(trips.length ? trips[0].budgetUsd : 0)}</div>
+          </div>
+          <div class="plan-chip" style="border-left-color:${planObjColor('Purchase')}">
+            <div class="pc-n">${usd(t.retargetingUsd)}</div>
+            <div class="pc-l">Retargeting</div>
+            <div class="pc-s">website, purchase-optimised</div>
+          </div>
+          <div class="plan-chip" style="border-left-color:${planObjColor('Landing Page Views / Engagement')}">
+            <div class="pc-n">${usd(t.trafficUsd)}</div>
+            <div class="pc-l">Traffic &amp; engagement</div>
+            <div class="pc-s">website, ${esc((always.find((l) => l.kind === 'traffic') || {}).costPerResult || '')}</div>
+          </div>
         </div>
       </div>
 
       <div class="panel">
-        <div class="ptitle">Planned budget by trip</div>
-        ${barRows(programBars)}
+        <div class="ptitle">Campaign schedule</div>
+        ${months}
       </div>
 
       <div class="panel">
-        <div class="ptitle">Plan line items</div>
+        <div class="ptitle">Always-on</div>
+        <div class="plan-always">${alwaysCards}</div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Full plan detail</div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
@@ -2040,7 +2072,7 @@
               <th>Budget (USD)</th><th>Budget (SAR)</th><th>Est. CPM</th>
               <th>Est. Impressions</th><th>Est. Cost / Result</th><th>Est. Results</th>
             </tr></thead>
-            <tbody>${lineRows}</tbody>
+            <tbody>${detailRows}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL</td><td></td><td></td>
               <td class="num">${usd(t.allUsd)}</td>
@@ -2052,18 +2084,10 @@
             </tr></tfoot>
           </table>
         </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">Plan summary (as written in the source document)</div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              <th>Line</th><th>Objective</th><th>Budget (USD)</th><th>Budget (SAR)</th>
-              <th>Est. CPM</th><th>Est. Impressions</th><th>Est. Cost / Result</th><th>Est. Results</th>
-            </tr></thead>
-            <tbody>${summaryRows}</tbody>
-          </table>
+        <div class="plan-foot" style="margin-top:12px">
+          As written in the plan: ${summaryLine}.<br>
+          Source: <b>${esc(p.source)}</b> · all objectives target <b>${esc(p.market)}</b> · budgets are USD, SAR converted at <b>${dec(p.usdSar)}</b>.
+          These are planned and estimated figures, not measured results — see <b>Campaigns</b> and <b>History</b> for what actually ran.
         </div>
       </div>`;
 
