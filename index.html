@@ -602,6 +602,13 @@
   const POLL_MS = 30000;   // server caches upstream calls, so this stays cheap
   const $ = (id) => document.getElementById(id);
   const esc = (s) => { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; };
+  // esc() goes through textContent, which escapes & < > but leaves quotes
+  // alone — fine for text nodes, silently broken inside an attribute, where
+  // the first embedded " ends the value early. Anything interpolated into an
+  // attribute has to come through here instead.
+  const attr = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   let view = 'board';   // 'board' | 'report'
   let latest = null;
 
@@ -1369,9 +1376,13 @@
     });
   }
 
+  // Titles are campaign names straight from Meta, so they're escaped here as
+  // text; the whole string is escaped again as an attribute at the call site.
+  // Attribute decoding and innerHTML parsing each unwrap one layer, so the two
+  // passes cancel out exactly rather than double-encoding.
   const tipRows = (title, rows) =>
-    `<div class="tt">${title}</div>` +
-    rows.map(([k, v]) => `<div class="trow"><span class="tk">${k}</span><b>${v}</b></div>`).join('');
+    `<div class="tt">${esc(title)}</div>` +
+    rows.map(([k, v]) => `<div class="trow"><span class="tk">${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
 
   // A "nice" axis top, so gridlines land on round numbers instead of the raw max.
   function niceMax(v) {
@@ -1388,10 +1399,10 @@
     const top = niceMax(Math.max(0, ...points.map((p) => p.v)));
     const cols = points.map((p) => {
       const h = top ? Math.max(p.v > 0 ? 2 : 0, (p.v / top) * 100) : 0;
-      return `<div class="vzcol"><div class="vzbar${p.dim ? ' dim' : ''}" style="height:${h.toFixed(2)}%" data-tip="${esc(p.tip)}"></div></div>`;
+      return `<div class="vzcol"><div class="vzbar${p.dim ? ' dim' : ''}" style="height:${h.toFixed(2)}%" data-tip="${attr(p.tip)}"></div></div>`;
     }).join('');
     const axis = points.map((p) =>
-      `<span class="${p.mark ? 'yr' : ''}" title="${esc(p.label)}">${esc(p.label)}</span>`).join('');
+      `<span class="${p.mark ? 'yr' : ''}" title="${attr(p.label)}">${esc(p.label)}</span>`).join('');
     return `
       <div class="vz">
         <div class="vzwrap">
@@ -1416,10 +1427,10 @@
     const top = Math.max(0, ...items.map((i) => i.v)) || 1;
     return `<div class="vz"><div class="vzrows">${items.map((i) => `
       <div class="vzrow">
-        <div class="vzlabel" title="${esc(i.label)}">${esc(i.label)}</div>
+        <div class="vzlabel" title="${attr(i.label)}">${esc(i.label)}</div>
         <div class="vzval">${esc(i.value)}</div>
         <div class="vztrack">
-          <div class="vzfill" style="width:${((i.v / top) * 100).toFixed(2)}%;background:${i.color || 'var(--fill)'}" data-tip="${esc(i.tip)}"></div>
+          <div class="vzfill" style="width:${((i.v / top) * 100).toFixed(2)}%;background:${i.color || 'var(--fill)'}" data-tip="${attr(i.tip)}"></div>
         </div>
       </div>`).join('')}</div></div>`;
   }
@@ -1428,7 +1439,7 @@
   // with its share, so identity never rests on color alone.
   function stackedBar(segments, total) {
     const bar = segments.map((s) =>
-      `<div class="vzseg" style="width:${((s.v / (total || 1)) * 100).toFixed(2)}%;background:${s.color}" data-tip="${esc(s.tip)}"></div>`).join('');
+      `<div class="vzseg" style="width:${((s.v / (total || 1)) * 100).toFixed(2)}%;background:${s.color}" data-tip="${attr(s.tip)}"></div>`).join('');
     const legend = segments.map((s) =>
       `<span><i style="background:${s.color}"></i>${esc(s.label)} <b>${esc(s.value)}</b> · ${pct(ratio(s.v, total))}</span>`).join('');
     return `<div class="vz"><div class="vzstack">${bar}</div><div class="vzlegend">${legend}</div></div>`;
