@@ -1852,6 +1852,12 @@
       if (!adHistory) $('historyWrap').innerHTML = '<div class="msg">Loading campaign history…</div>';
       loadHistory(false);
     }
+    // Keep the address bar in step, so a reload or a copied link lands on the
+    // same tab. replaceState rather than the hash property: no history entry
+    // per tab click, so Back still leaves the dashboard.
+    try {
+      if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+    } catch (e) { /* file:// or a sandboxed frame — the tab still switches */ }
     saveViewState();
   }
 
@@ -1869,6 +1875,21 @@
   // load, so a refresh (or the wall display losing power overnight) picks up
   // where it left off instead of resetting to the very beginning.
   loadViewState();
+
+  // A #hash beats stored state, so a wall display can be pointed straight at
+  // one tab by URL and stay there through reboots, and any tab can be linked.
+  const VIEWS = ['board', 'report', 'campaigns', 'history'];
+  const viewFromHash = () => {
+    const h = String(location.hash || '').replace(/^#/, '');
+    return VIEWS.includes(h) ? h : null;
+  };
+  const hashView = viewFromHash();
+  if (hashView) view = hashView;
+  addEventListener('hashchange', () => {
+    const next = viewFromHash();
+    if (next && next !== view) setView(next);
+  });
+
   setView(view);
 
   load(false);
