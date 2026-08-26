@@ -58,7 +58,16 @@
   .stat .n { font-size: 26px; font-weight: 700; line-height: 1; }
   .stat .l { font-size: 10.5px; color: var(--text-3); margin-top: 4px; }
 
-  .tools { display: flex; align-items: center; gap: 7px; }
+  /* Desktop: everything on the right stacks as one column under the stats —
+     the stats + live dot + refresh on top, the tab groups directly beneath
+     them, both right-aligned so the tabs read as "belonging to" that block
+     rather than sitting off on their own at the left edge. */
+  .headright { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .headright-top { display: flex; align-items: center; gap: 16px; }
+  @media (max-width: 900px) {
+    .headright, .headright-top { align-items: flex-start; }
+  }
+
   .btn {
     background: transparent; color: var(--text-2); border: 1px solid var(--line);
     border-radius: 7px; padding: 6px 11px; font: inherit; font-size: 12px; cursor: pointer;
@@ -624,13 +633,16 @@
       <div class="asof">As of <b id="asof">—</b></div>
     </div>
     <div class="spacer"></div>
-    <div class="stats">
-      <div class="stat" id="sNewWrap"><div class="n" id="sNew">—</div><div class="l">New in 24h</div></div>
-      <div class="stat"><div class="n" id="sLastWeek">—</div><div class="l">Last Week</div></div>
-      <div class="stat"><div class="n" id="sWeeklyTarget">—</div><div class="l">Weekly Target</div></div>
-    </div>
-    <div class="tools">
-      <span class="dot" id="dot" title="Live"></span>
+    <div class="headright">
+      <div class="headright-top">
+        <div class="stats">
+          <div class="stat" id="sNewWrap"><div class="n" id="sNew">—</div><div class="l">New in 24h</div></div>
+          <div class="stat"><div class="n" id="sLastWeek">—</div><div class="l">Last Week</div></div>
+          <div class="stat"><div class="n" id="sWeeklyTarget">—</div><div class="l">Weekly Target</div></div>
+        </div>
+        <span class="dot" id="dot" title="Live"></span>
+        <button class="btn" id="refreshBtn">Refresh</button>
+      </div>
       <div class="segrow" id="viewSeg">
         <div class="seggroup">
           <span class="segcat">Booking</span>
@@ -649,7 +661,6 @@
           </div>
         </div>
       </div>
-      <button class="btn" id="refreshBtn">Refresh</button>
     </div>
   </div>
 
