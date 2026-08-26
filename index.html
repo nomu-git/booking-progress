@@ -1330,6 +1330,11 @@
   // which blanks rather than showing a misleading zero. Same contract here.
   const ratio = (a, b) => (Number(b) ? Number(a) / Number(b) : null);
   const show = (v, fmt) => (v == null ? '—' : fmt(v));
+  // CPM is cost per *thousand* impressions — the sheet's =spend/impressions*1000.
+  const cpmOf = (spend, impressions) => {
+    const r = ratio(spend, impressions);
+    return r == null ? null : r * 1000;
+  };
 
   // One tooltip element for the whole page, already styled for the report bars.
   function bindViz(root) {
@@ -1421,7 +1426,7 @@
 
   function campaignRow(c, totalSpend) {
     const cpr = ratio(c.spend, c.results);
-    const cpm = ratio(c.spend, c.impressions);
+    const cpm = cpmOf(c.spend, c.impressions);
     const freq = ratio(c.impressions, c.reach);
     const share = ratio(c.spend, totalSpend) || 0;
     const remaining = c.allocated == null ? null : c.allocated - c.spend;
@@ -1463,7 +1468,7 @@
     const t = p.totals;
     const cur = esc(p.currency);
     const totalCpr = ratio(t.spend, t.results);
-    const totalCpm = ratio(t.spend, t.impressions);
+    const totalCpm = cpmOf(t.spend, t.impressions);
     const totalFreq = ratio(t.impressions, t.reach);
     const remaining = t.allocated == null ? null : t.allocated - t.spend;
     const used = t.allocated == null ? null : ratio(t.spend, t.allocated);
@@ -1527,7 +1532,7 @@
         <td class="num">${show(o.allocated, money)}</td>
         <td class="num">${money(o.spend)}</td>
         <td class="num">${int(o.impressions)}</td>
-        <td class="num">${show(ratio(o.spend, o.impressions), dec)}</td>
+        <td class="num">${show(cpmOf(o.spend, o.impressions), dec)}</td>
         <td class="num">${int(o.reach)}</td>
         <td class="num">${int(o.purchases)}</td>
         <td class="num">${int(o.results)}</td>
@@ -1592,7 +1597,7 @@
 
       <div class="panel">
         <div class="ptitle">All campaigns · ${p.year}</div>
-        <div class="tzbadge">💰 Figures in <b>${cur}</b>, ${esc(p.since)} to ${esc(p.until)}, across ${p.accounts.length} ad account${p.accounts.length === 1 ? '' : 's'}</div>
+        <div class="tzbadge">💰 Figures in <b>${cur}</b>, ${esc(p.since)} to ${esc(p.until)}, across ${p.accounts.length} ad account${p.accounts.length === 1 ? '' : 's'}. <b>Reach</b> is de-duplicated over the whole period, so a campaign that ran for several months reads lower here than a spreadsheet that added its months together — the same person reached in June and July counts once.</div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
@@ -1678,14 +1683,14 @@
       ]),
     }));
 
-    // Year label only on January (and on the first month shown), so a 38-month
-    // axis stays readable instead of repeating the year 38 times.
+    // Year label only where the year turns over; every other column gets the
+    // bare three-letter month. "Sep 2023" in a 34-column axis just truncates.
     const monthPoints = p.months.map((m, i) => {
-      const isJan = m.month.slice(5, 7) === '01';
+      const turns = i === 0 || m.year !== p.months[i - 1].year;
       return {
         v: m.spend,
-        label: isJan || i === 0 ? String(m.year) : m.label,
-        mark: isJan || i === 0,
+        label: turns ? String(m.year) : m.label.slice(0, 3),
+        mark: turns,
         tip: tipRows(m.label, [
           ['Spend', `${cur} ${money(m.spend)}`],
           ['Campaigns running', int(m.campaigns)],
@@ -1718,7 +1723,7 @@
                   <td class="num">${show(ratio(c.spend, c.results), money)}</td>
                   <td class="num">${int(c.impressions)}</td>
                   <td class="num">${int(c.reach)}</td>
-                  <td class="num">${show(ratio(c.spend, c.impressions), dec)}</td>
+                  <td class="num">${show(cpmOf(c.spend, c.impressions), dec)}</td>
                   <td class="num">${int(c.purchases)}</td>
                   <td class="num">${esc(c.account)}</td>
                   <td class="num sharecell"><div class="sharebar" style="width:${((ratio(c.spend, y.spend) || 0) * 100).toFixed(0)}%"></div><span>${pct(ratio(c.spend, y.spend))}</span></td>
@@ -1731,7 +1736,7 @@
                 <td class="num">${show(ratio(y.spend, y.results), money)}</td>
                 <td class="num">${int(y.impressions)}</td>
                 <td class="num">${int(y.reach)}</td>
-                <td class="num">${show(ratio(y.spend, y.impressions), dec)}</td>
+                <td class="num">${show(cpmOf(y.spend, y.impressions), dec)}</td>
                 <td class="num">${int(y.purchases)}</td>
                 <td></td><td class="num">100.0%</td>
               </tr></tfoot>
@@ -1758,7 +1763,7 @@
         <div class="ptitle">Total ad spend · all retained history</div>
         <div class="vhero">
           <span class="vh-c">${cur}</span><span class="vh-n">${money(t.spend)}</span>
-          <span class="vh-s">${int(t.campaigns)} campaigns over ${p.years.length} year${p.years.length === 1 ? '' : 's'} · ${int(t.results)} results at ${show(ratio(t.spend, t.results), money)} each</span>
+          <span class="vh-s">${int(t.campaigns)} campaigns over ${p.years.length} year${p.years.length === 1 ? '' : 's'} · ${compact(t.reach)} reach · ${compact(t.impressions)} impressions</span>
         </div>
         <div class="tzbadge">🗄️ Meta keeps campaign insights for about <b>${p.retentionMonths} months</b> and purges everything older, so this archive starts at <b>${esc(p.since)}</b>. Anything that ran before then is gone at the source.</div>
       </div>
