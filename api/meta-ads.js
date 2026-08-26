@@ -84,4 +84,37 @@ async function graphGetAll(path, params = {}, cap = 20) {
   return rows;
 }
 
-module.exports = { graphGet, graphGetAll, AD_ACCOUNTS, API_VERSION, TOKEN_VARS };
+// Ad accounts don't all bill in the same currency — the archive spreadsheet
+// carried a "Cur" column and converted USD rows by hand. Same job, done once
+// here so every view reports a single comparable currency.
+const REPORT_CURRENCY = process.env.META_CURRENCY || 'SAR';
+const USD_SAR = Number(process.env.META_USD_SAR || 3.75);
+
+let accountMetaCache = new Map();
+
+async function getAccountMeta(accountId) {
+  if (accountMetaCache.has(accountId)) return accountMetaCache.get(accountId);
+  let meta = { id: accountId, name: accountId, currency: REPORT_CURRENCY };
+  try {
+    const body = await graphGet(`/${accountId}`, { fields: 'name,currency' });
+    meta = { id: accountId, name: body.name || accountId, currency: body.currency || REPORT_CURRENCY };
+  } catch (err) {
+    console.error(`account meta failed for ${accountId}: ${err.message}`);
+  }
+  accountMetaCache.set(accountId, meta);
+  return meta;
+}
+
+// Only USD is ever seen alongside SAR on these accounts, so that's the one rate
+// carried. Anything else passes through untouched rather than being guessed at.
+function toReportCurrency(amount, fromCurrency) {
+  const value = Number(amount) || 0;
+  if (!fromCurrency || fromCurrency === REPORT_CURRENCY) return value;
+  if (fromCurrency === 'USD' && REPORT_CURRENCY === 'SAR') return value * USD_SAR;
+  return value;
+}
+
+module.exports = {
+  graphGet, graphGetAll, getAccountMeta, toReportCurrency,
+  AD_ACCOUNTS, API_VERSION, TOKEN_VARS, REPORT_CURRENCY, USD_SAR,
+};

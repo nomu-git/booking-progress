@@ -340,6 +340,9 @@
   .cpill.on  { background: rgba(61,220,132,.16); color: var(--fresh); }
   .cpill.off { background: rgba(134,152,180,.14); color: var(--text-3); }
   .cobj { font-size: 11px; color: var(--text-3); }
+  /* Objective colour repeats here so the tables and the charts agree on
+     identity — the dot is the same hue the campaign wears in every chart. */
+  .odot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
 
   /* Share-of-spend bar sits behind the number so the table stays scannable. */
   .sharecell { position: relative; min-width: 90px; }
@@ -348,6 +351,88 @@
     height: 14px; border-radius: 3px; background: rgba(245,185,53,.22);
   }
   .sharecell span { position: relative; }
+
+  /* ---------- charts (Meta Ads) ----------
+     Marks sit on --track, not --card: the panel blue is too light to clear 3:1
+     against the categorical hues, the inset track clears it for all but one
+     slot, and that slot is covered by the direct labels + table view below. */
+
+  .vz { background: var(--track); border-radius: 8px; padding: 14px 14px 8px; }
+  .vz-tall { min-height: 150px; }
+
+  /* Plot area carries the gridlines; columns sit on top of them. */
+  .vzplot { position: relative; height: 150px; }
+  .vzgrid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .vzgrid i { display: block; border-top: 1px solid rgba(134,152,180,.13); }
+  .vzcols { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
+  .vzcol { flex: 1; display: flex; align-items: flex-end; justify-content: center; height: 100%; min-width: 0; }
+
+  /* 4px rounded data-end, anchored to the baseline. */
+  .vzbar {
+    width: 100%; max-width: 46px; border-radius: 4px 4px 0 0;
+    background: var(--fill); cursor: pointer; transition: filter .12s;
+    min-height: 2px;
+  }
+  .vzcol:hover .vzbar { filter: brightness(1.18); }
+  .vzbar.dim { background: var(--fill-empty); }
+
+  .vzaxis { display: flex; gap: 2px; margin-top: 7px; }
+  .vzaxis span {
+    flex: 1; text-align: center; font-size: 9.5px; color: var(--text-3);
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Year boundaries in the all-time timeline read as separators, not as data. */
+  .vzaxis span.yr { color: var(--text-2); font-weight: 700; }
+
+  .vzscale { display: flex; flex-direction: column; justify-content: space-between; height: 150px;
+    font-size: 9.5px; color: var(--text-3); text-align: right; padding-right: 8px; min-width: 44px; }
+  .vzwrap { display: flex; }
+  .vzwrap > .vzplotwrap { flex: 1; min-width: 0; }
+
+  /* Horizontal bars — the form for long campaign names. */
+  .vzrows { display: flex; flex-direction: column; gap: 7px; }
+  .vzrow { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; align-items: center; }
+  .vzrow .vzlabel { font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vzrow .vzval { font-size: 11.5px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .vzrow .vztrack { grid-column: 1 / -1; height: 9px; background: rgba(134,152,180,.10); border-radius: 4px; overflow: hidden; }
+  .vzrow .vzfill { height: 100%; border-radius: 4px; background: var(--fill); cursor: pointer; min-width: 2px; }
+  .vzrow:hover .vzfill { filter: brightness(1.18); }
+
+  /* Part-to-whole. 2px surface gap between segments, per the mark spec. */
+  .vzstack { display: flex; gap: 2px; height: 26px; border-radius: 5px; overflow: hidden; }
+  .vzseg { cursor: pointer; min-width: 3px; transition: filter .12s; }
+  .vzseg:hover { filter: brightness(1.18); }
+
+  .vzlegend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 11px; color: var(--text-2); }
+  .vzlegend span { display: inline-flex; align-items: center; gap: 6px; }
+  .vzlegend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .vzlegend b { color: #fff; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* Hero figure — the one number each tab leads with. */
+  .vhero { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .vhero .vh-n { font-size: 46px; font-weight: 700; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+  .vhero .vh-c { font-size: 15px; color: var(--yellow); font-weight: 700; }
+  .vhero .vh-s { font-size: 12px; color: var(--text-3); }
+
+  #campaignsWrap > .panel, #historyWrap > .panel, #campaignsWrap > .vgrid2, #historyWrap > .vgrid2 { margin-bottom: 12px; }
+  .vgrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 900px) { .vgrid2 { grid-template-columns: 1fr; } }
+
+  /* History: one collapsible block per year. */
+  .yrhead {
+    display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer;
+    background: none; border: 0; padding: 4px 0; text-align: left; color: inherit; font: inherit;
+  }
+  .yrhead .yr-n { font-size: 20px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .yrhead .yr-s { font-size: 11.5px; color: var(--text-3); }
+  .yrhead .yr-sp { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--yellow); font-variant-numeric: tabular-nums; }
+  .yrhead .yr-ar { color: var(--text-3); font-size: 12px; transition: transform .15s; }
+  .yrhead[aria-expanded="true"] .yr-ar { transform: rotate(90deg); }
+  .yrbody { margin-top: 12px; }
+  .yrpill {
+    display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
+    background: rgba(77,157,224,.14); color: var(--info); font-size: 9.5px; font-weight: 600;
+  }
 
   /* ---------- notes ---------- */
 
@@ -464,6 +549,7 @@
         <button data-view="board" aria-pressed="true">Dashboard</button>
         <button data-view="report" aria-pressed="false">Report</button>
         <button data-view="campaigns" aria-pressed="false">Campaigns</button>
+        <button data-view="history" aria-pressed="false">History</button>
       </div>
       <button class="btn" id="refreshBtn">Refresh</button>
     </div>
@@ -488,6 +574,7 @@
   <div id="board"></div>
   <div id="reportWrap" hidden></div>
   <div id="campaignsWrap" hidden></div>
+  <div id="historyWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   <div class="tip" id="tip" role="status"></div>
@@ -551,7 +638,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (s.view === 'board' || s.view === 'report' || s.view === 'campaigns') view = s.view;
+      if (['board', 'report', 'campaigns', 'history'].includes(s.view)) view = s.view;
       if (s.rGran) rGran = s.rGran;
       if (s.rCount) rCount = s.rCount;
       if (s.selectedWeekStart) selectedWeekStart = s.selectedWeekStart;
@@ -1201,28 +1288,136 @@
     $('sWeeklyTarget').textContent = report.weeklyTarget;
   }
 
-  /* ================= campaigns (Meta Ads) ================= */
+  /* ================= Meta Ads: shared chart primitives ================= */
 
   let campaigns = null;
+  let adHistory = null;
+  const openYears = new Set();
+
+  // Fixed categorical order, stepped for the dark chart surface and validated
+  // as a set (CVD ΔE 8.4 worst adjacent, normal-vision 19.3). Never cycled: a
+  // 7th objective folds into "Other" rather than inventing a hue.
+  const SERIES = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300'];
+  const OBJ_ORDER = ['Messages', 'Purchases', 'Leads', 'Link Clicks', 'Reach', 'Custom Conversion'];
+  const objColor = (name) => {
+    const i = OBJ_ORDER.indexOf(name);
+    return i >= 0 && i < SERIES.length ? SERIES[i] : '#8698b4';
+  };
 
   const nf0 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
   const nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const int = (n) => nf0.format(Math.round(Number(n) || 0));
   const dec = (n) => nf2.format(Number(n) || 0);
 
-  // Cost-per-result swings from single digits to four figures across these
-  // campaigns, so the precision follows the magnitude rather than being fixed.
+  // Precision follows magnitude: cost-per-result runs from under a riyal to
+  // four figures across these campaigns, and neither end should look wrong.
   const money = (n) => {
     const v = Number(n) || 0;
-    return Math.abs(v) >= 1000 ? int(v) : dec(v);
+    if (Math.abs(v) >= 1000) return int(v);
+    if (Math.abs(v) >= 1) return dec(v);
+    return v === 0 ? '0' : v.toFixed(3);
+  };
+  // Axis ticks and tiles need the short form or they collide.
+  const compact = (n) => {
+    const v = Math.abs(Number(n) || 0);
+    if (v >= 1e6) return (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(v >= 1e4 ? 0 : 1) + 'k';
+    return int(v);
   };
   const pct = (n) => (Number.isFinite(n) ? (n * 100).toFixed(1) + '%' : '—');
 
-  // Every derived column in the spreadsheet is a division that can hit zero on
-  // the bottom, and Excel's IFERROR blanks those — same here, so an empty cell
-  // means "not computable" rather than a misleading 0.
+  // Every derived figure in the spreadsheet was a division wrapped in IFERROR,
+  // which blanks rather than showing a misleading zero. Same contract here.
   const ratio = (a, b) => (Number(b) ? Number(a) / Number(b) : null);
   const show = (v, fmt) => (v == null ? '—' : fmt(v));
+
+  // One tooltip element for the whole page, already styled for the report bars.
+  function bindViz(root) {
+    const tip = $('tip');
+    const move = (e) => {
+      const pad = 14, r = tip.getBoundingClientRect();
+      let x = e.clientX + pad, y = e.clientY + pad;
+      if (x + r.width > innerWidth) x = e.clientX - r.width - pad;
+      if (y + r.height > innerHeight) y = e.clientY - r.height - pad;
+      tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    };
+    root.querySelectorAll('[data-tip]').forEach((el) => {
+      el.addEventListener('mouseenter', (e) => {
+        tip.innerHTML = el.dataset.tip;
+        tip.classList.add('on');
+        move(e);
+      });
+      el.addEventListener('mousemove', move);
+      el.addEventListener('mouseleave', () => tip.classList.remove('on'));
+    });
+  }
+
+  const tipRows = (title, rows) =>
+    `<div class="tt">${title}</div>` +
+    rows.map(([k, v]) => `<div class="trow"><span class="tk">${k}</span><b>${v}</b></div>`).join('');
+
+  // A "nice" axis top, so gridlines land on round numbers instead of the raw max.
+  function niceMax(v) {
+    if (!(v > 0)) return 1;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    const n = v / mag;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+  }
+
+  // Column chart. One series, one hue — magnitude over time is a sequential
+  // job, so no legend is needed; the panel title names the measure.
+  function columnChart(points, opts) {
+    const o = opts || {};
+    const top = niceMax(Math.max(0, ...points.map((p) => p.v)));
+    const cols = points.map((p) => {
+      const h = top ? Math.max(p.v > 0 ? 2 : 0, (p.v / top) * 100) : 0;
+      return `<div class="vzcol"><div class="vzbar${p.dim ? ' dim' : ''}" style="height:${h.toFixed(2)}%" data-tip="${esc(p.tip)}"></div></div>`;
+    }).join('');
+    const axis = points.map((p) =>
+      `<span class="${p.mark ? 'yr' : ''}" title="${esc(p.label)}">${esc(p.label)}</span>`).join('');
+    return `
+      <div class="vz">
+        <div class="vzwrap">
+          <div class="vzscale">
+            <div>${o.fmt ? o.fmt(top) : compact(top)}</div>
+            <div>${o.fmt ? o.fmt(top / 2) : compact(top / 2)}</div>
+            <div>0</div>
+          </div>
+          <div class="vzplotwrap">
+            <div class="vzplot">
+              <div class="vzgrid"><i></i><i></i><i></i></div>
+              <div class="vzcols">${cols}</div>
+            </div>
+            <div class="vzaxis">${axis}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Horizontal bars — the right form when the category names are long.
+  function barRows(items) {
+    const top = Math.max(0, ...items.map((i) => i.v)) || 1;
+    return `<div class="vz"><div class="vzrows">${items.map((i) => `
+      <div class="vzrow">
+        <div class="vzlabel" title="${esc(i.label)}">${esc(i.label)}</div>
+        <div class="vzval">${esc(i.value)}</div>
+        <div class="vztrack">
+          <div class="vzfill" style="width:${((i.v / top) * 100).toFixed(2)}%;background:${i.color || 'var(--fill)'}" data-tip="${esc(i.tip)}"></div>
+        </div>
+      </div>`).join('')}</div></div>`;
+  }
+
+  // Part-to-whole. Legend is always present and every segment is direct-labeled
+  // with its share, so identity never rests on color alone.
+  function stackedBar(segments, total) {
+    const bar = segments.map((s) =>
+      `<div class="vzseg" style="width:${((s.v / (total || 1)) * 100).toFixed(2)}%;background:${s.color}" data-tip="${esc(s.tip)}"></div>`).join('');
+    const legend = segments.map((s) =>
+      `<span><i style="background:${s.color}"></i>${esc(s.label)} <b>${esc(s.value)}</b> · ${pct(ratio(s.v, total))}</span>`).join('');
+    return `<div class="vz"><div class="vzstack">${bar}</div><div class="vzlegend">${legend}</div></div>`;
+  }
+
+  /* ================= campaigns tab (current year) ================= */
 
   function campaignRow(c, totalSpend) {
     const cpr = ratio(c.spend, c.results);
@@ -1231,12 +1426,15 @@
     const share = ratio(c.spend, totalSpend) || 0;
     const remaining = c.allocated == null ? null : c.allocated - c.spend;
     const used = c.allocated == null ? null : ratio(c.spend, c.allocated);
+    const range = c.firstMonth
+      ? `${c.firstMonth}${c.lastMonth && c.lastMonth !== c.firstMonth ? ' – ' + c.lastMonth : ''}`
+      : '';
 
     return `
       <tr>
         <td class="cname">
           ${esc(c.name)}
-          <div class="cobj">${esc(c.objective)}${c.monthsLive ? ` · ${c.monthsLive} month${c.monthsLive === 1 ? '' : 's'}` : ''}${c.firstMonth ? ` · ${esc(c.firstMonth)}${c.lastMonth && c.lastMonth !== c.firstMonth ? ` – ${esc(c.lastMonth)}` : ''}` : ''}</div>
+          <div class="cobj"><i class="odot" style="background:${objColor(c.objective)}"></i>${esc(c.objective)}${range ? ' · ' + esc(range) : ''}</div>
         </td>
         <td><span class="cpill ${c.status === 'Active' ? 'on' : 'off'}">${esc(c.status)}</span></td>
         <td class="num">${show(c.allocated, money)}</td>
@@ -1269,95 +1467,156 @@
     const totalFreq = ratio(t.impressions, t.reach);
     const remaining = t.allocated == null ? null : t.allocated - t.spend;
     const used = t.allocated == null ? null : ratio(t.spend, t.allocated);
+    const active = p.campaigns.filter((c) => c.status === 'Active').length;
 
-    const rows = p.campaigns.map((c) => campaignRow(c, t.spend)).join('');
+    const monthPoints = (p.months || []).map((m) => ({
+      v: m.spend,
+      label: m.label,
+      tip: tipRows(`${m.label} ${p.year}`, [
+        ['Spend', `${cur} ${money(m.spend)}`],
+        ['Impressions', int(m.impressions)],
+        ['Share of year', pct(ratio(m.spend, t.spend))],
+      ]),
+    }));
 
-    const objRows = p.byObjective.map((o) => {
-      const oCpr = ratio(o.spend, o.results);
-      const oCpm = ratio(o.spend, o.impressions);
-      return `
-        <tr>
-          <td class="cname">${esc(o.objective)}</td>
-          <td class="num">${int(o.campaigns)}</td>
-          <td class="num">${show(o.allocated, money)}</td>
-          <td class="num">${money(o.spend)}</td>
-          <td class="num">${int(o.impressions)}</td>
-          <td class="num">${show(oCpm, dec)}</td>
-          <td class="num">${int(o.reach)}</td>
-          <td class="num">${int(o.purchases)}</td>
-          <td class="num">${int(o.results)}</td>
-          <td class="num">${show(oCpr, money)}</td>
-          <td class="num sharecell"><div class="sharebar" style="width:${((ratio(o.spend, t.spend) || 0) * 100).toFixed(0)}%"></div><span>${pct(ratio(o.spend, t.spend))}</span></td>
-        </tr>`;
-    }).join('');
+    // Top 8 by spend, remainder folded into one "Other" row rather than a
+    // 40-bar chart nobody can read from across the room.
+    const ranked = [...p.campaigns].sort((a, b) => b.spend - a.spend);
+    const shown = ranked.slice(0, 8);
+    const rest = ranked.slice(8);
+    const barItems = shown.map((c) => ({
+      v: c.spend,
+      label: c.name,
+      value: money(c.spend),
+      color: objColor(c.objective),
+      tip: tipRows(c.name, [
+        ['Objective', c.objective],
+        ['Spend', `${cur} ${money(c.spend)}`],
+        ['Results', int(c.results)],
+        ['Cost / result', show(ratio(c.spend, c.results), money)],
+        ['Share of spend', pct(ratio(c.spend, t.spend))],
+      ]),
+    }));
+    if (rest.length) {
+      const otherSpend = rest.reduce((sum, c) => sum + c.spend, 0);
+      barItems.push({
+        v: otherSpend, label: `Other (${rest.length} campaigns)`, value: money(otherSpend),
+        color: '#8698b4',
+        tip: tipRows('Other campaigns', [
+          ['Campaigns', int(rest.length)],
+          ['Combined spend', `${cur} ${money(otherSpend)}`],
+        ]),
+      });
+    }
+
+    const segs = p.byObjective.map((o) => ({
+      v: o.spend, label: o.objective, value: money(o.spend), color: objColor(o.objective),
+      tip: tipRows(o.objective, [
+        ['Campaigns', int(o.campaigns)],
+        ['Spend', `${cur} ${money(o.spend)}`],
+        ['Results', int(o.results)],
+        ['Cost / result', show(ratio(o.spend, o.results), money)],
+        ['Share of spend', pct(ratio(o.spend, t.spend))],
+      ]),
+    }));
+
+    const objRows = p.byObjective.map((o) => `
+      <tr>
+        <td class="cname"><i class="odot" style="background:${objColor(o.objective)}"></i>${esc(o.objective)}</td>
+        <td class="num">${int(o.campaigns)}</td>
+        <td class="num">${show(o.allocated, money)}</td>
+        <td class="num">${money(o.spend)}</td>
+        <td class="num">${int(o.impressions)}</td>
+        <td class="num">${show(ratio(o.spend, o.impressions), dec)}</td>
+        <td class="num">${int(o.reach)}</td>
+        <td class="num">${int(o.purchases)}</td>
+        <td class="num">${int(o.results)}</td>
+        <td class="num">${show(ratio(o.spend, o.results), money)}</td>
+        <td class="num sharecell"><div class="sharebar" style="width:${((ratio(o.spend, t.spend) || 0) * 100).toFixed(0)}%"></div><span>${pct(ratio(o.spend, t.spend))}</span></td>
+      </tr>`).join('');
 
     $('campaignsWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
+
+      <div class="panel">
+        <div class="ptitle">Total ad spend · ${p.year}</div>
+        <div class="vhero">
+          <span class="vh-c">${cur}</span><span class="vh-n">${money(t.spend)}</span>
+          <span class="vh-s">${int(t.campaigns)} campaigns · ${active} active · ${int(t.results)} results at ${show(totalCpr, money)} each</span>
+        </div>
+      </div>
+
       <div class="panel skpi-panel mkpi">
         <div class="skpi">
-          <div class="skpi-n">${money(t.spend)}</div>
-          <div class="skpi-l">Actual Spend</div>
-          <div class="skpi-sub">${cur}</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${show(t.allocated, money)}</div>
-          <div class="skpi-l">Allocated Budget</div>
-          <div class="skpi-sub">${t.allocated == null ? 'not configured' : cur}</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${show(remaining, money)}</div>
-          <div class="skpi-l">Budget Remaining</div>
-          <div class="skpi-sub">${show(used, pct)} used</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${int(t.results)}</div>
-          <div class="skpi-l">Results</div>
+          <div class="skpi-n">${int(t.results)}</div><div class="skpi-l">Results</div>
           <div class="skpi-sub">${show(totalCpr, money)} per result</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${int(t.impressions)}</div>
-          <div class="skpi-l">Impressions</div>
+          <div class="skpi-n">${compact(t.impressions)}</div><div class="skpi-l">Impressions</div>
           <div class="skpi-sub">${show(totalCpm, dec)} CPM</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${int(t.reach)}</div>
-          <div class="skpi-l">Reach</div>
+          <div class="skpi-n">${compact(t.reach)}</div><div class="skpi-l">Reach</div>
           <div class="skpi-sub">${show(totalFreq, dec)} frequency</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${int(t.purchases)}</div><div class="skpi-l">Purchases</div>
+          <div class="skpi-sub">across all campaigns</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${show(t.allocated, money)}</div><div class="skpi-l">Allocated</div>
+          <div class="skpi-sub">${t.allocated == null ? 'not configured' : cur}</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${show(remaining, money)}</div><div class="skpi-l">Remaining</div>
+          <div class="skpi-sub">${show(used, pct)} of budget used</div>
+        </div>
+      </div>
+
+      ${monthPoints.length ? `
+      <div class="panel">
+        <div class="ptitle">Spend by month · ${p.year} (${cur})</div>
+        ${columnChart(monthPoints, { fmt: compact })}
+      </div>` : ''}
+
+      <div class="vgrid2">
+        <div class="panel">
+          <div class="ptitle">Spend by campaign</div>
+          ${barRows(barItems)}
+        </div>
+        <div class="panel">
+          <div class="ptitle">Spend by objective</div>
+          ${stackedBar(segs, t.spend)}
         </div>
       </div>
 
       <div class="panel">
-        <div class="ptitle">Campaigns · ${p.year}</div>
-        <div class="tzbadge">💰 All figures in <b>${cur}</b>, ${esc(p.since)} to ${esc(p.until)}, across ${p.accounts.length} ad account${p.accounts.length === 1 ? '' : 's'}</div>
+        <div class="ptitle">All campaigns · ${p.year}</div>
+        <div class="tzbadge">💰 Figures in <b>${cur}</b>, ${esc(p.since)} to ${esc(p.until)}, across ${p.accounts.length} ad account${p.accounts.length === 1 ? '' : 's'}</div>
         <div class="tscroll">
           <table class="ctable">
-            <thead>
-              <tr>
-                <th>Campaign</th><th>Status</th><th>Allocated</th><th>Spend</th>
-                <th>Remaining</th><th>Used</th><th>Results</th><th>Cost/Result</th>
-                <th>Impressions</th><th>Reach</th><th>CPM</th><th>Freq</th>
-                <th>Purchases</th><th>% Spend</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-            <tfoot>
-              <tr>
-                <td class="cname">TOTAL / AVERAGE</td>
-                <td></td>
-                <td class="num">${show(t.allocated, money)}</td>
-                <td class="num">${money(t.spend)}</td>
-                <td class="num">${show(remaining, money)}</td>
-                <td class="num">${show(used, pct)}</td>
-                <td class="num">${int(t.results)}</td>
-                <td class="num">${show(totalCpr, money)}</td>
-                <td class="num">${int(t.impressions)}</td>
-                <td class="num">${int(t.reach)}</td>
-                <td class="num">${show(totalCpm, dec)}</td>
-                <td class="num">${show(totalFreq, dec)}</td>
-                <td class="num">${int(t.purchases)}</td>
-                <td class="num">100.0%</td>
-              </tr>
-            </tfoot>
+            <thead><tr>
+              <th>Campaign</th><th>Status</th><th>Allocated</th><th>Spend</th>
+              <th>Remaining</th><th>Used</th><th>Results</th><th>Cost/Result</th>
+              <th>Impressions</th><th>Reach</th><th>CPM</th><th>Freq</th>
+              <th>Purchases</th><th>% Spend</th>
+            </tr></thead>
+            <tbody>${p.campaigns.map((c) => campaignRow(c, t.spend)).join('')}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL / AVERAGE</td><td></td>
+              <td class="num">${show(t.allocated, money)}</td>
+              <td class="num">${money(t.spend)}</td>
+              <td class="num">${show(remaining, money)}</td>
+              <td class="num">${show(used, pct)}</td>
+              <td class="num">${int(t.results)}</td>
+              <td class="num">${show(totalCpr, money)}</td>
+              <td class="num">${int(t.impressions)}</td>
+              <td class="num">${int(t.reach)}</td>
+              <td class="num">${show(totalCpm, dec)}</td>
+              <td class="num">${show(totalFreq, dec)}</td>
+              <td class="num">${int(t.purchases)}</td>
+              <td class="num">100.0%</td>
+            </tr></tfoot>
           </table>
         </div>
       </div>
@@ -1366,17 +1625,17 @@
         <div class="ptitle">Performance by campaign objective</div>
         <div class="tscroll">
           <table class="ctable">
-            <thead>
-              <tr>
-                <th>Objective</th><th>Campaigns</th><th>Allocated</th><th>Spend</th>
-                <th>Impressions</th><th>CPM</th><th>Reach</th><th>Purchases</th>
-                <th>Results</th><th>Cost/Result</th><th>% of Spend</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th>Objective</th><th>Campaigns</th><th>Allocated</th><th>Spend</th>
+              <th>Impressions</th><th>CPM</th><th>Reach</th><th>Purchases</th>
+              <th>Results</th><th>Cost/Result</th><th>% of Spend</th>
+            </tr></thead>
             <tbody>${objRows}</tbody>
           </table>
         </div>
       </div>`;
+
+    bindViz($('campaignsWrap'));
   }
 
   async function loadCampaigns(force) {
@@ -1389,6 +1648,171 @@
     } catch (err) {
       if (!campaigns) {
         $('campaignsWrap').innerHTML = `<div class="msg err">Could not load campaign data: ${esc(err.message)}</div>`;
+      }
+    }
+  }
+
+  /* ================= history tab (every year Meta still holds) ================= */
+
+  function renderHistory() {
+    const p = adHistory;
+    if (!p) return;
+    if (p.error && !p.years) {
+      $('historyWrap').innerHTML = `<div class="msg err">Could not load campaign history: ${esc(p.error)}</div>`;
+      return;
+    }
+
+    const t = p.totals;
+    const cur = esc(p.currency);
+
+    const yearPoints = [...p.years].reverse().map((y) => ({
+      v: y.spend,
+      label: String(y.year),
+      dim: y.partial,
+      tip: tipRows(String(y.year) + (y.partial ? ' (partial year)' : ''), [
+        ['Spend', `${cur} ${money(y.spend)}`],
+        ['Campaigns', int(y.campaigns)],
+        ['Months with delivery', int(y.months)],
+        ['Results', int(y.results)],
+        ['Cost / result', show(ratio(y.spend, y.results), money)],
+      ]),
+    }));
+
+    // Year label only on January (and on the first month shown), so a 38-month
+    // axis stays readable instead of repeating the year 38 times.
+    const monthPoints = p.months.map((m, i) => {
+      const isJan = m.month.slice(5, 7) === '01';
+      return {
+        v: m.spend,
+        label: isJan || i === 0 ? String(m.year) : m.label,
+        mark: isJan || i === 0,
+        tip: tipRows(m.label, [
+          ['Spend', `${cur} ${money(m.spend)}`],
+          ['Campaigns running', int(m.campaigns)],
+          ['Results', int(m.results)],
+          ['Impressions', int(m.impressions)],
+        ]),
+      };
+    });
+
+    const yearBlocks = p.years.map((y) => {
+      const rows = p.campaigns.filter((c) => c.year === y.year);
+      const open = openYears.has(y.year);
+      const body = !open ? '' : `
+        <div class="yrbody">
+          <div class="tscroll">
+            <table class="ctable">
+              <thead><tr>
+                <th>Campaign</th><th>Months</th><th>Spend</th><th>Results</th>
+                <th>Cost/Result</th><th>Impressions</th><th>Reach</th>
+                <th>CPM</th><th>Purchases</th><th>Account</th><th>% of Year</th>
+              </tr></thead>
+              <tbody>${rows.map((c) => `
+                <tr>
+                  <td class="cname">${esc(c.name)}
+                    <div class="cobj"><i class="odot" style="background:${objColor(c.objective)}"></i>${esc(c.objective)}</div>
+                  </td>
+                  <td class="num">${esc(c.firstMonth || '—')}${c.lastMonth && c.lastMonth !== c.firstMonth ? ' – ' + esc(c.lastMonth) : ''}<div class="cobj">${c.monthsLive} month${c.monthsLive === 1 ? '' : 's'}</div></td>
+                  <td class="num">${money(c.spend)}</td>
+                  <td class="num">${int(c.results)}</td>
+                  <td class="num">${show(ratio(c.spend, c.results), money)}</td>
+                  <td class="num">${int(c.impressions)}</td>
+                  <td class="num">${int(c.reach)}</td>
+                  <td class="num">${show(ratio(c.spend, c.impressions), dec)}</td>
+                  <td class="num">${int(c.purchases)}</td>
+                  <td class="num">${esc(c.account)}</td>
+                  <td class="num sharecell"><div class="sharebar" style="width:${((ratio(c.spend, y.spend) || 0) * 100).toFixed(0)}%"></div><span>${pct(ratio(c.spend, y.spend))}</span></td>
+                </tr>`).join('')}
+              </tbody>
+              <tfoot><tr>
+                <td class="cname">${y.year} TOTAL</td><td></td>
+                <td class="num">${money(y.spend)}</td>
+                <td class="num">${int(y.results)}</td>
+                <td class="num">${show(ratio(y.spend, y.results), money)}</td>
+                <td class="num">${int(y.impressions)}</td>
+                <td class="num">${int(y.reach)}</td>
+                <td class="num">${show(ratio(y.spend, y.impressions), dec)}</td>
+                <td class="num">${int(y.purchases)}</td>
+                <td></td><td class="num">100.0%</td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </div>`;
+
+      return `
+        <div class="panel">
+          <button class="yrhead" data-year="${y.year}" aria-expanded="${open}">
+            <span class="yr-ar">›</span>
+            <span class="yr-n">${y.year}</span>
+            <span class="yr-s">${int(y.campaigns)} campaign${y.campaigns === 1 ? '' : 's'} · ${int(y.months)} month${y.months === 1 ? '' : 's'} · ${int(y.results)} results${y.partial ? '<span class="yrpill">PARTIAL</span>' : ''}</span>
+            <span class="yr-sp">${cur} ${money(y.spend)}</span>
+          </button>
+          ${body}
+        </div>`;
+    }).join('');
+
+    $('historyWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
+
+      <div class="panel">
+        <div class="ptitle">Total ad spend · all retained history</div>
+        <div class="vhero">
+          <span class="vh-c">${cur}</span><span class="vh-n">${money(t.spend)}</span>
+          <span class="vh-s">${int(t.campaigns)} campaigns over ${p.years.length} year${p.years.length === 1 ? '' : 's'} · ${int(t.results)} results at ${show(ratio(t.spend, t.results), money)} each</span>
+        </div>
+        <div class="tzbadge">🗄️ Meta keeps campaign insights for about <b>${p.retentionMonths} months</b> and purges everything older, so this archive starts at <b>${esc(p.since)}</b>. Anything that ran before then is gone at the source.</div>
+      </div>
+
+      <div class="vgrid2">
+        <div class="panel">
+          <div class="ptitle">Spend by year (${cur})</div>
+          ${columnChart(yearPoints, { fmt: compact })}
+          <div class="vzlegend"><span><i style="background:var(--fill-empty)"></i>Partial year — window starts or ends mid-year</span></div>
+        </div>
+        <div class="panel">
+          <div class="ptitle">Reach and results by year</div>
+          ${barRows([...p.years].map((y) => ({
+            v: y.results, label: String(y.year), value: int(y.results),
+            tip: tipRows(String(y.year), [
+              ['Results', int(y.results)],
+              ['Reach', int(y.reach)],
+              ['Impressions', int(y.impressions)],
+              ['Cost / result', show(ratio(y.spend, y.results), money)],
+            ]),
+          })))}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Spend month by month · ${esc(p.since)} to ${esc(p.until)} (${cur})</div>
+        ${columnChart(monthPoints, { fmt: compact })}
+      </div>
+
+      ${yearBlocks}`;
+
+    bindViz($('historyWrap'));
+
+    $('historyWrap').querySelectorAll('.yrhead').forEach((b) => {
+      b.addEventListener('click', () => {
+        const year = Number(b.dataset.year);
+        if (openYears.has(year)) openYears.delete(year); else openYears.add(year);
+        renderHistory();
+      });
+    });
+  }
+
+  async function loadHistory(force) {
+    try {
+      const res = await fetch('/api/campaign-history' + (force ? '?refresh=1' : ''));
+      const p = await res.json();
+      if (!res.ok && !p.years) throw new Error(p.error || `HTTP ${res.status}`);
+      adHistory = p;
+      // Newest year open by default — that's the one people came to read.
+      if (!openYears.size && p.years && p.years.length) openYears.add(p.years[0].year);
+      renderHistory();
+    } catch (err) {
+      if (!adHistory) {
+        $('historyWrap').innerHTML = `<div class="msg err">Could not load campaign history: ${esc(err.message)}</div>`;
       }
     }
   }
@@ -1411,6 +1835,7 @@
     $('notes').hidden = view !== 'board';
     $('reportWrap').hidden = view !== 'report';
     $('campaignsWrap').hidden = view !== 'campaigns';
+    $('historyWrap').hidden = view !== 'history';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -1420,6 +1845,12 @@
     if (view === 'campaigns') {
       if (!campaigns) $('campaignsWrap').innerHTML = '<div class="msg">Loading campaign data…</div>';
       loadCampaigns(false);
+    }
+    // Three years of month-by-month insights is a slow first call, so it waits
+    // for someone to actually ask for it and then caches for half an hour.
+    if (view === 'history') {
+      if (!adHistory) $('historyWrap').innerHTML = '<div class="msg">Loading campaign history…</div>';
+      loadHistory(false);
     }
     saveViewState();
   }
@@ -1431,6 +1862,7 @@
     load(true);
     loadReport(true);
     if (campaigns) loadCampaigns(true);
+    if (adHistory) loadHistory(true);
   });
 
   // Restore whichever tab/filter/period the screen was showing before this

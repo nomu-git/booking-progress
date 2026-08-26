@@ -1,4 +1,4 @@
-const { graphGet, graphGetAll, AD_ACCOUNTS } = require('./meta-ads');
+const { graphGetAll, getAccountMeta, toReportCurrency, AD_ACCOUNTS, REPORT_CURRENCY } = require('./meta-ads');
 const { mapWithConcurrency } = require('./wetravel');
 
 const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
@@ -81,6 +81,7 @@ const monthLabel = (iso) => {
 
 async function loadAccount(accountId, since, until) {
   const timeRange = JSON.stringify({ since, until });
+  const account = await getAccountMeta(accountId);
 
   // Campaign records carry status and start date; insights carry the numbers.
   // They're separate edges, so both are fetched and joined on campaign id.
@@ -105,11 +106,11 @@ async function loadAccount(accountId, since, until) {
       level: 'campaign',
       time_range: timeRange,
       time_increment: 'monthly',
-      fields: 'campaign_id,spend,date_start',
+      fields: 'campaign_id,spend,impressions,date_start',
     }).catch(() => []),
   ]);
 
-  return { accountId, campaigns, insights, monthly };
+  return { accountId, account, campaigns, insights, monthly };
 }
 
 async function build() {
@@ -118,23 +119,36 @@ async function build() {
 
   const loaded = await mapWithConcurrency(AD_ACCOUNTS, 2, (id) => loadAccount(id, since, until));
 
-  // Months with actual spend, per campaign, across every account.
+  // Months with actual spend, per campaign, across every account — and the
+  // same rows rolled up per month for the spend-over-time chart.
   const monthsByCampaign = new Map();
-  for (const { monthly } of loaded) {
+  const monthTotals = new Map();
+  for (const { monthly, account } of loaded) {
     for (const row of monthly) {
-      if (num(row.spend) <= 0) continue;
+      const spend = toReportCurrency(row.spend, account.currency);
+      if (spend <= 0) continue;
       const key = row.campaign_id;
       if (!monthsByCampaign.has(key)) monthsByCampaign.set(key, new Set());
       monthsByCampaign.get(key).add(row.date_start);
+
+      const mk = String(row.date_start || '').slice(0, 7);
+      if (!/^\d{4}-\d{2}$/.test(mk)) continue;
+      if (!monthTotals.has(mk)) monthTotals.set(mk, { month: mk, spend: 0, impressions: 0 });
+      const m = monthTotals.get(mk);
+      m.spend += spend;
+      m.impressions += num(row.impressions);
     }
   }
+  const months = [...monthTotals.values()]
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map((m) => ({ ...m, label: MONTHS[Number(m.month.slice(5, 7)) - 1] }));
 
   const campaigns = [];
-  for (const { accountId, campaigns: meta, insights } of loaded) {
+  for (const { accountId, account, campaigns: meta, insights } of loaded) {
     const byId = new Map(meta.map((c) => [c.id, c]));
 
     for (const row of insights) {
-      const spend = num(row.spend);
+      const spend = toReportCurrency(row.spend, account.currency);
       const impressions = num(row.impressions);
       const reach = num(row.reach);
 
@@ -219,9 +233,11 @@ async function build() {
     since,
     until,
     accounts: AD_ACCOUNTS,
-    // Meta reports in each account's own currency; the sheet is SAR throughout.
-    currency: process.env.META_CURRENCY || 'SAR',
+    // Each account bills in its own currency; everything above is already
+    // converted, so the whole payload reads in one comparable unit.
+    currency: REPORT_CURRENCY,
     totals,
+    months,
     byObjective,
     campaigns,
   };
