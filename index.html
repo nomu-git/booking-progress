@@ -587,6 +587,7 @@
           <div class="seg">
             <button data-view="campaigns" aria-pressed="false">Campaigns</button>
             <button data-view="history" aria-pressed="false">History</button>
+            <button data-view="plan" aria-pressed="false">SA Media Plan</button>
           </div>
         </div>
       </div>
@@ -614,6 +615,7 @@
   <div id="reportWrap" hidden></div>
   <div id="campaignsWrap" hidden></div>
   <div id="historyWrap" hidden></div>
+  <div id="planWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   <div class="tip" id="tip" role="status"></div>
@@ -684,7 +686,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'campaigns', 'history'].includes(s.view)) view = s.view;
+      if (['board', 'report', 'campaigns', 'history', 'plan'].includes(s.view)) view = s.view;
       if (s.rGran) rGran = s.rGran;
       if (s.rCount) rCount = s.rCount;
       if (s.selectedWeekStart) selectedWeekStart = s.selectedWeekStart;
@@ -1875,6 +1877,211 @@
     }
   }
 
+  /* ================= SA media plan (the plan, not measured data) ================= */
+
+  let mediaPlan = null;
+
+  // The plan writes "Purchase" where Ads Manager reports "Purchases". Same
+  // thing, and it has to wear the same hue as on the Campaigns tab or the two
+  // views would colour the identical objective differently.
+  const PLAN_OBJ_ALIAS = {
+    Purchase: 'Purchases',
+    'Landing Page Views / Engagement': 'Link Clicks',
+  };
+  const planObjColor = (name) => objColor(PLAN_OBJ_ALIAS[name] || name);
+
+  const usd = (n) => '$' + money(n);
+
+  function renderPlan() {
+    const p = mediaPlan;
+    if (!p) return;
+    if (p.error) {
+      $('planWrap').innerHTML = `<div class="msg err">Could not load the media plan: ${esc(p.error)}</div>`;
+      return;
+    }
+
+    const t = p.totals;
+    const prospecting = p.lines.filter((l) => l.kind === 'prospecting');
+
+    const monthPoints = p.byMonth.map((m) => ({
+      v: m.budgetUsd,
+      label: m.month,
+      tip: tipRows(`${m.month} — planned`, [
+        ['Budget', usd(m.budgetUsd)],
+        ['In SAR', 'SAR ' + money(m.budgetUsd * p.usdSar)],
+        ['Campaign flights', int(m.campaigns)],
+        ['Est. impressions', int(m.impressions)],
+        ['Est. results', int(m.results)],
+      ]),
+    }));
+
+    const programBars = p.byProgram.map((g) => ({
+      v: g.budgetUsd,
+      label: g.program + (g.flights > 1 ? ` (×${g.flights})` : ''),
+      value: usd(g.budgetUsd),
+      tip: tipRows(g.program, [
+        ['Flights planned', int(g.flights)],
+        ['Budget', usd(g.budgetUsd)],
+        ['In SAR', 'SAR ' + money(g.budgetUsd * p.usdSar)],
+        ['Est. impressions', int(g.impressions)],
+        ['Est. messages', int(g.results)],
+      ]),
+    }));
+
+    const mixSegs = [
+      { key: 'prospecting', label: 'Prospecting', v: t.prospectingUsd },
+      { key: 'retargeting', label: 'Retargeting', v: t.retargetingUsd },
+      { key: 'traffic', label: 'Traffic / Engagement', v: t.trafficUsd },
+    ].filter((seg) => seg.v > 0).map((seg, i) => ({
+      v: seg.v,
+      label: seg.label,
+      value: usd(seg.v),
+      color: SERIES[i],
+      tip: tipRows(seg.label, [
+        ['Budget', usd(seg.v)],
+        ['In SAR', 'SAR ' + money(seg.v * p.usdSar)],
+        ['Share of plan', pct(ratio(seg.v, t.allUsd))],
+      ]),
+    }));
+
+    const lineRows = p.lines.map((l) => `
+      <tr>
+        <td class="cname">${esc(l.program)}
+          <div class="cobj"><i class="odot" style="background:${planObjColor(l.objective)}"></i>${esc(l.objective)}</div>
+        </td>
+        <td class="num">${esc(l.dates)}</td>
+        <td class="num">${esc(l.market)}</td>
+        <td class="num">${usd(l.budgetUsd)}</td>
+        <td class="num">${money(l.budgetSar)}</td>
+        <td class="num">${l.cpm == null ? '—' : dec(l.cpm)}</td>
+        <td class="num">${l.impressions == null ? '—' : int(l.impressions)}</td>
+        <td class="num">${esc(l.costPerResult)}</td>
+        <td class="num">${esc(l.results)}</td>
+      </tr>`).join('');
+
+    const summaryRows = p.summary.map((r) => `
+      <tr>
+        <td class="cname">${esc(r.label)}</td>
+        <td class="num">${esc(r.objective)}</td>
+        <td class="num">${usd(r.budgetUsd)}</td>
+        <td class="num">${money(r.budgetUsd * p.usdSar)}</td>
+        <td class="num">${r.cpm == null ? '—' : dec(r.cpm)}</td>
+        <td class="num">${r.impressions == null ? '—' : int(r.impressions)}</td>
+        <td class="num">${esc(r.costPerResult)}</td>
+        <td class="num">${esc(r.results)}</td>
+      </tr>`).join('');
+
+    $('planWrap').innerHTML = `
+      <div class="msg warn">
+        <b>This tab is the plan, not measured results.</b>
+        Every figure below is what the Saudi Arabia media plan budgeted and estimated — none of it comes from Meta.
+        For what actually happened, use <b>Campaigns</b> (this year) or <b>History</b> (prior years).
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Total planned media spend · ${esc(p.market)}</div>
+        <div class="vhero">
+          <span class="vh-c">USD</span><span class="vh-n">${money(t.allUsd)}</span>
+          <span class="vh-s">≈ SAR ${money(t.allUsd * p.usdSar)} at ${dec(p.usdSar)} · ${int(t.flights)} campaign flights across ${int(t.programs)} trips</span>
+        </div>
+        <div class="tzbadge">📋 Transcribed verbatim from <b>${esc(p.source)}</b>. Budgets are USD as written; SAR shown at the same ${dec(p.usdSar)} rate the rest of this dashboard uses.</div>
+      </div>
+
+      <div class="panel skpi-panel mkpi">
+        <div class="skpi">
+          <div class="skpi-n">${money(t.prospectingUsd)}</div><div class="skpi-l">Prospecting</div>
+          <div class="skpi-sub">USD · ${int(prospecting.length)} flights</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${money(t.retargetingUsd)}</div><div class="skpi-l">Retargeting</div>
+          <div class="skpi-sub">USD · monthly</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${money(t.trafficUsd)}</div><div class="skpi-l">Traffic</div>
+          <div class="skpi-sub">USD · monthly</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${compact(t.impressions)}</div><div class="skpi-l">Est. Impressions</div>
+          <div class="skpi-sub">planned reach volume</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${int(t.results)}</div><div class="skpi-l">Est. Results</div>
+          <div class="skpi-sub">mostly messages</div>
+        </div>
+        <div class="skpi">
+          <div class="skpi-n">${show(ratio(t.allUsd, t.results), (v) => '$' + dec(v))}</div><div class="skpi-l">Est. Cost / Result</div>
+          <div class="skpi-sub">blended across the plan</div>
+        </div>
+      </div>
+
+      <div class="vgrid2">
+        <div class="panel">
+          <div class="ptitle">Planned budget by launch month (USD)</div>
+          ${columnChart(monthPoints, { fmt: (v) => '$' + compact(v) })}
+          <div class="vzlegend"><span>Recurring monthly lines (retargeting, traffic) sit outside this chart — they have no single launch month.</span></div>
+        </div>
+        <div class="panel">
+          <div class="ptitle">Budget mix</div>
+          ${stackedBar(mixSegs, t.allUsd)}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Planned budget by trip</div>
+        ${barRows(programBars)}
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Plan line items</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              <th>Program / Campaign</th><th>Date</th><th>Market</th>
+              <th>Budget (USD)</th><th>Budget (SAR)</th><th>Est. CPM</th>
+              <th>Est. Impressions</th><th>Est. Cost / Result</th><th>Est. Results</th>
+            </tr></thead>
+            <tbody>${lineRows}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL</td><td></td><td></td>
+              <td class="num">${usd(t.allUsd)}</td>
+              <td class="num">${money(t.allUsd * p.usdSar)}</td>
+              <td></td>
+              <td class="num">${int(t.impressions)}</td>
+              <td></td>
+              <td class="num">${int(t.results)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Plan summary (as written in the source document)</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              <th>Line</th><th>Objective</th><th>Budget (USD)</th><th>Budget (SAR)</th>
+              <th>Est. CPM</th><th>Est. Impressions</th><th>Est. Cost / Result</th><th>Est. Results</th>
+            </tr></thead>
+            <tbody>${summaryRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    bindViz($('planWrap'));
+  }
+
+  async function loadPlan() {
+    try {
+      const res = await fetch('/api/media-plan');
+      const p = await res.json();
+      if (!res.ok) throw new Error(p.error || `HTTP ${res.status}`);
+      mediaPlan = p;
+      renderPlan();
+    } catch (err) {
+      $('planWrap').innerHTML = `<div class="msg err">Could not load the media plan: ${esc(err.message)}</div>`;
+    }
+  }
+
   /* ================= view switching ================= */
 
   // Explicit target, not a toggle — Dashboard is always one click away from
@@ -1894,6 +2101,7 @@
     $('reportWrap').hidden = view !== 'report';
     $('campaignsWrap').hidden = view !== 'campaigns';
     $('historyWrap').hidden = view !== 'history';
+    $('planWrap').hidden = view !== 'plan';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -1909,6 +2117,11 @@
     if (view === 'history') {
       if (!adHistory) $('historyWrap').innerHTML = '<div class="msg">Loading campaign history…</div>';
       loadHistory(false);
+    }
+    // Static reference data, so it's fetched once and kept — a plan doesn't move.
+    if (view === 'plan' && !mediaPlan) {
+      $('planWrap').innerHTML = '<div class="msg">Loading media plan…</div>';
+      loadPlan();
     }
     // Keep the address bar in step, so a reload or a copied link lands on the
     // same tab. replaceState rather than the hash property: no history entry
@@ -1936,7 +2149,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'campaigns', 'history'];
+  const VIEWS = ['board', 'report', 'campaigns', 'history', 'plan'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;
