@@ -31,6 +31,12 @@
     --text: #ffffff;
     --text-2: #b7c5d8;
     --text-3: #8698b4;
+
+    /* Reference bands behind the weekly chart. Kept faint on purpose: they
+       have to tint the plot without competing with the line drawn over them. */
+    --zone-good: rgba(61,220,132,.09);
+    --zone-watch: rgba(239,139,60,.09);
+    --zone-act: rgba(224,72,61,.10);
   }
 
   * { box-sizing: border-box; }
@@ -456,15 +462,68 @@
   .laxis span { flex: 1; text-align: center; font-size: 9.5px; color: var(--text-3);
     min-width: 0; overflow: hidden; white-space: nowrap; }
 
-  /* Small multiples: four trends read as one row, same shape, different measure. */
-  .trendgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  @media (max-width: 980px) { .trendgrid { grid-template-columns: 1fr; } }
-  .trendhead { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-  .trendhead .th-l { font-size: 10.5px; font-weight: 700; letter-spacing: .09em;
-    text-transform: uppercase; color: var(--text-3); }
-  .trendhead .th-n { margin-left: auto; font-size: 17px; font-weight: 700; color: #fff;
-    font-variant-numeric: tabular-nums; }
-  .trendhead .th-d { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  /* ---- the one weekly chart ----
+     One plot, a metric switch above it, and reference bands behind the line so
+     "is this good" is answered by where the line sits, not by doing arithmetic
+     against a number printed elsewhere. */
+
+  .mhead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  .mnow { margin-left: auto; display: flex; align-items: baseline; gap: 8px; }
+  .mnow-n { font-size: 30px; font-weight: 700; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
+  .mnow-u { font-size: 11px; color: var(--text-3); }
+  .th-d { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* The verdict is the guide: a word, an icon, and a sentence saying what to
+     do. Never colour alone — the word and the shape both carry the state. */
+  .verdict {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 10px 13px; border-radius: 8px; margin-bottom: 13px;
+    font-size: 12.5px; line-height: 1.5; border: 1px solid transparent;
+  }
+  .verdict .v-ico { font-size: 11px; }
+  .verdict .v-word { font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+  .verdict .v-text { color: var(--text-2); }
+  .v-good  { background: rgba(61,220,132,.10); border-color: rgba(61,220,132,.34); }
+  .v-good .v-ico, .v-good .v-word { color: var(--fresh); }
+  .v-watch { background: rgba(239,139,60,.10); border-color: rgba(239,139,60,.34); }
+  .v-watch .v-ico, .v-watch .v-word { color: var(--target); }
+  .v-act   { background: rgba(224,72,61,.12); border-color: rgba(224,72,61,.38); }
+  .v-act .v-ico, .v-act .v-word { color: #ff9d92; }
+  .v-none  { background: var(--track); }
+
+  .mainvz { padding: 16px 16px 10px; }
+  .mplot svg { height: 250px; }
+  .mscale { height: 250px; min-width: 52px; }
+  .mplot { position: relative; }
+
+  /* Point markers are HTML, not SVG: the plot stretches to the panel width and
+     would turn a circle into an oval. Percentage offsets don't distort. */
+  .mdots { position: absolute; inset: 0; pointer-events: none; }
+  .mk {
+    position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
+    border-radius: 50%; background: var(--fill); box-shadow: 0 0 0 2px var(--track);
+  }
+  .mk-good  { background: var(--fresh); }
+  .mk-watch { background: var(--target); }
+  .mk-act   { background: var(--danger); }
+  .mk-part  { background: var(--track); box-shadow: 0 0 0 2px var(--fill); }
+  .mk-now   { width: 12px; height: 12px; margin: -6px 0 0 -6px; }
+
+  .tgt-tag {
+    position: absolute; right: 4px; transform: translateY(-50%);
+    background: var(--navy); border: 1px solid var(--info-line); color: var(--info);
+    font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+    pointer-events: none; white-space: nowrap;
+  }
+
+  .mlegend { font-size: 10.5px; }
+  .zk { width: 12px; height: 9px; border-radius: 2px; flex: none; display: inline-block; }
+  .zk-good  { background: rgba(61,220,132,.35); }
+  .zk-watch { background: rgba(239,139,60,.35); }
+  .zk-act   { background: rgba(224,72,61,.38); }
+  .zk-line  { background: var(--info); height: 2px; border-radius: 1px; }
+  .zk-avg   { background: repeating-linear-gradient(90deg,#8698b4 0 4px,transparent 4px 7px); height: 2px; }
+  .zk-part  { background: repeating-linear-gradient(90deg,var(--fill) 0 4px,transparent 4px 7px); height: 2px; }
 
   /* Direction of change, coloured by whether it is good — which for a cost
      metric is the opposite of "up". The arrow and the sign carry it too. */
@@ -825,7 +884,7 @@
   function saveViewState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        view, rGran, rCount, selectedWeekStart, selectedMonthStart,
+        view, rGran, rCount, selectedWeekStart, selectedMonthStart, mainMetric,
       }));
     } catch (e) { /* storage unavailable (private mode, etc.) — just skip persisting */ }
   }
@@ -838,6 +897,7 @@
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
       if (['board', 'report', 'campaigns', 'history', 'plan'].includes(s.view)) view = s.view;
+      if (s.mainMetric && METRICS[s.mainMetric]) mainMetric = s.mainMetric;
       if (s.rGran) rGran = s.rGran;
       if (s.rCount) rCount = s.rCount;
       if (s.selectedWeekStart) selectedWeekStart = s.selectedWeekStart;
@@ -1732,27 +1792,163 @@
     return `<span class="th-d ${cls}">${arrow} ${Math.abs(v * 100).toFixed(0)}%</span>`;
   }
 
-  function trendPanel(label, weeks, pick, fmt, headline, delta, lowerIsBetter) {
-    const points = weeks.map((w) => ({
-      v: pick(w),
-      label: w.label,
-      partial: w.partial,
-      tip: tipRows(`Week of ${w.label}${w.partial ? ' (in progress)' : ''}`, [
-        [label, fmt(pick(w))],
-        ['Cost', 'SAR ' + money(w.spend)],
-        ['Results', int(w.results)],
-        ['Impressions', int(w.impressions)],
-        ['Link clicks', int(w.linkClicks)],
-      ]),
+  /* ---------------- the one weekly chart ---------------- */
+
+  let mainMetric = 'cpr';
+
+  // Each metric knows how to read itself off a week, how to print itself, which
+  // direction is good, and what its reference level is. The chart itself is
+  // generic — swapping metric changes only this config, never the drawing.
+  const METRICS = {
+    cpr: {
+      label: 'Cost per result', lowerBetter: true,
+      get: (w) => (w.results ? w.spend / w.results : null),
+      fmt: (v) => money(v), axis: (v) => compact(v),
+      target: (t) => t.costPerResult,
+      unit: 'per result',
+    },
+    cost: {
+      label: 'Weekly cost', lowerBetter: true,
+      get: (w) => w.spend, fmt: (v) => money(v), axis: (v) => compact(v),
+      target: (t) => t.weeklyCost,
+      unit: 'spent',
+    },
+    results: {
+      label: 'Results', lowerBetter: false,
+      get: (w) => w.results, fmt: (v) => int(v), axis: (v) => compact(v),
+      target: () => null,
+      unit: 'results',
+    },
+    ctr: {
+      label: 'Link CTR', lowerBetter: false,
+      get: (w) => (w.impressions ? (w.linkClicks / w.impressions) * 100 : null),
+      fmt: (v) => (v == null ? '—' : v.toFixed(2) + '%'), axis: (v) => v.toFixed(1) + '%',
+      target: (t) => (t.linkCtr || 0) * 100,
+      unit: 'link CTR',
+    },
+  };
+
+  // Good / watch / act, expressed as value ranges so the chart can paint them
+  // as bands. A metric with no reference level gets no bands rather than
+  // invented ones.
+  function zonesFor(target, top, lowerBetter) {
+    if (!target) return [];
+    return lowerBetter
+      ? [
+        { from: 0, to: target, state: 'good' },
+        { from: target, to: target * 1.5, state: 'watch' },
+        { from: target * 1.5, to: Math.max(top, target * 1.5), state: 'act' },
+      ]
+      : [
+        { from: target, to: Math.max(top, target), state: 'good' },
+        { from: target * 0.5, to: target, state: 'watch' },
+        { from: 0, to: target * 0.5, state: 'act' },
+      ];
+  }
+
+  const stateOf = (v, target, lowerBetter) => {
+    if (v == null || !target) return null;
+    if (lowerBetter) return v <= target ? 'good' : v <= target * 1.5 ? 'watch' : 'act';
+    return v >= target ? 'good' : v >= target * 0.5 ? 'watch' : 'act';
+  };
+
+  const STATE_WORD = { good: 'Performing well', watch: 'Watch', act: 'Needs attention' };
+  const STATE_ICON = { good: '●', watch: '▲', act: '■' };
+
+  // Trailing average over the last four complete weeks — the trend line a
+  // trading chart carries, so a single good or bad week is visibly a spike
+  // rather than a new normal.
+  function movingAvg(vals, window) {
+    return vals.map((_, i) => {
+      const slice = vals.slice(Math.max(0, i - window + 1), i + 1).filter((v) => v != null);
+      return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null;
+    });
+  }
+
+  function mainChart(weeks, cfg, targets) {
+    const W = 1000, H = 250, PADT = 14, PADB = 8;
+    const raw = weeks.map(cfg.get);
+    const target = cfg.target(targets || {});
+    const top = niceMax(Math.max(...raw.filter((v) => v != null), target || 0)) || 1;
+    const n = weeks.length;
+    const x = (i) => (n <= 1 ? W / 2 : (i * W) / (n - 1));
+    const y = (v) => PADT + (1 - v / top) * (H - PADT - PADB);
+
+    const pts = weeks.map((w, i) => ({
+      w, i, v: raw[i], x: x(i), y: y(raw[i] == null ? 0 : raw[i]), partial: w.partial,
     }));
+    const solid = pts.filter((p) => !p.partial && p.v != null);
+    const path = (list) => list.map((p, k) => `${k ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+    const bands = zonesFor(target, top, cfg.lowerBetter).map((z) => {
+      const yTop = y(Math.min(z.to, top)), yBot = y(Math.max(0, z.from));
+      const h = Math.max(0, yBot - yTop);
+      return h > 0.5 ? `<rect x="0" y="${yTop.toFixed(1)}" width="${W}" height="${h.toFixed(1)}" fill="var(--zone-${z.state})"/>` : '';
+    }).join('');
+
+    const avg = movingAvg(raw, 4);
+    const avgPts = pts.map((p, i) => ({ ...p, y: y(avg[i] == null ? 0 : avg[i]) })).filter((p, i) => avg[i] != null && !p.partial);
+    const avgLine = avgPts.length > 1
+      ? `<path d="${path(avgPts)}" fill="none" stroke="#8698b4" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" opacity=".75"/>` : '';
+
+    const targetLine = target
+      ? `<line x1="0" y1="${y(target).toFixed(1)}" x2="${W}" y2="${y(target).toFixed(1)}" stroke="var(--info)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>` : '';
+
+    const tail = pts.length > 1 && pts[pts.length - 1].partial && pts[pts.length - 2].v != null
+      ? `<path d="${path(pts.slice(-2))}" fill="none" stroke="var(--fill)" stroke-width="2.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" stroke-linecap="round"/>` : '';
+
+    const hits = pts.map((p) => {
+      const half = (n <= 1 ? W : W / (n - 1)) / 2;
+      const left = Math.max(0, p.x - half);
+      const state = stateOf(p.v, target, cfg.lowerBetter);
+      return `<rect class="lhit" x="${left.toFixed(1)}" y="0" width="${Math.min(W - left, half * 2).toFixed(1)}" height="${H}" fill="transparent" data-cx="${p.x.toFixed(1)}" data-tip="${attr(tipRows(
+        `Week of ${p.w.label}${p.partial ? ' · in progress' : ''}`,
+        [[cfg.label, cfg.fmt(p.v)]]
+          .concat(state ? [['Against target', STATE_WORD[state]]] : [])
+          .concat([
+            ['Cost', 'SAR ' + money(p.w.spend)],
+            ['Results', int(p.w.results)],
+            ['Impressions', int(p.w.impressions)],
+            ['Link clicks', int(p.w.linkClicks)],
+          ])))}"/>`;
+    }).join('');
+
+    // Markers live in HTML, not SVG: the plot is stretched to the panel width,
+    // which would turn a circle into an oval. A percentage-positioned div is
+    // immune to that.
+    const dots = pts.filter((p) => p.v != null).map((p) => {
+      const state = stateOf(p.v, target, cfg.lowerBetter) || 'none';
+      const isLast = p.i === pts.length - 1;
+      return `<i class="mk mk-${state}${p.partial ? ' mk-part' : ''}${isLast ? ' mk-now' : ''}" style="left:${((p.x / W) * 100).toFixed(2)}%;top:${((p.y / H) * 100).toFixed(2)}%"></i>`;
+    }).join('');
+
+    const axis = weeks.map((w, i) => {
+      const step = Math.ceil(n / 9);
+      return `<span>${(n <= 9 || i % step === 0 || i === n - 1) ? esc(w.label) : ''}</span>`;
+    }).join('');
+
     return `
-      <div class="panel">
-        <div class="trendhead">
-          <span class="th-l">${esc(label)}</span>
-          <span class="th-n">${headline}</span>
-          ${deltaChip(delta, lowerIsBetter)}
+      <div class="vz mainvz">
+        <div class="lwrap">
+          <div class="lscale mscale">
+            <div>${cfg.axis(top)}</div><div>${cfg.axis(top * 0.5)}</div><div>0</div>
+          </div>
+          <div class="lplot mplot">
+            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">
+              ${bands}
+              <line x1="0" y1="${y(top).toFixed(1)}" x2="${W}" y2="${y(top).toFixed(1)}" stroke="rgba(134,152,180,.14)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+              <line x1="0" y1="${y(top / 2).toFixed(1)}" x2="${W}" y2="${y(top / 2).toFixed(1)}" stroke="rgba(134,152,180,.14)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+              ${targetLine}${avgLine}
+              <path d="${path(solid)}" fill="none" stroke="var(--fill)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+              ${tail}
+              <line class="lcross" x1="0" y1="0" x2="0" y2="${H}" stroke="#fff" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" opacity="0"/>
+              ${hits}
+            </svg>
+            <div class="mdots">${dots}</div>
+            ${target ? `<div class="tgt-tag" style="top:${((y(target) / H) * 100).toFixed(2)}%">target ${cfg.fmt(target)}</div>` : ''}
+            <div class="laxis">${axis}</div>
+          </div>
         </div>
-        ${lineChart(points, { fmt: (v) => fmt(v) })}
       </div>`;
   }
 
@@ -1764,31 +1960,48 @@
     }
 
     const weeks = wk.weeks;
+    const targets = wk.targets || {};
+    const cfg = METRICS[mainMetric] || METRICS.cpr;
+    const target = cfg.target(targets);
+
     const complete = weeks.filter((w) => !w.partial);
-    const last = complete[complete.length - 1];
-    const prior = complete[complete.length - 2];
+    const last = complete[complete.length - 1] || null;
+    const prior = complete[complete.length - 2] || null;
 
-    const cprOf = (w) => (w && w.results ? w.spend / w.results : null);
-    const ctrOf = (w) => (w && w.impressions ? w.linkClicks / w.impressions : null);
-    const cpmOfW = (w) => (w && w.impressions ? (w.spend / w.impressions) * 1000 : null);
+    const nowV = last ? cfg.get(last) : null;
+    const prevV = prior ? cfg.get(prior) : null;
+    const state = stateOf(nowV, target, cfg.lowerBetter);
+    const delta = change(nowV, prevV);
 
-    const trends = [
-      trendPanel('Cost per result', weeks, (w) => cprOf(w) || 0,
-        (v) => (v ? money(v) : '—'),
-        show(cprOf(last), money), change(cprOf(last), cprOf(prior)), true),
-      trendPanel('Weekly cost', weeks, (w) => w.spend,
-        (v) => money(v), money(last ? last.spend : 0),
-        change(last && last.spend, prior && prior.spend), false),
-      trendPanel('Results', weeks, (w) => w.results,
-        (v) => int(v), int(last ? last.results : 0),
-        change(last && last.results, prior && prior.results), false),
-      trendPanel('Link CTR', weeks, (w) => (ctrOf(w) || 0) * 100,
-        (v) => v.toFixed(2) + '%',
-        show(ctrOf(last), pct), change(ctrOf(last), ctrOf(prior)), false),
-    ].join('');
+    // Where the latest week sits against its own four-week average — the
+    // "is this a spike or a shift" question a trend line exists to answer.
+    const avgSeries = movingAvg(complete.map(cfg.get), 4);
+    const avgNow = avgSeries[avgSeries.length - 1];
+    const vsAvg = change(nowV, avgNow);
+
+    // One sentence of what to do, assembled from the two facts that decide it:
+    // where the number sits against target, and which way it is moving.
+    const improving = delta == null ? null : (cfg.lowerBetter ? delta < -0.02 : delta > 0.02);
+    const worsening = delta == null ? null : (cfg.lowerBetter ? delta > 0.02 : delta < -0.02);
+    // "Off target" is above for a cost metric and below for a rate one, so the
+    // wording follows the metric's direction rather than assuming cost.
+    const off = cfg.lowerBetter ? 'above' : 'below';
+    let advice;
+    if (nowV == null) advice = 'No delivery in the last complete week — nothing to judge yet.';
+    else if (!target) advice = improving ? 'Moving the right way week on week.' : worsening ? 'Moving the wrong way week on week.' : 'Broadly flat week on week.';
+    else if (state === 'good') advice = improving
+      ? 'On target and still improving — this is the one to put more budget behind.'
+      : worsening ? 'Still on target, but slipping. Worth watching next week before it crosses.'
+        : 'Comfortably on target. Hold the current setup.';
+    else if (state === 'watch') advice = improving
+      ? `Slightly ${off} target but recovering. Give it another week before changing anything.`
+      : `Slightly ${off} target and not recovering — review creative and audience this week.`;
+    else advice = improving
+      ? `Well ${off} target, though improving. Keep the change that started the recovery.`
+      : `Well ${off} target. Pause or rebuild the weakest campaigns in the table below.`;
 
     const rows = wk.campaigns.map((c) => {
-      const cur = c.current, prev = c.previous;
+      const cur = c.current;
       return `
         <div class="sigrow">
           <div>
@@ -1810,9 +2023,40 @@
 
     return `
       <div class="panel">
-        <div class="ptitle">Weekly trend · last ${weeks.length} weeks</div>
-        <div class="tzbadge">📅 Weeks run <b>Sunday to Saturday</b>, the same boundary the booking Report uses. The final point is the week in progress — drawn dashed and hollow, because it is a part-week and will keep rising.</div>
-        <div class="trendgrid">${trends}</div>
+        <div class="mhead">
+          <div class="seg" id="metricSeg">
+            ${Object.keys(METRICS).map((k) =>
+              `<button data-m="${k}" aria-pressed="${k === mainMetric}">${esc(METRICS[k].label)}</button>`).join('')}
+          </div>
+          <div class="mnow">
+            <span class="mnow-n">${cfg.fmt(nowV)}</span>
+            <span class="mnow-u">${esc(cfg.unit)}</span>
+            ${deltaChip(delta, cfg.lowerBetter)}
+          </div>
+        </div>
+
+        ${state ? `<div class="verdict v-${state}">
+          <span class="v-ico">${STATE_ICON[state]}</span>
+          <span class="v-word">${STATE_WORD[state]}</span>
+          <span class="v-text">${esc(advice)}</span>
+        </div>` : `<div class="verdict v-none"><span class="v-text">${esc(advice)}</span></div>`}
+
+        ${mainChart(weeks, cfg, targets)}
+
+        <div class="vzlegend mlegend">
+          ${target ? `
+            <span><i class="zk zk-good"></i>On target — ${cfg.lowerBetter ? 'at or below' : 'at or above'} ${cfg.fmt(target)}</span>
+            <span><i class="zk zk-watch"></i>Watch</span>
+            <span><i class="zk zk-act"></i>Act now</span>
+            <span><i class="zk zk-line"></i>Target ${cfg.fmt(target)}${targets.costPerResultNote && mainMetric === 'cpr' ? ` (${esc(targets.costPerResultNote)})` : ''}</span>` : ''}
+          <span><i class="zk zk-avg"></i>4-week average</span>
+          <span><i class="zk zk-part"></i>Week in progress</span>
+        </div>
+        <div class="plan-foot" style="margin-top:10px">
+          Last complete week <b>${esc(last ? last.label : '—')}</b>${prior ? ` vs <b>${esc(prior.label)}</b>` : ''}${
+            vsAvg != null ? ` · ${Math.abs(vsAvg * 100).toFixed(0)}% ${vsAvg > 0 ? 'above' : 'below'} its 4-week average` : ''}.
+          Weeks run Sunday to Saturday, the same boundary the booking Report uses. The dashed tail is the week still running.
+        </div>
       </div>
 
       <div class="panel">
@@ -2069,6 +2313,17 @@
       </div>`;
 
     bindViz($('campaignsWrap'));
+
+    // Switching metric redraws the whole tab, the same way the Report tab
+    // handles its granularity buttons — the data is already in hand.
+    const seg = $('metricSeg');
+    if (seg) {
+      seg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+        mainMetric = b.dataset.m;
+        renderCampaigns();
+        saveViewState();
+      }));
+    }
   }
 
   async function loadCampaigns(force) {

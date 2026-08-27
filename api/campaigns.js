@@ -3,6 +3,7 @@ const {
   AD_ACCOUNTS, REPORT_CURRENCY,
 } = require('./meta-ads');
 const { mapWithConcurrency } = require('./wetravel');
+const { build: buildMediaPlan } = require('./media-plan');
 
 const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
 
@@ -424,8 +425,31 @@ async function build() {
       ORDER[a.signal] - ORDER[b.signal] || b.current.spend - a.current.spend);
   }
 
+  /* ---------------- reference targets ----------------
+     What "good" means has to come from somewhere defensible. Cost per result
+     is taken from NomuHub's own Saudi media plan — its blended estimate of
+     ~$5.13 per message — rather than an invented number, so the line on the
+     chart is the thing the team actually committed to. Weekly cost comes from
+     the live daily budget. Link CTR is the published industry band. */
+  let targets = { costPerResult: null, costPerResultNote: null, weeklyCost: null, linkCtr: 0.02 };
+  try {
+    const plan = buildMediaPlan();
+    const planned = plan.totals.results
+      ? (plan.totals.prospectingUsd / plan.totals.results) * plan.usdSar
+      : null;
+    if (planned) {
+      targets.costPerResult = planned;
+      targets.costPerResultNote =
+        `SA media plan: $${(plan.totals.prospectingUsd / plan.totals.results).toFixed(2)} per message at ${plan.usdSar}`;
+    }
+  } catch (err) {
+    console.error(`media plan target unavailable: ${err.message}`);
+  }
+  if (totals.dailyBudget) targets.weeklyCost = totals.dailyBudget * 7;
+
   const weekly = {
     days: WEEKLY_DAYS,
+    targets,
     weeks,
     currentWeek: thisWeek,
     lastCompleteWeek: lastComplete ? lastComplete.week : null,
