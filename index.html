@@ -444,6 +444,62 @@
   .vzseg { cursor: pointer; min-width: 3px; transition: filter .12s; }
   .vzseg:hover { filter: brightness(1.18); }
 
+  /* line chart */
+  .lwrap { display: flex; }
+  .lscale { display: flex; flex-direction: column; justify-content: space-between; height: 132px;
+    font-size: 9.5px; color: var(--text-3); text-align: right; padding-right: 8px; min-width: 42px; }
+  .lplot { flex: 1; min-width: 0; }
+  .lplot svg { display: block; width: 100%; height: 132px; }
+  .lhit { cursor: pointer; }
+  .lhit:hover { fill: rgba(255,255,255,.045); }
+  .laxis { display: flex; margin-top: 6px; }
+  .laxis span { flex: 1; text-align: center; font-size: 9.5px; color: var(--text-3);
+    min-width: 0; overflow: hidden; white-space: nowrap; }
+
+  /* Small multiples: four trends read as one row, same shape, different measure. */
+  .trendgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (max-width: 980px) { .trendgrid { grid-template-columns: 1fr; } }
+  .trendhead { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .trendhead .th-l { font-size: 10.5px; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--text-3); }
+  .trendhead .th-n { margin-left: auto; font-size: 17px; font-weight: 700; color: #fff;
+    font-variant-numeric: tabular-nums; }
+  .trendhead .th-d { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Direction of change, coloured by whether it is good — which for a cost
+     metric is the opposite of "up". The arrow and the sign carry it too. */
+  .d-up   { color: var(--fresh); }
+  .d-down { color: var(--danger); }
+  .d-flat { color: var(--text-3); }
+
+  /* weekly triage */
+  .sigrow {
+    display: grid; grid-template-columns: minmax(0,1.6fr) 84px repeat(4, minmax(0,1fr)) minmax(0,1.3fr);
+    gap: 10px; align-items: center; padding: 9px 2px; font-size: 12px;
+  }
+  .sigrow + .sigrow { border-top: 1px solid rgba(52,81,124,.3); }
+  .sighead { font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-3); font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .sig-name { color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sig-sub { font-size: 10.5px; color: var(--text-3); margin-top: 2px; }
+  .sig-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); }
+  .sig-num b { color: #fff; }
+  .sig-why { font-size: 11px; color: var(--text-3); }
+  .sigpill {
+    display: inline-block; padding: 3px 9px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .sig-fix   { background: rgba(224,72,61,.16); color: #ff9d92; }
+  .sig-watch { background: rgba(239,139,60,.16); color: var(--target); }
+  .sig-scale { background: rgba(61,220,132,.16); color: var(--fresh); }
+  .sig-new   { background: rgba(77,157,224,.16); color: var(--info); }
+  .sig-idle  { background: rgba(134,152,180,.13); color: var(--text-3); }
+  @media (max-width: 980px) {
+    .sigrow { grid-template-columns: 1fr auto; row-gap: 5px; }
+    .sig-why { grid-column: 1 / -1; }
+    .sighead { display: none; }
+  }
+
   .vzlegend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 11px; color: var(--text-2); }
   .vzlegend span { display: inline-flex; align-items: center; gap: 6px; }
   .vzlegend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
@@ -1471,6 +1527,12 @@
   // Every derived figure in the spreadsheet was a division wrapped in IFERROR,
   // which blanks rather than showing a misleading zero. Same contract here.
   const ratio = (a, b) => (Number(b) ? Number(a) / Number(b) : null);
+  // Signed change against a prior figure; null when there is nothing to
+  // compare to, since a rise from zero is not a percentage.
+  const change = (now, before) => {
+    if (!Number.isFinite(before) || before === 0 || !Number.isFinite(now)) return null;
+    return (now - before) / before;
+  };
   const show = (v, fmt) => (v == null ? '—' : fmt(v));
   // CPM is cost per *thousand* impressions — the sheet's =spend/impressions*1000.
   const cpmOf = (spend, impressions) => {
@@ -1489,13 +1551,23 @@
       tip.style.left = x + 'px'; tip.style.top = y + 'px';
     };
     root.querySelectorAll('[data-tip]').forEach((el) => {
+      // A line chart's hit column also drives the crosshair in its own svg.
+      const cross = el.dataset.cx ? el.closest('svg').querySelector('.lcross') : null;
       el.addEventListener('mouseenter', (e) => {
         tip.innerHTML = el.dataset.tip;
         tip.classList.add('on');
+        if (cross) {
+          cross.setAttribute('x1', el.dataset.cx);
+          cross.setAttribute('x2', el.dataset.cx);
+          cross.setAttribute('opacity', '0.75');
+        }
         move(e);
       });
       el.addEventListener('mousemove', move);
-      el.addEventListener('mouseleave', () => tip.classList.remove('on'));
+      el.addEventListener('mouseleave', () => {
+        tip.classList.remove('on');
+        if (cross) cross.setAttribute('opacity', '0');
+      });
     });
   }
 
@@ -1545,6 +1617,84 @@
       </div>`;
   }
 
+  // Line chart — the form for a trend. One series, so no legend: the panel
+  // title names the measure. A dashed tail marks a week still in progress, so
+  // a partial figure never reads as a genuine fall.
+  //
+  // The plot is stretched to the panel width (preserveAspectRatio="none"),
+  // which is right for a line but would squash a circle into an oval — so
+  // there are no permanent dot markers. Hover draws a vertical crosshair
+  // instead, which is the specified interaction for a line chart and is
+  // immune to horizontal scaling.
+  let lineSeq = 0;
+
+  function lineChart(points, opts) {
+    const o = opts || {};
+    const uid = `lg${++lineSeq}`;
+    const W = 600, H = 132, PADL = 4, PADR = 4, PADT = 10, PADB = 6;
+    const val = (p) => (Number.isFinite(p.v) ? p.v : 0);
+    const top = niceMax(Math.max(...points.map(val), 0)) || 1;
+    const n = points.length;
+    const x = (i) => (n <= 1 ? W / 2 : PADL + (i * (W - PADL - PADR)) / (n - 1));
+    const y = (v) => PADT + (1 - v / top) * (H - PADT - PADB);
+
+    const pts = points.map((p, i) => ({ ...p, x: x(i), y: y(val(p)) }));
+    const solid = pts.filter((p) => !p.partial);
+    const path = (list) => list.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const stroke = o.color || 'var(--fill)';
+
+    const area = solid.length > 1
+      ? `<path d="${path(solid)} L${solid[solid.length - 1].x.toFixed(1)},${(H - PADB).toFixed(1)} L${solid[0].x.toFixed(1)},${(H - PADB).toFixed(1)} Z" fill="url(#${uid})" stroke="none"/>`
+      : '';
+    // The in-progress week is joined by a dashed segment, never a solid one.
+    const tail = pts.length > 1 && pts[pts.length - 1].partial
+      ? `<path d="${path(pts.slice(-2))}" fill="none" stroke="${stroke}" stroke-width="2" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>`
+      : '';
+
+    const hits = pts.map((p) => {
+      const half = (n <= 1 ? W : (W - PADL - PADR) / (n - 1)) / 2;
+      const left = Math.max(0, p.x - half);
+      const width = Math.min(W - left, half * 2);
+      return `<rect class="lhit" x="${left.toFixed(1)}" y="0" width="${width.toFixed(1)}" height="${H}" fill="transparent" data-tip="${attr(p.tip)}" data-cx="${p.x.toFixed(1)}"/>`;
+    }).join('');
+
+    const grid = [0, 0.5, 1].map((f) => {
+      const gy = (PADT + f * (H - PADT - PADB)).toFixed(1);
+      return `<line x1="0" y1="${gy}" x2="${W}" y2="${gy}" stroke="rgba(134,152,180,.13)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    }).join('');
+
+    const axis = points.map((p, i) => {
+      const step = Math.ceil(n / 8);
+      const show = n <= 8 || i % step === 0 || i === n - 1;
+      return `<span>${show ? esc(p.label) : ''}</span>`;
+    }).join('');
+
+    return `
+      <div class="vz">
+        <div class="lwrap">
+          <div class="lscale">
+            <div>${o.fmt ? o.fmt(top) : compact(top)}</div>
+            <div>${o.fmt ? o.fmt(top / 2) : compact(top / 2)}</div>
+            <div>0</div>
+          </div>
+          <div class="lplot">
+            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">
+              <defs><linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${o.color || '#f5b935'}" stop-opacity=".22"/>
+                <stop offset="100%" stop-color="${o.color || '#f5b935'}" stop-opacity="0"/>
+              </linearGradient></defs>
+              ${grid}${area}
+              <path d="${path(solid)}" fill="none" stroke="${stroke}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+              ${tail}
+              <line class="lcross" x1="0" y1="0" x2="0" y2="${H}" stroke="${stroke}" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" opacity="0"/>
+              ${hits}
+            </svg>
+            <div class="laxis">${axis}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
   // Horizontal bars — the right form when the category names are long.
   function barRows(items) {
     const top = Math.max(0, ...items.map((i) => i.v)) || 1;
@@ -1566,6 +1716,126 @@
     const legend = segments.map((s) =>
       `<span><i style="background:${s.color}"></i>${esc(s.label)} <b>${esc(s.value)}</b> · ${pct(ratio(s.v, total))}</span>`).join('');
     return `<div class="vz"><div class="vzstack">${bar}</div><div class="vzlegend">${legend}</div></div>`;
+  }
+
+  /* ---------------- weekly planning view ---------------- */
+
+  // Direction, with the sign that matters: for cost-style metrics a fall is
+  // the good outcome, so `lowerIsBetter` flips which way earns the green.
+  function deltaChip(v, lowerIsBetter) {
+    if (v == null) return '<span class="th-d d-flat">—</span>';
+    const flat = Math.abs(v) < 0.02;
+    const good = lowerIsBetter ? v < 0 : v > 0;
+    const cls = flat ? 'd-flat' : (good ? 'd-up' : 'd-down');
+    const arrow = flat ? '→' : (v > 0 ? '↑' : '↓');
+    return `<span class="th-d ${cls}">${arrow} ${Math.abs(v * 100).toFixed(0)}%</span>`;
+  }
+
+  function trendPanel(label, weeks, pick, fmt, headline, delta, lowerIsBetter) {
+    const points = weeks.map((w) => ({
+      v: pick(w),
+      label: w.label,
+      partial: w.partial,
+      tip: tipRows(`Week of ${w.label}${w.partial ? ' (in progress)' : ''}`, [
+        [label, fmt(pick(w))],
+        ['Cost', 'SAR ' + money(w.spend)],
+        ['Results', int(w.results)],
+        ['Impressions', int(w.impressions)],
+        ['Link clicks', int(w.linkClicks)],
+      ]),
+    }));
+    return `
+      <div class="panel">
+        <div class="trendhead">
+          <span class="th-l">${esc(label)}</span>
+          <span class="th-n">${headline}</span>
+          ${deltaChip(delta, lowerIsBetter)}
+        </div>
+        ${lineChart(points, { fmt: (v) => fmt(v) })}
+      </div>`;
+  }
+
+  function weeklySection(p) {
+    const wk = p.weekly;
+    if (!wk || !wk.weeks || wk.weeks.length < 2) {
+      return `<div class="panel"><div class="ptitle">Weekly performance</div>
+        <div class="msg">Not enough delivery history yet to show a weekly trend.</div></div>`;
+    }
+
+    const weeks = wk.weeks;
+    const complete = weeks.filter((w) => !w.partial);
+    const last = complete[complete.length - 1];
+    const prior = complete[complete.length - 2];
+
+    const cprOf = (w) => (w && w.results ? w.spend / w.results : null);
+    const ctrOf = (w) => (w && w.impressions ? w.linkClicks / w.impressions : null);
+    const cpmOfW = (w) => (w && w.impressions ? (w.spend / w.impressions) * 1000 : null);
+
+    const trends = [
+      trendPanel('Cost per result', weeks, (w) => cprOf(w) || 0,
+        (v) => (v ? money(v) : '—'),
+        show(cprOf(last), money), change(cprOf(last), cprOf(prior)), true),
+      trendPanel('Weekly cost', weeks, (w) => w.spend,
+        (v) => money(v), money(last ? last.spend : 0),
+        change(last && last.spend, prior && prior.spend), false),
+      trendPanel('Results', weeks, (w) => w.results,
+        (v) => int(v), int(last ? last.results : 0),
+        change(last && last.results, prior && prior.results), false),
+      trendPanel('Link CTR', weeks, (w) => (ctrOf(w) || 0) * 100,
+        (v) => v.toFixed(2) + '%',
+        show(ctrOf(last), pct), change(ctrOf(last), ctrOf(prior)), false),
+    ].join('');
+
+    const rows = wk.campaigns.map((c) => {
+      const cur = c.current, prev = c.previous;
+      return `
+        <div class="sigrow">
+          <div>
+            <div class="sig-name">${esc(c.name)}</div>
+            <div class="sig-sub">${esc(c.objective || '')}${c.status ? ' · ' + esc(c.status) : ''}</div>
+          </div>
+          <div><span class="sigpill sig-${esc(c.signal)}">${esc(c.signal)}</span></div>
+          <div class="sig-num"><b>${money(cur.spend)}</b><div class="sig-sub">${deltaChip(c.change.spend, false)}</div></div>
+          <div class="sig-num"><b>${int(cur.results)}</b><div class="sig-sub">${deltaChip(c.change.results, false)}</div></div>
+          <div class="sig-num"><b>${show(cur.costPerResult, money)}</b><div class="sig-sub">${deltaChip(c.change.costPerResult, true)}</div></div>
+          <div class="sig-num"><b>${show(cur.ctr, pct)}</b><div class="sig-sub">${deltaChip(c.change.ctr, false)}</div></div>
+          <div class="sig-why">${c.reasons.length ? esc(c.reasons.join(' · ')) : '<span style="color:#6c7f9c">steady</span>'}</div>
+        </div>`;
+    }).join('');
+
+    const counts = ['fix', 'watch', 'scale', 'new', 'idle']
+      .map((k) => ({ k, n: wk.campaigns.filter((c) => c.signal === k).length }))
+      .filter((x) => x.n);
+
+    return `
+      <div class="panel">
+        <div class="ptitle">Weekly trend · last ${weeks.length} weeks</div>
+        <div class="tzbadge">📅 Weeks run <b>Sunday to Saturday</b>, the same boundary the booking Report uses. The final point is the week in progress — drawn dashed and hollow, because it is a part-week and will keep rising.</div>
+        <div class="trendgrid">${trends}</div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">What to adjust · week of ${esc(last ? last.label : '—')} vs ${esc(prior ? prior.label : '—')}</div>
+        <div class="vzlegend" style="margin:0 0 12px">
+          ${counts.map((x) => `<span><span class="sigpill sig-${x.k}">${x.k}</span> <b>${x.n}</b></span>`).join('')}
+        </div>
+        <div class="tscroll">
+          <div style="min-width:760px">
+            <div class="sigrow sighead">
+              <div>Campaign</div><div>Signal</div><div class="sig-num">Cost</div>
+              <div class="sig-num">Results</div><div class="sig-num">Cost / result</div>
+              <div class="sig-num">Link CTR</div><div>Why</div>
+            </div>
+            ${rows || '<div class="msg">No campaigns delivered in that week.</div>'}
+          </div>
+        </div>
+        <div class="plan-foot" style="margin-top:12px">
+          Compares the last <b>complete</b> week against the one before it, so a Monday reading never looks like a crash.
+          <b>fix</b> = cost per result up more than 25%, link CTR under 0.5%, or spend with no results ·
+          <b>scale</b> = cost per result down more than 15% ·
+          <b>idle</b> = under SAR 50 in both weeks, too little to read.
+        </div>
+      </div>`;
   }
 
   /* ================= campaigns tab (current year) ================= */
@@ -1732,6 +2002,8 @@
           <div class="skpi-sub">${t.dailyBudget == null ? 'no active ad sets' : show(monthlyRun, money) + ' / 30 days'}</div>
         </div>
       </div>
+
+      ${weeklySection(p)}
 
       ${monthPoints.length ? `
       <div class="panel">
