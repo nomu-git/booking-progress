@@ -258,6 +258,8 @@
     .segdiv { display: none; }
   }
   .fnote { font-size: 11px; color: var(--text-3); margin-left: auto; }
+  /* A pill only works for one short line — border-radius:20px on wrapped
+     text produces the huge lopsided caps a pill was never meant to show. */
   .tzbadge {
     display: inline-flex; align-items: center; gap: 6px;
     background: rgba(242,178,51,.14); border: 1px solid rgba(242,178,51,.35);
@@ -265,6 +267,17 @@
     padding: 6px 12px; border-radius: 20px; margin-bottom: 14px;
   }
   .tzbadge b { font-weight: 800; }
+
+  /* Same amber note, but a block: for anything long enough to wrap onto a
+     second line, which a pill shape can't hold without distorting. */
+  .infonote {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(242,178,51,.10); border: 1px solid rgba(242,178,51,.30);
+    color: var(--text-2); font-size: 12px; line-height: 1.55; font-weight: 500;
+    padding: 10px 13px; border-radius: 8px; margin-bottom: 14px;
+  }
+  .infonote .ni-ico { flex: none; font-size: 13px; margin-top: 1px; }
+  .infonote b { color: var(--yellow); font-weight: 700; }
 
   .chart { position: relative; height: 230px; padding-left: 30px; }
   .crule { position: absolute; left: 30px; right: 0; height: 1px; background: rgba(255,255,255,.07); }
@@ -2270,7 +2283,7 @@
 
       <div class="panel">
         <div class="ptitle">All campaigns · ${p.year}</div>
-        <div class="tzbadge">💰 Figures in <b>${cur}</b>, ${esc(p.since)} to ${esc(p.until)}, across ${p.accounts.length} ad account${p.accounts.length === 1 ? '' : 's'}. <b>Reach</b> is de-duplicated over the whole period, so a campaign that ran for several months reads lower here than a spreadsheet that added its months together — the same person reached in June and July counts once.</div>
+        <div class="infonote"><span class="ni-ico">💰</span><span>Figures in <b>${cur}</b>, ${esc(p.since)} to ${esc(p.until)}, across ${p.accounts.length} ad account${p.accounts.length === 1 ? '' : 's'}. <b>Reach</b> is de-duplicated over the whole period, so a campaign that ran for several months reads lower here than a spreadsheet that added its months together — the same person reached in June and July counts once.</span></div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
@@ -2448,7 +2461,7 @@
           <span class="vh-c">${cur}</span><span class="vh-n">${money(t.spend)}</span>
           <span class="vh-s">${int(t.campaigns)} campaigns over ${p.years.length} year${p.years.length === 1 ? '' : 's'} · ${compact(t.reach)} reach · ${compact(t.impressions)} impressions</span>
         </div>
-        <div class="tzbadge">🗄️ Meta keeps campaign insights for about <b>${p.retentionMonths} months</b> and purges everything older, so this archive starts at <b>${esc(p.since)}</b>. Anything that ran before then is gone at the source.</div>
+        <div class="infonote"><span class="ni-ico">🗄️</span><span>Meta keeps campaign insights for about <b>${p.retentionMonths} months</b> and purges everything older, so this archive starts at <b>${esc(p.since)}</b>. Anything that ran before then is gone at the source.</span></div>
       </div>
 
       <div class="vgrid2">
