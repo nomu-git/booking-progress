@@ -493,6 +493,7 @@
   .sig-watch { background: rgba(239,139,60,.16); color: var(--target); }
   .sig-scale { background: rgba(61,220,132,.16); color: var(--fresh); }
   .sig-new   { background: rgba(77,157,224,.16); color: var(--info); }
+  .sig-stopped { background: rgba(224,72,61,.10); color: #e0a0a0; }
   .sig-idle  { background: rgba(134,152,180,.13); color: var(--text-3); }
   @media (max-width: 980px) {
     .sigrow { grid-template-columns: 1fr auto; row-gap: 5px; }
@@ -1803,7 +1804,7 @@
         </div>`;
     }).join('');
 
-    const counts = ['fix', 'watch', 'scale', 'new', 'idle']
+    const counts = ['fix', 'stopped', 'watch', 'scale', 'new', 'idle']
       .map((k) => ({ k, n: wk.campaigns.filter((c) => c.signal === k).length }))
       .filter((x) => x.n);
 
@@ -1817,7 +1818,7 @@
       <div class="panel">
         <div class="ptitle">What to adjust · week of ${esc(last ? last.label : '—')} vs ${esc(prior ? prior.label : '—')}</div>
         <div class="vzlegend" style="margin:0 0 12px">
-          ${counts.map((x) => `<span><span class="sigpill sig-${x.k}">${x.k}</span> <b>${x.n}</b></span>`).join('')}
+          ${counts.map((x) => `<span><span class="sigpill sig-${esc(x.k)}">${esc(x.k)}</span> <b>${x.n}</b></span>`).join('')}
         </div>
         <div class="tscroll">
           <div style="min-width:760px">
@@ -1833,6 +1834,7 @@
           Compares the last <b>complete</b> week against the one before it, so a Monday reading never looks like a crash.
           <b>fix</b> = cost per result up more than 25%, link CTR under 0.5%, or spend with no results ·
           <b>scale</b> = cost per result down more than 15% ·
+          <b>stopped</b> = was delivering, now isn't ·
           <b>idle</b> = under SAR 50 in both weeks, too little to read.
         </div>
       </div>`;

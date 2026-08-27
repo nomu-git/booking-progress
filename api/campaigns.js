@@ -385,6 +385,11 @@ async function build() {
       } else if (cur.spend >= MIN_SIGNAL_SPEND && prev.spend < MIN_SIGNAL_SPEND) {
         signal = 'new';
         reasons.push('first full week of delivery');
+      } else if (cur.spend < MIN_SIGNAL_SPEND) {
+        // Was running, now isn't. Worth stating plainly — a campaign going
+        // dark is either a decision someone made or an accident worth catching.
+        signal = 'stopped';
+        reasons.push(`no delivery this week (spent ${Math.round(prev.spend)} last week)`);
       } else {
         if (cur.spend > 0 && cur.results === 0) { signal = 'fix'; reasons.push('spend with no results'); }
         else if (cprChange != null && cprChange > 0.25) { signal = 'fix'; reasons.push(`cost per result up ${Math.round(cprChange * 100)}%`); }
@@ -414,7 +419,7 @@ async function build() {
       });
     }
     // Worst first — the point of the panel is what needs attention.
-    const ORDER = { fix: 0, watch: 1, new: 2, scale: 3, idle: 4 };
+    const ORDER = { fix: 0, stopped: 1, watch: 2, new: 3, scale: 4, idle: 5 };
     weeklyCampaigns.sort((a, b) =>
       ORDER[a.signal] - ORDER[b.signal] || b.current.spend - a.current.spend);
   }
