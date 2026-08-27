@@ -86,7 +86,7 @@ async function loadAccount(accountId, since, until) {
     graphGetAll(`/${accountId}/insights`, {
       level: 'campaign',
       time_range: timeRange,
-      fields: 'campaign_id,campaign_name,objective,spend,impressions,reach,actions',
+      fields: 'campaign_id,campaign_name,objective,spend,impressions,reach,actions,clicks,inline_link_clicks',
     }).catch((err) => {
       console.error(`insights failed for ${accountId}: ${err.message}`);
       return [];
@@ -166,6 +166,11 @@ async function build() {
       const spend = toReportCurrency(row.spend, account.currency);
       const impressions = num(row.impressions);
       const reach = num(row.reach);
+      const clicks = num(row.clicks);
+      // For click-to-Messenger/WhatsApp ads the click that matters registers as
+      // a link click, so link CTR is the honest read of creative pull — plain
+      // CTR counts reactions and profile taps too.
+      const linkClicks = num(row.inline_link_clicks);
 
       // A campaign that never delivered in this window isn't part of the year's
       // reporting — it would only pad the table with zero rows.
@@ -212,6 +217,8 @@ async function build() {
         results,
         impressions,
         reach,
+        clicks,
+        linkClicks,
         purchases: actionValue(row.actions, PURCHASE_ACTIONS),
         // Money went out but nothing came back. Almost always a gap in
         // RESULT_ACTIONS rather than a genuinely fruitless campaign, so it's
@@ -239,6 +246,8 @@ async function build() {
     results: sum('results'),
     impressions: sum('impressions'),
     reach: sum('reach'),
+    clicks: sum('clicks'),
+    linkClicks: sum('linkClicks'),
     purchases: sum('purchases'),
   };
 
@@ -259,6 +268,8 @@ async function build() {
       spend: gSum('spend'),
       impressions: gSum('impressions'),
       reach: gSum('reach'),
+      clicks: gSum('clicks'),
+      linkClicks: gSum('linkClicks'),
       purchases: gSum('purchases'),
       results: gSum('results'),
     });

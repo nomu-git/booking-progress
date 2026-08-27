@@ -329,6 +329,17 @@
   .skpi-l { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
   .skpi-sub { font-size: 10px; color: #6c7f9c; margin-top: 3px; }
 
+  /* A tile earns a colour only when a published benchmark says the number is
+     out of the usual range — never for the metric merely existing. The word
+     underneath always carries the same meaning as the colour, so the signal
+     survives colour-blindness and a black-and-white print alike. */
+  .skpi-good .skpi-n  { color: var(--fresh); }
+  .skpi-watch .skpi-n { color: var(--target); }
+  .skpi-bad .skpi-n   { color: var(--danger); }
+  .skpi-good .skpi-sub  { color: var(--fresh); }
+  .skpi-watch .skpi-sub { color: var(--target); }
+  .skpi-bad .skpi-sub   { color: var(--danger); }
+
   /* ---------- campaigns (Meta Ads) ---------- */
 
   /* Six tiles across on a wall display, folding to three then two as the
@@ -355,6 +366,11 @@
     font-weight: 700; color: #fff; padding-top: 9px;
   }
   .ctable .num { font-variant-numeric: tabular-nums; }
+  /* Same benchmark meaning as the tiles, applied per campaign so a single
+     under-performing line is findable without reading every number. */
+  .ctable td.cell-good  { color: var(--fresh); font-weight: 600; }
+  .ctable td.cell-watch { color: var(--target); font-weight: 600; }
+  .ctable td.cell-bad   { color: var(--danger); font-weight: 700; }
 
   /* Status and objective read as quiet labels, not as alarm colors — the
      booking board already owns green/yellow/red for capacity meaning. */
@@ -506,13 +522,22 @@
     .pf-est { grid-column: 1 / -1; }
   }
 
-  .plan-always { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 780px) { .plan-always { grid-template-columns: 1fr; } }
-  .pa-card { background: var(--track); border-radius: 8px; padding: 13px 15px; }
-  .pa-top { display: flex; align-items: baseline; gap: 10px; }
-  .pa-name { font-size: 13px; font-weight: 700; color: #fff; }
-  .pa-amt { margin-left: auto; font-size: 17px; font-weight: 700; color: var(--yellow); font-variant-numeric: tabular-nums; }
-  .pa-sub { font-size: 11.5px; color: var(--text-3); margin-top: 5px; line-height: 1.5; }
+  /* Always-on rows sit inside each month, dimmed so they read as recurring
+     context rather than as another trip launching that month. */
+  .pflight.pf-always .pf-trip { color: var(--text-2); font-weight: 500; }
+  .pflight.pf-always .pf-num, .pflight.pf-always .pf-estn { color: var(--text-3); }
+  .pflight.pf-always .pf-num b { color: var(--text-2); }
+  .pf-tag {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+    background: rgba(77,157,224,.14); color: var(--info);
+    font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .pm-foot {
+    display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 9px; padding-top: 8px;
+    border-top: 1px dashed rgba(134,152,180,.25);
+    font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums;
+  }
+  .pm-foot-tot { color: var(--yellow); font-weight: 700; margin-left: auto; }
 
   .plan-foot { font-size: 11.5px; color: var(--text-3); line-height: 1.6; }
   .plan-foot b { color: var(--text-2); }
@@ -1550,6 +1575,7 @@
     const cpm = cpmOf(c.spend, c.impressions);
     const freq = ratio(c.impressions, c.reach);
     const share = ratio(c.spend, totalSpend) || 0;
+    const cCtr = ratio(c.linkClicks, c.impressions);
     const range = c.firstMonth
       ? `${c.firstMonth}${c.lastMonth && c.lastMonth !== c.firstMonth ? ' – ' + c.lastMonth : ''}`
       : '';
@@ -1565,10 +1591,11 @@
         <td class="num">${money(c.spend)}</td>
         <td class="num">${int(c.results)}${c.noResults ? ' <span class="flag" title="Spend recorded but no results attributed">!</span>' : ''}</td>
         <td class="num">${show(cpr, money)}</td>
+        <td class="num ${cCtr == null ? '' : cCtr < CTR_POOR ? 'cell-bad' : cCtr >= CTR_HEALTHY ? 'cell-good' : ''}">${show(cCtr, pct)}</td>
         <td class="num">${int(c.impressions)}</td>
         <td class="num">${int(c.reach)}</td>
         <td class="num">${show(cpm, dec)}</td>
-        <td class="num">${show(freq, dec)}</td>
+        <td class="num ${freq == null ? '' : freq >= FREQ_FATIGUE ? 'cell-bad' : freq >= FREQ_WATCH ? 'cell-watch' : ''}">${show(freq, dec)}</td>
         <td class="num">${int(c.purchases)}</td>
         <td class="num sharecell"><div class="sharebar" style="width:${(share * 100).toFixed(0)}%"></div><span>${pct(share)}</span></td>
       </tr>`;
@@ -1588,6 +1615,8 @@
     const totalCpm = cpmOf(t.spend, t.impressions);
     const totalFreq = ratio(t.impressions, t.reach);
     const active = t.active != null ? t.active : p.campaigns.filter((c) => c.status === 'Active').length;
+    const linkCtr = ratio(t.linkClicks, t.impressions);
+    const costPerClick = ratio(t.spend, t.linkClicks);
     // Daily commitment projected out, so the tile answers "what does this cost
     // us a month if nothing changes" rather than making everyone multiply.
     const monthlyRun = t.dailyBudget == null ? null : t.dailyBudget * 30;
@@ -1650,12 +1679,12 @@
         <td class="num">${int(o.campaigns)}</td>
         <td class="num">${show(o.dailyBudget, money)}</td>
         <td class="num">${money(o.spend)}</td>
+        <td class="num">${int(o.results)}</td>
+        <td class="num">${show(ratio(o.spend, o.results), money)}</td>
+        <td class="num">${show(ratio(o.linkClicks, o.impressions), pct)}</td>
         <td class="num">${int(o.impressions)}</td>
         <td class="num">${show(cpmOf(o.spend, o.impressions), dec)}</td>
         <td class="num">${int(o.reach)}</td>
-        <td class="num">${int(o.purchases)}</td>
-        <td class="num">${int(o.results)}</td>
-        <td class="num">${show(ratio(o.spend, o.results), money)}</td>
         <td class="num sharecell"><div class="sharebar" style="width:${((ratio(o.spend, t.spend) || 0) * 100).toFixed(0)}%"></div><span>${pct(ratio(o.spend, t.spend))}</span></td>
       </tr>`).join('');
 
@@ -1679,28 +1708,28 @@
 
       <div class="panel skpi-panel mkpi">
         <div class="skpi">
-          <div class="skpi-n">${int(t.results)}</div><div class="skpi-l">Results</div>
-          <div class="skpi-sub">${show(totalCpr, money)} per result</div>
+          <div class="skpi-n">${money(t.spend)}</div><div class="skpi-l">Total Cost</div>
+          <div class="skpi-sub">${cur} · ${int(t.campaigns)} campaigns</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${compact(t.impressions)}</div><div class="skpi-l">Impressions</div>
-          <div class="skpi-sub">${show(totalCpm, dec)} CPM</div>
+          <div class="skpi-n">${show(totalCpr, money)}</div><div class="skpi-l">Cost / Result</div>
+          <div class="skpi-sub">${int(t.results)} results</div>
+        </div>
+        <div class="skpi ${ctrClass(linkCtr)}">
+          <div class="skpi-n">${show(linkCtr, pct)}</div><div class="skpi-l">Link CTR</div>
+          <div class="skpi-sub">${ctrNote(linkCtr)}</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${compact(t.reach)}</div><div class="skpi-l">Reach</div>
-          <div class="skpi-sub">${show(totalFreq, dec)} frequency</div>
+          <div class="skpi-n">${show(totalCpm, dec)}</div><div class="skpi-l">CPM</div>
+          <div class="skpi-sub">${compact(t.impressions)} impressions</div>
         </div>
-        <div class="skpi">
-          <div class="skpi-n">${int(t.purchases)}</div><div class="skpi-l">Purchases</div>
-          <div class="skpi-sub">across all campaigns</div>
+        <div class="skpi ${freqClass(totalFreq)}">
+          <div class="skpi-n">${show(totalFreq, dec)}</div><div class="skpi-l">Frequency</div>
+          <div class="skpi-sub">${freqNote(totalFreq)}</div>
         </div>
         <div class="skpi">
           <div class="skpi-n">${show(t.dailyBudget, money)}</div><div class="skpi-l">Daily Budget</div>
-          <div class="skpi-sub">${t.dailyBudget == null ? 'no active ad sets' : 'across ' + active + ' active campaign' + (active === 1 ? '' : 's')}</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${show(monthlyRun, money)}</div><div class="skpi-l">At This Rate</div>
-          <div class="skpi-sub">${t.dailyBudget == null ? '—' : 'per 30 days'}</div>
+          <div class="skpi-sub">${t.dailyBudget == null ? 'no active ad sets' : show(monthlyRun, money) + ' / 30 days'}</div>
         </div>
       </div>
 
@@ -1727,10 +1756,10 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Campaign</th><th>Status</th><th>Daily Budget</th><th>Spend</th>
-              <th>Results</th><th>Cost/Result</th>
+              <th>Campaign</th><th>Status</th><th>Daily Budget</th><th>Cost</th>
+              <th>Results</th><th>Cost/Result</th><th>Link CTR</th>
               <th>Impressions</th><th>Reach</th><th>CPM</th><th>Freq</th>
-              <th>Purchases</th><th>% Spend</th>
+              <th>Purchases</th><th>% Cost</th>
             </tr></thead>
             <tbody>${p.campaigns.map((c) => campaignRow(c, t.spend)).join('')}</tbody>
             <tfoot><tr>
@@ -1739,6 +1768,7 @@
               <td class="num">${money(t.spend)}</td>
               <td class="num">${int(t.results)}</td>
               <td class="num">${show(totalCpr, money)}</td>
+              <td class="num">${show(linkCtr, pct)}</td>
               <td class="num">${int(t.impressions)}</td>
               <td class="num">${int(t.reach)}</td>
               <td class="num">${show(totalCpm, dec)}</td>
@@ -1755,9 +1785,9 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Objective</th><th>Campaigns</th><th>Daily Budget</th><th>Spend</th>
-              <th>Impressions</th><th>CPM</th><th>Reach</th><th>Purchases</th>
-              <th>Results</th><th>Cost/Result</th><th>% of Spend</th>
+              <th>Objective</th><th>Campaigns</th><th>Daily Budget</th><th>Cost</th>
+              <th>Results</th><th>Cost/Result</th><th>Link CTR</th>
+              <th>Impressions</th><th>CPM</th><th>Reach</th><th>% of Cost</th>
             </tr></thead>
             <tbody>${objRows}</tbody>
           </table>
@@ -1963,6 +1993,32 @@
   // kept if a figure ever has them, but nothing in the plan currently does.
   const usd = (n) => '$' + (Number.isInteger(Number(n)) ? int(n) : money(n));
 
+  /* ---- benchmark thresholds ----
+     Published 2026 Meta benchmarks, used only to colour a tile and add one
+     line of plain English. They are industry-wide averages, not NomuHub
+     targets, so nothing here changes a number — it only says whether a number
+     is in the range advertisers generally consider healthy.
+       Link CTR : most industries land 2–3%; under 0.5% signals a creative or
+                  targeting problem worth acting on.
+       Frequency: above 4 is the fatigue line, especially alongside a falling
+                  CTR and a rising CPM. */
+  const CTR_HEALTHY = 0.02;
+  const CTR_POOR = 0.005;
+  const FREQ_FATIGUE = 4;
+  const FREQ_WATCH = 3;
+
+  const ctrClass = (v) => (v == null ? '' : v < CTR_POOR ? 'skpi-bad' : v >= CTR_HEALTHY ? 'skpi-good' : 'skpi-watch');
+  const ctrNote = (v) => (v == null ? 'no impressions yet'
+    : v < CTR_POOR ? 'below 0.5% — creative or targeting'
+    : v >= CTR_HEALTHY ? 'healthy (2–3% typical)'
+    : 'under the 2% typical range');
+
+  const freqClass = (v) => (v == null ? '' : v >= FREQ_FATIGUE ? 'skpi-bad' : v >= FREQ_WATCH ? 'skpi-watch' : 'skpi-good');
+  const freqNote = (v) => (v == null ? 'no reach yet'
+    : v >= FREQ_FATIGUE ? 'above 4 — refresh creative'
+    : v >= FREQ_WATCH ? 'approaching fatigue'
+    : 'comfortable');
+
   function renderPlan() {
     const p = mediaPlan;
     if (!p) return;
@@ -1981,16 +2037,21 @@
     const always = p.lines.filter((l) => l.kind !== 'prospecting');
     const maxEst = Math.max(...trips.map((l) => l.resultCount || 0), 1);
 
-    // Grouped by the month each flight starts in — the order the plan runs.
+    // The retargeting and traffic lines run every month, so they belong inside
+    // each month rather than in a block of their own — a month's real outlay is
+    // its trips plus the always-on spend, and that's the number used to plan.
+    const alwaysUsd = always.reduce((sum, l) => sum + l.budgetUsd, 0);
+
     const months = p.byMonth.map((m) => {
       const flights = trips.filter((l) => l.startMonth === m.index);
       if (!flights.length) return '';
+      const tripUsd = flights.reduce((sum, l) => sum + l.budgetUsd, 0);
       return `
         <div class="plan-month">
           <div class="pm-head">
             <span class="pm-name">${esc(MONTH_FULL[m.month] || m.month)}</span>
-            <span class="pm-meta">${flights.length} campaign${flights.length === 1 ? '' : 's'}</span>
-            <span class="pm-total">${usd(flights.reduce((sum, l) => sum + l.budgetUsd, 0))}</span>
+            <span class="pm-meta">${flights.length} trip campaign${flights.length === 1 ? '' : 's'} + ${always.length} always-on</span>
+            <span class="pm-total">${usd(tripUsd + alwaysUsd)}</span>
           </div>
           ${flights.map((l) => `
             <div class="pflight">
@@ -2003,20 +2064,27 @@
               <div class="pf-num">${esc(String(l.costPerResult).replace(' / Message', ''))}</div>
               <div class="pf-num"><b>${usd(l.budgetUsd)}</b></div>
             </div>`).join('')}
+          ${always.map((l) => `
+            <div class="pflight pf-always">
+              <div class="pf-trip">${esc(l.program)} <span class="pf-tag">always-on</span></div>
+              <div class="pf-date">every month</div>
+              <div class="pf-est"><span class="pf-estn">${esc(l.objective)}</span></div>
+              <div class="pf-num">${esc(l.costPerResult === 'Optimize for Purchase' ? '—' : l.costPerResult)}</div>
+              <div class="pf-num"><b>${usd(l.budgetUsd)}</b></div>
+            </div>`).join('')}
+          <div class="pm-foot">
+            <span>${flights.length} trip${flights.length === 1 ? '' : 's'} ${usd(tripUsd)}</span>
+            <span>+ always-on ${usd(alwaysUsd)}</span>
+            <span class="pm-foot-tot">= ${usd(tripUsd + alwaysUsd)} in ${esc(MONTH_FULL[m.month] || m.month)}</span>
+          </div>
         </div>`;
     }).join('');
 
-    const alwaysCards = always.map((l) => `
-      <div class="pa-card">
-        <div class="pa-top">
-          <span class="pa-name">${esc(l.program)}</span>
-          <span class="pa-amt">${usd(l.budgetUsd)}</span>
-        </div>
-        <div class="pa-sub">
-          ${esc(l.dates)} · ${esc(l.objective)}<br>
-          ${esc(l.costPerResult)} · ${esc(l.results)}${l.impressions ? ` · ${int(l.impressions)} est. impressions` : ''}
-        </div>
-      </div>`).join('');
+    // Four months of trips, but always-on recurs in every one of them. The
+    // plan's own headline counts it once; both readings are shown rather than
+    // silently picking whichever is larger.
+    const runMonths = p.byMonth.length;
+    const fullRunUsd = t.prospectingUsd + alwaysUsd * runMonths;
 
     const detailRows = p.lines.map((l) => `
       <tr>
@@ -2067,11 +2135,11 @@
       <div class="panel">
         <div class="ptitle">Campaign schedule</div>
         ${months}
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">Always-on</div>
-        <div class="plan-always">${alwaysCards}</div>
+        <div class="plan-foot" style="margin-top:4px">
+          Every month carries the two always-on lines (${always.map((l) => esc(l.program) + ' ' + usd(l.budgetUsd)).join(' · ')}) on top of that month's trip campaigns.
+          Across all ${runMonths} months that is <b>${usd(fullRunUsd)}</b> in total —
+          the plan's own headline of <b>${usd(t.allUsd)}</b> counts the always-on lines once, as a single month's cost.
+        </div>
       </div>
 
       <div class="panel">
