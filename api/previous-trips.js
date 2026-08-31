@@ -41,6 +41,38 @@ const dayKey = (v) => {
   return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 };
 
+const MONTHS = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+// "Week 2 (05 Jul - 11 Jul)" carries no year, so anchor it to the trip it
+// belongs to. Same logic trips-progress.js uses for the live board — kept in
+// sync there rather than shared, since the two files read different data.
+function weekDates(packageName, trip) {
+  const m = String(packageName || '')
+    .match(/\((\d{1,2})\s*([A-Za-z]{3,})\.?\s*[-–]\s*(\d{1,2})\s*([A-Za-z]{3,})\.?\s*\)/);
+  const tripStart = new Date(trip.start_date);
+  if (!m || Number.isNaN(tripStart.getTime())) {
+    return { start: dayKey(trip.start_date), end: dayKey(trip.end_date) || dayKey(trip.start_date) };
+  }
+  const [, d1, mo1, d2, mo2] = m;
+  const m1 = MONTHS[mo1.slice(0, 3).toLowerCase()];
+  const m2 = MONTHS[mo2.slice(0, 3).toLowerCase()];
+  if (m1 == null || m2 == null) {
+    return { start: dayKey(trip.start_date), end: dayKey(trip.end_date) || dayKey(trip.start_date) };
+  }
+  let year = tripStart.getUTCFullYear();
+  let start = new Date(Date.UTC(year, m1, Number(d1)));
+  if (start.getTime() < tripStart.getTime() - 45 * 864e5) {
+    year += 1;
+    start = new Date(Date.UTC(year, m1, Number(d1)));
+  }
+  let end = new Date(Date.UTC(year, m2, Number(d2)));
+  if (end.getTime() < start.getTime()) end = new Date(Date.UTC(year + 1, m2, Number(d2)));
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
 // Oman is UTC+4 year-round — "has this departed?" is judged on Muscat's
 // calendar day, same as the dashboard and report.
 const OMAN_OFFSET_MS = 4 * 60 * 60 * 1000;
@@ -66,23 +98,63 @@ async function fetchOrders(tripUuid) {
   return orders;
 }
 
-// Just the two totals this view needs — no per-week breakdown, that's the
-// live dashboard's job, not a record of what already happened.
-async function loadTotals(trip) {
+// Packages exist even at zero capacity — that's exactly the signal this file
+// is looking for, so an empty week still needs to come back, not be skipped.
+async function fetchPackages(tripUuid) {
+  return (await apiGet(`/draft_trips/${tripUuid}/packages`)).data || [];
+}
+
+// WeTravel drops an order's package/week once it's cancelled — a cancelled
+// order comes back with an empty packages array, no matter which week it was
+// for. So a cancellation total is trustworthy at the trip level (summed
+// below) but not attributable to one particular week; per-week figures here
+// are booked counts only, never a per-week cancelled count.
+async function loadTripDetail(trip) {
   let orders;
+  let packages;
   try {
-    orders = await fetchOrders(trip.uuid);
+    [orders, packages] = await Promise.all([fetchOrders(trip.uuid), fetchPackages(trip.uuid)]);
   } catch (err) {
-    console.error(`previous-trips: bookings failed for ${trip.uuid}: ${err.message}`);
+    console.error(`previous-trips: fetch failed for ${trip.uuid}: ${err.message}`);
     return null;
   }
+
   let booked = 0;
   let cancelled = 0;
+  const bookedByWeek = new Map();
   for (const order of orders) {
     booked += order.active_count || 0;
     cancelled += order.cancelled_count || 0;
+    for (const pkg of order.packages || []) {
+      const key = tidy(pkg.name);
+      bookedByWeek.set(key, (bookedByWeek.get(key) || 0) + (pkg.quantity || 1));
+    }
   }
-  return { booked, cancelled };
+
+  const weeks = packages
+    .map((pkg) => {
+      const label = tidy(pkg.name);
+      // A capacity of zero is WeTravel's own "unavailable" state for that
+      // week — Muatasam's rule is that a week closed like this, after the
+      // trip already had real bookings against it, reads as cancelled.
+      const capacity = pkg.quantity == null ? null : Number(pkg.quantity);
+      return {
+        label,
+        capacity,
+        unavailable: capacity === 0,
+        booked: bookedByWeek.get(label) || 0,
+        ...weekDates(label, trip),
+      };
+    })
+    .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+
+  // Orders with no package at all (deleted before cancellation, or never
+  // assigned one) aren't lost — surfaced as a leftover rather than silently
+  // dropped, the same way trips-progress.js handles it for live trips.
+  const weeksBooked = weeks.reduce((sum, w) => sum + w.booked, 0);
+  const unallocated = Math.max(0, booked - weeksBooked);
+
+  return { booked, cancelled, weeks, unallocated };
 }
 
 async function build() {
@@ -99,18 +171,23 @@ async function build() {
     return end && end < todayKey;
   });
 
-  const loaded = await mapWithConcurrency(candidates, 4, (trip) => loadTotals(trip));
+  const loaded = await mapWithConcurrency(candidates, 4, (trip) => loadTripDetail(trip));
 
   const trips = [];
   candidates.forEach((trip, i) => {
-    const totals = loaded[i];
+    const detail = loaded[i];
     // No booking record at all isn't a departure the team can review — same
     // rule the live dashboard applies.
-    if (!totals) return;
+    if (!detail) return;
 
     const start = dayKey(trip.start_date);
     const end = dayKey(trip.end_date) || start;
     const d = new Date(`${start}T00:00:00Z`);
+
+    // A single-week trip with no live capacity left has nowhere else for that
+    // signal to show, so the whole row carries it. A multi-week trip keeps
+    // its other weeks visible — only the closed one is flagged.
+    const singleWeekCancelled = detail.weeks.length === 1 && detail.weeks[0].unavailable;
 
     trips.push({
       uuid: trip.uuid,
@@ -121,9 +198,12 @@ async function build() {
       end,
       year: d.getUTCFullYear(),
       month: d.getUTCMonth(), // 0-11, for the month filter
-      booked: totals.booked,
-      cancelled: totals.cancelled,
+      booked: detail.booked,
+      cancelled: detail.cancelled,
       charter: CHARTERS.has(String(trip.uuid)),
+      weeks: detail.weeks,
+      unallocated: detail.unallocated,
+      cancelledTrip: singleWeekCancelled,
     });
   });
 

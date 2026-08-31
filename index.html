@@ -645,6 +645,34 @@
     .pt-dates { grid-column: 1 / -1; text-align: left; }
   }
 
+  .pt-row.pt-cancelled-row {
+    background: rgba(224,72,61,.07); border-radius: 6px; margin: 0 -6px; padding-left: 8px; padding-right: 8px;
+  }
+  .pt-row.pt-cancelled-row .pt-name { color: #ffb3ab; }
+  .pt-tag {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+    background: rgba(224,72,61,.18); color: #ff9d92;
+    font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .pt-toggle {
+    background: none; border: 0; color: var(--info); font: inherit; font-size: 11px;
+    cursor: pointer; padding: 2px 0; display: flex; align-items: center; gap: 4px;
+  }
+  .pt-toggle:hover { color: #fff; }
+  .pt-toggle .pt-ar { font-size: 9px; transition: transform .15s; }
+  .pt-toggle[aria-expanded="true"] .pt-ar { transform: rotate(90deg); }
+  .pt-weeks { margin: 6px 0 4px 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--line); }
+  .pt-wrow {
+    display: grid; grid-template-columns: minmax(0,1fr) 90px; gap: 10px; align-items: center;
+    padding: 5px 8px; font-size: 11.5px; border-radius: 5px;
+  }
+  .pt-wrow.pt-cancelled-row { background: rgba(224,72,61,.09); }
+  .pt-wlabel { color: var(--text-2); }
+  .pt-wrow.pt-cancelled-row .pt-wlabel { color: #ffb3ab; }
+  .pt-wnum { text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .pt-wnum b { color: #fff; }
+  .pt-unalloc { font-size: 10.5px; color: var(--text-3); padding: 4px 8px; }
+
   /* ---------- SA media plan ----------
      A plan is read as a schedule, so it's laid out as one: month, then the
      flights inside it. Deliberately plainer than the live tabs — there's no
@@ -2777,6 +2805,7 @@
   let previousTrips = null;
   let ptYear = 'all';
   let ptMonth = 'all';
+  const ptOpenTrips = new Set();
 
   const PT_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
@@ -2825,16 +2854,37 @@
               <span class="cancel">Cancelled <b>${int(yCancelled)}</b></span>
             </div>
           </div>
-          ${rows.map((t) => `
-            <div class="pt-row">
+          ${rows.map((t) => {
+            const weeks = t.weeks || [];
+            const multi = weeks.length > 1;
+            const cancelled = !!t.cancelledTrip;
+            const open = ptOpenTrips.has(t.uuid);
+            const weeksList = multi ? `
+              <button class="pt-toggle" data-toggle="${esc(t.uuid)}" aria-expanded="${open}">
+                <span class="pt-ar">›</span>${weeks.length} weeks
+              </button>
+              ${open ? `
+                <div class="pt-weeks">
+                  ${weeks.map((w) => `
+                    <div class="pt-wrow${w.unavailable ? ' pt-cancelled-row' : ''}">
+                      <div class="pt-wlabel">${esc(w.label)}${w.unavailable ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
+                      <div class="pt-wnum">Booked <b>${int(w.booked)}</b></div>
+                    </div>`).join('')}
+                  ${t.unallocated ? `<div class="pt-unalloc">+${int(t.unallocated)} booked, week not specified</div>` : ''}
+                </div>` : ''}` : '';
+
+            return `
+            <div class="pt-row${cancelled ? ' pt-cancelled-row' : ''}">
               <div>
-                <div class="pt-name">${esc(t.name)}${t.charter ? '<span class="pt-charter">Charter</span>' : ''}</div>
+                <div class="pt-name">${esc(t.name)}${t.charter ? '<span class="pt-charter">Charter</span>' : ''}${cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
                 <div class="pt-dest">${esc(t.destination || '—')}</div>
+                ${weeksList}
               </div>
               <div class="pt-dates">${esc(ptDate(t.start))}${t.end && t.end !== t.start ? ' – ' + esc(ptDate(t.end)) : ''}</div>
               <div class="pt-num">Booked<br><b>${int(t.booked)}</b></div>
               <div class="pt-num pt-cancel">Cancelled<br><b>${int(t.cancelled)}</b></div>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
         </div>`;
     }).join('');
 
@@ -2865,6 +2915,13 @@
 
     $('ptYearSel').addEventListener('change', (e) => { ptYear = e.target.value; renderPreviousTrips(); saveViewState(); });
     $('ptMonthSel').addEventListener('change', (e) => { ptMonth = e.target.value; renderPreviousTrips(); saveViewState(); });
+    $('previousWrap').querySelectorAll('[data-toggle]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const uuid = b.dataset.toggle;
+        if (ptOpenTrips.has(uuid)) ptOpenTrips.delete(uuid); else ptOpenTrips.add(uuid);
+        renderPreviousTrips();
+      });
+    });
   }
 
   async function loadPreviousTrips(force) {
