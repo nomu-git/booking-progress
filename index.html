@@ -624,6 +624,21 @@
   .pt-ynums b { color: #fff; }
   .pt-ynums .cancel b { color: var(--danger); }
 
+  /* Month is the sub-level inside a year — smaller type, an indent, and a
+     lighter rule than the year header it sits under, so the hierarchy reads
+     at a glance rather than needing the numbers to prove which is which. */
+  .pt-month { margin: 0 0 16px 4px; }
+  .pt-month:last-child { margin-bottom: 0; }
+  .pt-mhead {
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+    padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px dashed rgba(134,152,180,.25);
+  }
+  .pt-mname { font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; }
+  .pt-mmeta { font-size: 10.5px; color: var(--text-3); }
+  .pt-mnums { margin-left: auto; display: flex; gap: 14px; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-3); }
+  .pt-mnums b { color: var(--text-2); }
+  .pt-mnums .cancel b { color: var(--danger); }
+
   .pt-row {
     display: grid; grid-template-columns: minmax(0,1.7fr) 128px 96px 96px;
     gap: 12px; align-items: center; padding: 8px 2px; font-size: 12.5px;
@@ -2816,6 +2831,45 @@
     return Number.isNaN(d.getTime()) ? '' : `${d.getUTCDate()} ${PT_MONTHS_SHORT[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   };
 
+  function ptGroupTotals(rows) {
+    return {
+      booked: rows.reduce((sum, t) => sum + t.booked, 0),
+      cancelled: rows.reduce((sum, t) => sum + t.cancelled, 0),
+    };
+  }
+
+  function ptTripRow(t) {
+    const weeks = t.weeks || [];
+    const multi = weeks.length > 1;
+    const cancelled = !!t.cancelledTrip;
+    const open = ptOpenTrips.has(t.uuid);
+    const weeksList = multi ? `
+      <button class="pt-toggle" data-toggle="${esc(t.uuid)}" aria-expanded="${open}">
+        <span class="pt-ar">›</span>${weeks.length} weeks
+      </button>
+      ${open ? `
+        <div class="pt-weeks">
+          ${weeks.map((w) => `
+            <div class="pt-wrow${w.unavailable ? ' pt-cancelled-row' : ''}">
+              <div class="pt-wlabel">${esc(w.label)}${w.unavailable ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
+              <div class="pt-wnum">Booked <b>${int(w.booked)}</b></div>
+            </div>`).join('')}
+          ${t.unallocated ? `<div class="pt-unalloc">+${int(t.unallocated)} booked, week not specified</div>` : ''}
+        </div>` : ''}` : '';
+
+    return `
+    <div class="pt-row${cancelled ? ' pt-cancelled-row' : ''}">
+      <div>
+        <div class="pt-name">${esc(t.name)}${t.charter ? '<span class="pt-charter">Charter</span>' : ''}${cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
+        <div class="pt-dest">${esc(t.destination || '—')}</div>
+        ${weeksList}
+      </div>
+      <div class="pt-dates">${esc(ptDate(t.start))}${t.end && t.end !== t.start ? ' – ' + esc(ptDate(t.end)) : ''}</div>
+      <div class="pt-num">Booked<br><b>${int(t.booked)}</b></div>
+      <div class="pt-num pt-cancel">Cancelled<br><b>${int(t.cancelled)}</b></div>
+    </div>`;
+  }
+
   function renderPreviousTrips() {
     const p = previousTrips;
     if (!p) return;
@@ -2832,7 +2886,10 @@
     const totalCancelled = filtered.reduce((sum, t) => sum + t.cancelled, 0);
 
     // Grouped by year, most recent year first — trips within a year are
-    // already sorted most-recent-first from the API.
+    // already sorted most-recent-first from the API. A specific month is
+    // already the whole point of the month filter, so the month sub-header
+    // only earns its place when "All months" could mix several together.
+    const showMonths = ptMonth === 'all';
     const byYear = new Map();
     for (const t of filtered) {
       if (!byYear.has(t.year)) byYear.set(t.year, []);
@@ -2842,49 +2899,49 @@
 
     const yearBlocks = years.map((year) => {
       const rows = byYear.get(year);
-      const yBooked = rows.reduce((sum, t) => sum + t.booked, 0);
-      const yCancelled = rows.reduce((sum, t) => sum + t.cancelled, 0);
+      const yTotals = ptGroupTotals(rows);
+
+      let body;
+      if (showMonths) {
+        const byMonth = new Map();
+        for (const t of rows) {
+          if (!byMonth.has(t.month)) byMonth.set(t.month, []);
+          byMonth.get(t.month).push(t);
+        }
+        // Rows arrive already sorted most-recent-first, so months only need
+        // a distinct-and-descending pass, not a second re-sort by date.
+        const months = [...byMonth.keys()].sort((a, b) => b - a);
+        body = months.map((month) => {
+          const mRows = byMonth.get(month);
+          const mTotals = ptGroupTotals(mRows);
+          return `
+            <div class="pt-month">
+              <div class="pt-mhead">
+                <span class="pt-mname">${esc(PT_MONTHS[month])}</span>
+                <span class="pt-mmeta">${mRows.length} trip${mRows.length === 1 ? '' : 's'}</span>
+                <div class="pt-mnums">
+                  <span>Booked <b>${int(mTotals.booked)}</b></span>
+                  <span class="cancel">Cancelled <b>${int(mTotals.cancelled)}</b></span>
+                </div>
+              </div>
+              ${mRows.map(ptTripRow).join('')}
+            </div>`;
+        }).join('');
+      } else {
+        body = rows.map(ptTripRow).join('');
+      }
+
       return `
         <div class="pt-year">
           <div class="pt-yhead">
             <span class="pt-yname">${year}</span>
             <span class="pt-ymeta">${rows.length} trip${rows.length === 1 ? '' : 's'}</span>
             <div class="pt-ynums">
-              <span>Booked <b>${int(yBooked)}</b></span>
-              <span class="cancel">Cancelled <b>${int(yCancelled)}</b></span>
+              <span>Booked <b>${int(yTotals.booked)}</b></span>
+              <span class="cancel">Cancelled <b>${int(yTotals.cancelled)}</b></span>
             </div>
           </div>
-          ${rows.map((t) => {
-            const weeks = t.weeks || [];
-            const multi = weeks.length > 1;
-            const cancelled = !!t.cancelledTrip;
-            const open = ptOpenTrips.has(t.uuid);
-            const weeksList = multi ? `
-              <button class="pt-toggle" data-toggle="${esc(t.uuid)}" aria-expanded="${open}">
-                <span class="pt-ar">›</span>${weeks.length} weeks
-              </button>
-              ${open ? `
-                <div class="pt-weeks">
-                  ${weeks.map((w) => `
-                    <div class="pt-wrow${w.unavailable ? ' pt-cancelled-row' : ''}">
-                      <div class="pt-wlabel">${esc(w.label)}${w.unavailable ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
-                      <div class="pt-wnum">Booked <b>${int(w.booked)}</b></div>
-                    </div>`).join('')}
-                  ${t.unallocated ? `<div class="pt-unalloc">+${int(t.unallocated)} booked, week not specified</div>` : ''}
-                </div>` : ''}` : '';
-
-            return `
-            <div class="pt-row${cancelled ? ' pt-cancelled-row' : ''}">
-              <div>
-                <div class="pt-name">${esc(t.name)}${t.charter ? '<span class="pt-charter">Charter</span>' : ''}${cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
-                <div class="pt-dest">${esc(t.destination || '—')}</div>
-                ${weeksList}
-              </div>
-              <div class="pt-dates">${esc(ptDate(t.start))}${t.end && t.end !== t.start ? ' – ' + esc(ptDate(t.end)) : ''}</div>
-              <div class="pt-num">Booked<br><b>${int(t.booked)}</b></div>
-              <div class="pt-num pt-cancel">Cancelled<br><b>${int(t.cancelled)}</b></div>
-            </div>`;
-          }).join('')}
+          ${body}
         </div>`;
     }).join('');
 
