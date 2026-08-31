@@ -184,10 +184,11 @@ async function build() {
     const end = dayKey(trip.end_date) || start;
     const d = new Date(`${start}T00:00:00Z`);
 
-    // A single-week trip with no live capacity left has nowhere else for that
-    // signal to show, so the whole row carries it. A multi-week trip keeps
-    // its other weeks visible — only the closed one is flagged.
-    const singleWeekCancelled = detail.weeks.length === 1 && detail.weeks[0].unavailable;
+    // A trip with no live capacity left in ANY of its weeks reads as fully
+    // cancelled, not just each week individually — whether it's one week or
+    // several. A multi-week trip with at least one week still open keeps
+    // showing normally; only the closed weeks are flagged inside it.
+    const allWeeksCancelled = detail.weeks.length > 0 && detail.weeks.every((w) => w.unavailable);
 
     trips.push({
       uuid: trip.uuid,
@@ -203,7 +204,7 @@ async function build() {
       charter: CHARTERS.has(String(trip.uuid)),
       weeks: detail.weeks,
       unallocated: detail.unallocated,
-      cancelledTrip: singleWeekCancelled,
+      cancelledTrip: allWeeksCancelled,
     });
   });
 
