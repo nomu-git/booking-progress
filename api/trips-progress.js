@@ -188,6 +188,12 @@ async function loadTrip(trip) {
 
 async function build() {
   const todayKey = omanToday();
+  // The board is kept month by month: a departure stays up for the whole of
+  // its own month and only moves to Previous Trips once that month has
+  // passed. Dropping a week the day it left meant a trip under way vanished
+  // mid-month, which is what the team asked to stop.
+  const monthStart = `${todayKey.slice(0, 7)}-01`;
+  const thisMonth = todayKey.slice(0, 7);
   const allTrips = await listAllTrips();
   const warnings = [];
 
@@ -196,7 +202,10 @@ async function build() {
       if (EXCLUDED.has(String(trip.uuid))) return false;
       const start = dayKey(trip.start_date);
       const end = dayKey(trip.end_date) || start;
-      return start && end >= todayKey && start <= SEASON_END;
+      // Anything finishing before this month began belongs to Previous Trips.
+      // A trip that started earlier but still has weeks in this month is kept,
+      // and the per-week filter below decides which of those weeks show.
+      return start && end >= monthStart && start <= SEASON_END;
     })
     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
@@ -216,12 +225,14 @@ async function build() {
       return;
     }
 
-    // A departure disappears the day it leaves — once its start date arrives in
-    // Oman, there's no booking progress left to chase, so it drops off rather
-    // than lingering while the trip is under way. Applied per week, so a
-    // multi-week trip keeps showing the weeks that haven't departed yet.
+    // A week stays on the board while it is still to come or still running,
+    // and then for the rest of the month it belongs to — so a departure that
+    // has begun is never pulled out from under the team mid-month. It leaves
+    // the board when its month does. Applied per week, so a multi-week trip
+    // sheds last month's weeks while keeping this month's.
     const weeks = data.weeks
-      .filter((w) => w.start && w.start > todayKey && w.start <= SEASON_END)
+      .filter((w) => w.start && w.start <= SEASON_END
+        && (w.end >= todayKey || w.start.slice(0, 7) === thisMonth))
       .map((w) => ({
         id: w.id,
         label: w.label,

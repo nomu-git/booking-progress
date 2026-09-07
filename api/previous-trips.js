@@ -159,16 +159,20 @@ async function loadTripDetail(trip) {
 
 async function build() {
   const todayKey = omanToday();
+  // Previous starts where the Dashboard stops. The board keeps a departure
+  // for the whole of its own month, so a trip becomes "previous" only once
+  // that month has passed — the two filters are exact complements, so no
+  // trip is ever in both views or missing from both.
+  const monthStart = `${todayKey.slice(0, 7)}-01`;
   const allTrips = await listAllTrips();
 
-  // Departed = end date (or start, if no end) already in the past. Undated
-  // records have nothing to sort or filter by, so they're left out rather
-  // than guessed into a bucket.
+  // Undated records have nothing to sort or filter by, so they're left out
+  // rather than guessed into a bucket.
   const candidates = allTrips.filter((trip) => {
     if (EXCLUDED.has(String(trip.uuid))) return false;
     const start = dayKey(trip.start_date);
     const end = dayKey(trip.end_date) || start;
-    return end && end < todayKey;
+    return end && end < monthStart;
   });
 
   const loaded = await mapWithConcurrency(candidates, 4, (trip) => loadTripDetail(trip));
