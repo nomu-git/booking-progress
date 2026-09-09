@@ -106,7 +106,10 @@ async function loadAccount(accountId, since, until, recentSince) {
       level: 'campaign',
       time_range: timeRange,
       time_increment: 'monthly',
-      fields: 'campaign_id,spend,impressions,date_start',
+      // actions/inline_link_clicks/objective added so this one call can also
+      // feed the per-month budget-vs-actual adjuster — otherwise it would
+      // need a second Graph call to get results per calendar month.
+      fields: 'campaign_id,campaign_name,objective,spend,impressions,actions,inline_link_clicks,date_start',
     }).catch(() => []),
     // Daily rows for the recent window, bucketed into weeks below. Daily
     // rather than time_increment:7 so the week boundary is ours to choose and
@@ -447,95 +450,154 @@ async function build() {
   }
   if (totals.dailyBudget) targets.weeklyCost = totals.dailyBudget * 7;
 
-  /* ---------------- budget vs actual, this month ----------------
+  /* ---------------- budget vs actual, per period ----------------
      Budgets on these accounts are daily amounts on ad sets, so the only
-     honest window to compare them against is a single month: a monthly
-     allocation is the daily figure times the days in the month, and it is
-     compared with what was actually spent inside that same month. Pairing a
-     monthly allocation with a year of spend would be meaningless. */
-  const monthKey = todayIso.slice(0, 7);
-  const monthYear = Number(monthKey.slice(0, 4));
-  const monthIndex = Number(monthKey.slice(5, 7));
-  const daysInMonth = new Date(Date.UTC(monthYear, monthIndex, 0)).getUTCDate();
-  const daysElapsed = Number(todayIso.slice(8, 10));
+     honest window to compare them against is a bounded period: an allocation
+     is the daily figure times the days in that period, compared with what
+     was actually spent inside it. Pairing a period's allocation with a year
+     of spend would be meaningless.
 
-  // Month-to-date actuals per campaign, from the same daily rows the weekly
-  // view uses — no extra Graph call.
-  const mtdByCampaign = new Map();
+     Two kinds of period, built by the same function so they always agree on
+     what a column means:
+       - calendar months, from the year-long monthly insights call (already
+         fetched for the YTD chart, extended with actions/link-clicks so one
+         Graph call now serves both)
+       - a rolling last-14-days window, from the same daily rows the weekly
+         trend uses, for a default that isn't thin on the 1st of a month */
+  const perResult = targets.costPerResult || null;
+
+  function buildPeriod({ key, label, daysInPeriod, daysElapsed, totalsByCampaign }) {
+    const rows = campaigns.map((c) => {
+      const t = totalsByCampaign.get(c.id) || { spend: 0, results: 0, impressions: 0, linkClicks: 0 };
+      // Only a live daily budget represents money still allocated. A paused
+      // campaign has no allocation to compare against, so it reports none
+      // rather than a zero that would read as "budget exhausted" — and past
+      // periods necessarily use today's budget as a stand-in, since Meta
+      // doesn't expose a history of daily-budget changes.
+      const daily = c.status === 'Active' ? c.dailyBudget : null;
+      const allocated = daily ? daily * daysInPeriod : null;
+      const expectedToDate = daily ? daily * daysElapsed : null;
+      const targetResults = allocated && perResult ? allocated / perResult : null;
+      return {
+        id: c.id,
+        name: c.name,
+        status: c.status,
+        objective: c.objective,
+        dailyBudget: daily,
+        allocated,
+        expectedToDate,
+        spend: t.spend,
+        results: t.results,
+        impressions: t.impressions,
+        linkClicks: t.linkClicks,
+        remaining: allocated == null ? null : allocated - t.spend,
+        usedPct: allocated ? t.spend / allocated : null,
+        // Against pace, not against the whole period — a campaign seven days
+        // into a thirty-day month is not "5% spent", it is on or off pace.
+        pacePct: expectedToDate ? t.spend / expectedToDate : null,
+        targetResults,
+        performance: targetResults ? t.results / targetResults : null,
+        costPerResult: t.results ? t.spend / t.results : null,
+      };
+    })
+      // Anything with neither an allocation nor spend in this period isn't
+      // part of its picture at all.
+      .filter((r) => r.allocated != null || r.spend > 0)
+      .sort((a, b) => (b.allocated || 0) - (a.allocated || 0) || b.spend - a.spend);
+
+    const sum = (field) => rows.reduce((total, r) => total + (r[field] || 0), 0);
+    return {
+      key,
+      label,
+      daysInPeriod,
+      daysElapsed,
+      periodProgress: daysInPeriod ? daysElapsed / daysInPeriod : null,
+      costPerResultTarget: perResult,
+      allocated: sum('allocated') || null,
+      expectedToDate: sum('expectedToDate') || null,
+      spend: sum('spend'),
+      results: sum('results'),
+      targetResults: sum('targetResults') || null,
+      campaigns: rows,
+    };
+  }
+
+  const resultsFor = (label, actions) => (label === 'Reach'
+    ? 0
+    : (RESULT_ACTIONS[label] ? actionValue(actions, RESULT_ACTIONS[label]) : customConversionValue(actions)));
+
+  // Last 14 days, from the daily rows already fetched for the weekly trend —
+  // no extra Graph call. A rolling window has nothing "partial" about it, so
+  // unlike a calendar month it's always fully elapsed.
+  const last14Since = new Date(Date.now() - 13 * 864e5).toISOString().slice(0, 10);
+  const last14ByCampaign = new Map();
   for (const { daily, account } of loaded) {
     for (const row of daily || []) {
-      if (String(row.date_start || '').slice(0, 7) !== monthKey) continue;
+      const day = String(row.date_start || '').slice(0, 10);
+      if (day < last14Since || day > todayIso) continue;
       const spend = toReportCurrency(row.spend, account.currency);
       const label = OBJECTIVE_LABEL[row.objective] || 'Custom Conversion';
-      const results = label === 'Reach'
-        ? 0
-        : (RESULT_ACTIONS[label]
-          ? actionValue(row.actions, RESULT_ACTIONS[label])
-          : customConversionValue(row.actions));
-      if (!mtdByCampaign.has(row.campaign_id)) {
-        mtdByCampaign.set(row.campaign_id, { spend: 0, results: 0, impressions: 0, linkClicks: 0 });
+      if (!last14ByCampaign.has(row.campaign_id)) {
+        last14ByCampaign.set(row.campaign_id, { spend: 0, results: 0, impressions: 0, linkClicks: 0 });
       }
-      const m = mtdByCampaign.get(row.campaign_id);
+      const m = last14ByCampaign.get(row.campaign_id);
       m.spend += spend;
-      m.results += results;
+      m.results += resultsFor(label, row.actions);
       m.impressions += num(row.impressions);
       m.linkClicks += num(row.inline_link_clicks);
     }
   }
 
-  const perResult = targets.costPerResult || null;
+  // Calendar months, from the year-long monthly insights call — covers
+  // January through the current month, per campaign.
+  const monthlyByCampaign = new Map(); // monthKey -> Map(campaignId -> totals)
+  for (const { monthly, account } of loaded) {
+    for (const row of monthly) {
+      const mk = String(row.date_start || '').slice(0, 7);
+      if (!/^\d{4}-\d{2}$/.test(mk)) continue;
+      const spend = toReportCurrency(row.spend, account.currency);
+      const label = OBJECTIVE_LABEL[row.objective] || 'Custom Conversion';
+      if (!monthlyByCampaign.has(mk)) monthlyByCampaign.set(mk, new Map());
+      const byC = monthlyByCampaign.get(mk);
+      if (!byC.has(row.campaign_id)) byC.set(row.campaign_id, { spend: 0, results: 0, impressions: 0, linkClicks: 0 });
+      const m = byC.get(row.campaign_id);
+      m.spend += spend;
+      m.results += resultsFor(label, row.actions);
+      m.impressions += num(row.impressions);
+      m.linkClicks += num(row.inline_link_clicks);
+    }
+  }
 
-  const budgetRows = campaigns.map((c) => {
-    const mtd = mtdByCampaign.get(c.id) || { spend: 0, results: 0, impressions: 0, linkClicks: 0 };
-    // Only a live daily budget represents money still allocated. A paused
-    // campaign has no allocation to compare against, so it reports none
-    // rather than a zero that would read as "budget exhausted".
-    const daily = c.status === 'Active' ? c.dailyBudget : null;
-    const allocated = daily ? daily * daysInMonth : null;
-    const expectedToDate = daily ? daily * daysElapsed : null;
-    // What the plan's own efficiency says this allocation should return.
-    const targetResults = allocated && perResult ? allocated / perResult : null;
-    return {
-      id: c.id,
-      name: c.name,
-      status: c.status,
-      objective: c.objective,
-      dailyBudget: daily,
-      allocated,
-      expectedToDate,
-      spend: mtd.spend,
-      results: mtd.results,
-      impressions: mtd.impressions,
-      linkClicks: mtd.linkClicks,
-      remaining: allocated == null ? null : allocated - mtd.spend,
-      usedPct: allocated ? mtd.spend / allocated : null,
-      // Against pace, not against the whole month — a campaign seven days
-      // into a thirty-day month is not "5% spent", it is on or off pace.
-      pacePct: expectedToDate ? mtd.spend / expectedToDate : null,
-      targetResults,
-      performance: targetResults ? mtd.results / targetResults : null,
-      costPerResult: mtd.results ? mtd.spend / mtd.results : null,
-    };
-  })
-    // Anything with neither an allocation nor spend this month is not part of
-    // this month's picture at all.
-    .filter((r) => r.allocated != null || r.spend > 0)
-    .sort((a, b) => (b.allocated || 0) - (a.allocated || 0) || b.spend - a.spend);
+  const todayMonthKey = todayIso.slice(0, 7);
+  const monthPeriods = [...monthlyByCampaign.keys()].sort((a, b) => b.localeCompare(a)).map((mk) => {
+    const y = Number(mk.slice(0, 4));
+    const mIdx = Number(mk.slice(5, 7));
+    const daysInPeriod = new Date(Date.UTC(y, mIdx, 0)).getUTCDate();
+    const daysElapsed = mk === todayMonthKey ? Number(todayIso.slice(8, 10)) : daysInPeriod;
+    const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    return buildPeriod({
+      key: mk,
+      label: `${MONTH_FULL[mIdx - 1]} ${y}`,
+      daysInPeriod,
+      daysElapsed,
+      totalsByCampaign: monthlyByCampaign.get(mk),
+    });
+  });
 
-  const bSum = (key) => budgetRows.reduce((total, r) => total + (r[key] || 0), 0);
-  const budget = {
-    month: monthKey,
-    daysInMonth,
-    daysElapsed,
-    monthProgress: daysElapsed / daysInMonth,
-    costPerResultTarget: perResult,
-    allocated: bSum('allocated') || null,
-    expectedToDate: bSum('expectedToDate') || null,
-    spend: bSum('spend'),
-    results: bSum('results'),
-    targetResults: bSum('targetResults') || null,
-    campaigns: budgetRows,
-  };
+  const last14Period = buildPeriod({
+    key: 'last14',
+    label: 'Last 14 days',
+    daysInPeriod: 14,
+    daysElapsed: 14,
+    totalsByCampaign: last14ByCampaign,
+  });
+
+  // "Last 14 days" leads — a fresh calendar month is thin on data for days,
+  // and this is the one view that's never thin. The month picker covers the
+  // rest.
+  const budgetPeriods = [last14Period, ...monthPeriods];
+  const budget = last14Period;
 
   const weekly = {
     days: WEEKLY_DAYS,
@@ -580,6 +642,7 @@ async function build() {
     totals,
     months,
     budget,
+    budgetPeriods,
     weekly,
     byObjective,
     campaigns,

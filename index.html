@@ -484,6 +484,8 @@
      The one comparison this tab exists to make, so it gets the top of the
      page and reads as two figures side by side rather than two numbers the
      reader has to divide in their head. */
+  .bphead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .bphead .fselect { margin-left: auto; }
   .bvhero { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
   .bv-side { min-width: 130px; }
   .bv-lab { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
@@ -1016,7 +1018,7 @@
   function saveViewState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        view, rGran, rCount, selectedWeekStart, selectedMonthStart, mainMetric, ptYear, ptMonth,
+        view, rGran, rCount, selectedWeekStart, selectedMonthStart, mainMetric, budgetPeriod, ptYear, ptMonth,
       }));
     } catch (e) { /* storage unavailable (private mode, etc.) — just skip persisting */ }
   }
@@ -1032,6 +1034,7 @@
       if (s.ptYear) ptYear = s.ptYear;
       if (s.ptMonth) ptMonth = s.ptMonth;
       if (s.mainMetric && METRICS[s.mainMetric]) mainMetric = s.mainMetric;
+      if (s.budgetPeriod) budgetPeriod = s.budgetPeriod;
       if (s.rGran) rGran = s.rGran;
       if (s.rCount) rCount = s.rCount;
       if (s.selectedWeekStart) selectedWeekStart = s.selectedWeekStart;
@@ -1929,6 +1932,10 @@
   /* ---------------- the one weekly chart ---------------- */
 
   let mainMetric = 'cpr';
+  // Which budget period the Campaigns tab is showing. Last 14 days by
+  // default: a calendar month is thin on data for its first days, and this
+  // window never is.
+  let budgetPeriod = 'last14';
 
   // Each metric knows how to read itself off a week, how to print itself, which
   // direction is good, and what its reference level is. The chart itself is
@@ -2230,22 +2237,25 @@
 
     const t = p.totals;
     const cur = esc(p.currency);
-    const b = p.budget || {};
-    const rows = b.campaigns || [];
     const flagged = p.noResultCampaigns || [];
 
-    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthName = b.month
-      ? `${MONTH_NAMES[Number(b.month.slice(5, 7)) - 1]} ${b.month.slice(0, 4)}`
-      : '';
+    // Every period arrives in one payload, so switching between them is
+    // instant and needs no refetch. Last 14 days leads; if a stored choice
+    // points at a month that has since rolled out of range, fall back to it.
+    const periods = p.budgetPeriods && p.budgetPeriods.length
+      ? p.budgetPeriods
+      : (p.budget ? [p.budget] : []);
+    const b = periods.find((x) => x.key === budgetPeriod) || periods[0] || {};
+    const rows = b.campaigns || [];
+    const periodName = b.label || '';
+    const rolling = b.key === 'last14';
 
     const used = ratio(b.spend, b.allocated);
     const pace = ratio(b.spend, b.expectedToDate);
     const resultPerf = ratio(b.results, b.targetResults);
     const remaining = b.allocated == null ? null : b.allocated - b.spend;
 
-    // On pace means spending roughly in step with the month. Being under is
+    // On pace means spending roughly in step with the period. Being under is
     // not automatically good and over is not automatically bad, so the words
     // say which it is and leave the judgement to the reader.
     const paceState = pace == null ? null
@@ -2322,12 +2332,17 @@
       </div>` : ''}
 
       <div class="panel">
-        <div class="ptitle">Budget vs actual · ${esc(monthName)}</div>
+        <div class="bphead">
+          <div class="ptitle" style="margin:0">Budget vs actual · ${esc(periodName)}</div>
+          <select class="fselect" id="budgetPeriodSel">
+            ${periods.map((x) => `<option value="${attr(x.key)}"${x.key === b.key ? ' selected' : ''}>${esc(x.label)}</option>`).join('')}
+          </select>
+        </div>
         <div class="bvhero">
           <div class="bv-side">
             <div class="bv-lab">Allocated</div>
             <div class="bv-n">${show(b.allocated, money)}</div>
-            <div class="bv-s">${cur} · ${b.daysInMonth || 0} days</div>
+            <div class="bv-s">${cur} · ${b.daysInPeriod || 0} days</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
@@ -2338,25 +2353,35 @@
           <div class="bv-side">
             <div class="bv-lab">Remaining</div>
             <div class="bv-n">${show(remaining, money)}</div>
-            <div class="bv-s">${b.daysInMonth ? (b.daysInMonth - b.daysElapsed) + ' days left' : ''}</div>
+            <div class="bv-s">${rolling ? 'rolling window'
+              : !b.daysInPeriod ? ''
+              : b.daysInPeriod > b.daysElapsed ? (b.daysInPeriod - b.daysElapsed) + ' days left'
+              : 'month complete'}</div>
           </div>
         </div>
 
         <div class="bvbar">
           <div class="bvbar-track">
             <div class="bvbar-fill" style="width:${Math.min(100, (used || 0) * 100).toFixed(1)}%"></div>
-            ${b.monthProgress != null ? `<div class="bvbar-now" style="left:${(b.monthProgress * 100).toFixed(1)}%"></div>` : ''}
+            ${!rolling && b.periodProgress != null && b.periodProgress < 1 ? `<div class="bvbar-now" style="left:${(b.periodProgress * 100).toFixed(1)}%"></div>` : ''}
           </div>
           <div class="bvbar-legend">
-            <span>${show(used, pct)} of the month's budget spent</span>
-            <span class="bvbar-mark">│ ${pct(b.monthProgress)} of the month elapsed (day ${b.daysElapsed} of ${b.daysInMonth})</span>
+            <span>${show(used, pct)} of the ${rolling ? 'window\u2019s' : 'month\u2019s'} budget spent</span>
+            ${rolling
+              ? `<span class="bvbar-mark">│ the last ${b.daysInPeriod} days, up to today</span>`
+              : (b.periodProgress != null && b.periodProgress < 1
+                ? `<span class="bvbar-mark">│ ${pct(b.periodProgress)} of the month elapsed (day ${b.daysElapsed} of ${b.daysInPeriod})</span>`
+                : '<span class="bvbar-mark">│ full month</span>')}
           </div>
         </div>
 
         ${paceState ? `<div class="verdict v-${paceState}" style="margin-top:14px">
           <span class="v-ico">${STATE_ICON[paceState === 'bad' ? 'act' : paceState]}</span>
           <span class="v-word">${esc(paceWord)}</span>
-          <span class="v-text">Spending ${money(b.spend)} against ${money(b.expectedToDate)} expected by day ${b.daysElapsed}.</span>
+          <span class="v-text">Spending ${money(b.spend)} against ${money(b.expectedToDate)} expected ${
+            rolling ? `across the last ${b.daysInPeriod} days`
+            : b.daysInPeriod > b.daysElapsed ? `by day ${b.daysElapsed}`
+            : 'across the whole month'}.</span>
         </div>` : ''}
       </div>
 
@@ -2384,7 +2409,7 @@
       </div>
 
       <div class="panel">
-        <div class="ptitle">Budget vs actual by campaign · ${esc(monthName)}</div>
+        <div class="ptitle">Budget vs actual by campaign · ${esc(periodName)}</div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
@@ -2407,8 +2432,12 @@
           </table>
         </div>
         <div class="plan-foot" style="margin-top:12px">
-          <b>Budget</b> is the live daily amount on each campaign's active ad sets, times the ${b.daysInMonth || 0} days in ${esc(monthName)}.
-          <b>Pace</b> compares spend against what should have gone out by day ${b.daysElapsed}, so a campaign early in the month isn't read as underspending.
+          <b>Budget</b> is the live daily amount on each campaign's active ad sets, times the ${b.daysInPeriod || 0} days in ${esc(periodName)}.
+          Past months use today's daily budget as a stand-in, since Meta doesn't expose a history of budget changes.
+          <b>Pace</b> compares spend against what should have gone out ${
+            rolling ? 'over the window'
+            : b.daysInPeriod > b.daysElapsed ? `by day ${b.daysElapsed}`
+            : 'across the whole month'}, so a campaign early in the month isn't read as underspending.
           <b>Target</b> is what that budget should return at the plan's ${b.costPerResultTarget ? money(b.costPerResultTarget) + ' per result' : 'planned efficiency'} — paused campaigns carry no allocation, so they show none.
         </div>
       </div>
@@ -2429,6 +2458,15 @@
         renderCampaigns();
         saveViewState();
       }));
+    }
+
+    const psel = $('budgetPeriodSel');
+    if (psel) {
+      psel.addEventListener('change', (e) => {
+        budgetPeriod = e.target.value;
+        renderCampaigns();
+        saveViewState();
+      });
     }
   }
 
