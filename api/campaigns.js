@@ -447,6 +447,96 @@ async function build() {
   }
   if (totals.dailyBudget) targets.weeklyCost = totals.dailyBudget * 7;
 
+  /* ---------------- budget vs actual, this month ----------------
+     Budgets on these accounts are daily amounts on ad sets, so the only
+     honest window to compare them against is a single month: a monthly
+     allocation is the daily figure times the days in the month, and it is
+     compared with what was actually spent inside that same month. Pairing a
+     monthly allocation with a year of spend would be meaningless. */
+  const monthKey = todayIso.slice(0, 7);
+  const monthYear = Number(monthKey.slice(0, 4));
+  const monthIndex = Number(monthKey.slice(5, 7));
+  const daysInMonth = new Date(Date.UTC(monthYear, monthIndex, 0)).getUTCDate();
+  const daysElapsed = Number(todayIso.slice(8, 10));
+
+  // Month-to-date actuals per campaign, from the same daily rows the weekly
+  // view uses — no extra Graph call.
+  const mtdByCampaign = new Map();
+  for (const { daily, account } of loaded) {
+    for (const row of daily || []) {
+      if (String(row.date_start || '').slice(0, 7) !== monthKey) continue;
+      const spend = toReportCurrency(row.spend, account.currency);
+      const label = OBJECTIVE_LABEL[row.objective] || 'Custom Conversion';
+      const results = label === 'Reach'
+        ? 0
+        : (RESULT_ACTIONS[label]
+          ? actionValue(row.actions, RESULT_ACTIONS[label])
+          : customConversionValue(row.actions));
+      if (!mtdByCampaign.has(row.campaign_id)) {
+        mtdByCampaign.set(row.campaign_id, { spend: 0, results: 0, impressions: 0, linkClicks: 0 });
+      }
+      const m = mtdByCampaign.get(row.campaign_id);
+      m.spend += spend;
+      m.results += results;
+      m.impressions += num(row.impressions);
+      m.linkClicks += num(row.inline_link_clicks);
+    }
+  }
+
+  const perResult = targets.costPerResult || null;
+
+  const budgetRows = campaigns.map((c) => {
+    const mtd = mtdByCampaign.get(c.id) || { spend: 0, results: 0, impressions: 0, linkClicks: 0 };
+    // Only a live daily budget represents money still allocated. A paused
+    // campaign has no allocation to compare against, so it reports none
+    // rather than a zero that would read as "budget exhausted".
+    const daily = c.status === 'Active' ? c.dailyBudget : null;
+    const allocated = daily ? daily * daysInMonth : null;
+    const expectedToDate = daily ? daily * daysElapsed : null;
+    // What the plan's own efficiency says this allocation should return.
+    const targetResults = allocated && perResult ? allocated / perResult : null;
+    return {
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      objective: c.objective,
+      dailyBudget: daily,
+      allocated,
+      expectedToDate,
+      spend: mtd.spend,
+      results: mtd.results,
+      impressions: mtd.impressions,
+      linkClicks: mtd.linkClicks,
+      remaining: allocated == null ? null : allocated - mtd.spend,
+      usedPct: allocated ? mtd.spend / allocated : null,
+      // Against pace, not against the whole month — a campaign seven days
+      // into a thirty-day month is not "5% spent", it is on or off pace.
+      pacePct: expectedToDate ? mtd.spend / expectedToDate : null,
+      targetResults,
+      performance: targetResults ? mtd.results / targetResults : null,
+      costPerResult: mtd.results ? mtd.spend / mtd.results : null,
+    };
+  })
+    // Anything with neither an allocation nor spend this month is not part of
+    // this month's picture at all.
+    .filter((r) => r.allocated != null || r.spend > 0)
+    .sort((a, b) => (b.allocated || 0) - (a.allocated || 0) || b.spend - a.spend);
+
+  const bSum = (key) => budgetRows.reduce((total, r) => total + (r[key] || 0), 0);
+  const budget = {
+    month: monthKey,
+    daysInMonth,
+    daysElapsed,
+    monthProgress: daysElapsed / daysInMonth,
+    costPerResultTarget: perResult,
+    allocated: bSum('allocated') || null,
+    expectedToDate: bSum('expectedToDate') || null,
+    spend: bSum('spend'),
+    results: bSum('results'),
+    targetResults: bSum('targetResults') || null,
+    campaigns: budgetRows,
+  };
+
   const weekly = {
     days: WEEKLY_DAYS,
     targets,
@@ -489,6 +579,7 @@ async function build() {
     currency: REPORT_CURRENCY,
     totals,
     months,
+    budget,
     weekly,
     byObjective,
     campaigns,

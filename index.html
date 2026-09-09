@@ -480,6 +480,37 @@
      "is this good" is answered by where the line sits, not by doing arithmetic
      against a number printed elsewhere. */
 
+  /* ---- budget vs actual ----
+     The one comparison this tab exists to make, so it gets the top of the
+     page and reads as two figures side by side rather than two numbers the
+     reader has to divide in their head. */
+  .bvhero { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
+  .bv-side { min-width: 130px; }
+  .bv-lab { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+  .bv-n { font-size: 34px; font-weight: 700; color: #fff; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .bv-n.bv-act { color: var(--yellow); }
+  .bv-s { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+  .bv-vs { font-size: 12px; color: var(--text-3); padding-bottom: 10px; }
+
+  /* A single track: fill is what's been spent, the tick is where the month
+     itself has got to. Level with the tick means on pace. */
+  .bvbar { margin-top: 16px; }
+  .bvbar-track {
+    position: relative; height: 14px; border-radius: 7px;
+    background: var(--track); overflow: hidden;
+  }
+  .bvbar-fill { height: 100%; background: var(--fill); border-radius: 7px; min-width: 2px; }
+  .bvbar-now { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--info); }
+  .bvbar-legend {
+    display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 7px;
+    font-size: 11px; color: var(--text-3);
+  }
+  .bvbar-mark { color: var(--info); }
+
+  .mkpi-5 { grid-template-columns: repeat(5, 1fr); }
+  @media (max-width: 1100px) { .mkpi-5 { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 620px)  { .mkpi-5 { grid-template-columns: repeat(2, 1fr); } }
+
   .mhead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
   .mnow { margin-left: auto; display: flex; align-items: baseline; gap: 8px; }
   .mnow-n { font-size: 30px; font-weight: 700; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -2189,37 +2220,6 @@
 
   /* ================= campaigns tab (current year) ================= */
 
-  function campaignRow(c, totalSpend) {
-    const cpr = ratio(c.spend, c.results);
-    const cpm = cpmOf(c.spend, c.impressions);
-    const freq = ratio(c.impressions, c.reach);
-    const share = ratio(c.spend, totalSpend) || 0;
-    const cCtr = ratio(c.linkClicks, c.impressions);
-    const range = c.firstMonth
-      ? `${c.firstMonth}${c.lastMonth && c.lastMonth !== c.firstMonth ? ' – ' + c.lastMonth : ''}`
-      : '';
-
-    return `
-      <tr>
-        <td class="cname">
-          ${esc(c.name)}
-          <div class="cobj"><i class="odot" style="background:${objColor(c.objective)}"></i>${esc(c.objective)}${range ? ' · ' + esc(range) : ''}</div>
-        </td>
-        <td><span class="cpill ${c.status === 'Active' ? 'on' : 'off'}">${esc(c.status)}</span></td>
-        <td class="num">${c.dailyBudget ? money(c.dailyBudget) + '<div class="cobj">' + (c.activeAdSets || 0) + ' ad set' + (c.activeAdSets === 1 ? '' : 's') + '</div>' : '—'}</td>
-        <td class="num">${money(c.spend)}</td>
-        <td class="num">${int(c.results)}${c.noResults ? ' <span class="flag" title="Spend recorded but no results attributed">!</span>' : ''}</td>
-        <td class="num">${show(cpr, money)}</td>
-        <td class="num ${cCtr == null ? '' : cCtr < CTR_POOR ? 'cell-bad' : cCtr >= CTR_HEALTHY ? 'cell-good' : ''}">${show(cCtr, pct)}</td>
-        <td class="num">${int(c.impressions)}</td>
-        <td class="num">${int(c.reach)}</td>
-        <td class="num">${show(cpm, dec)}</td>
-        <td class="num ${freq == null ? '' : freq >= FREQ_FATIGUE ? 'cell-bad' : freq >= FREQ_WATCH ? 'cell-watch' : ''}">${show(freq, dec)}</td>
-        <td class="num">${int(c.purchases)}</td>
-        <td class="num sharecell"><div class="sharebar" style="width:${(share * 100).toFixed(0)}%"></div><span>${pct(share)}</span></td>
-      </tr>`;
-  }
-
   function renderCampaigns() {
     const p = campaigns;
     if (!p) return;
@@ -2230,30 +2230,35 @@
 
     const t = p.totals;
     const cur = esc(p.currency);
-    const totalCpr = ratio(t.spend, t.results);
-    const totalCpm = cpmOf(t.spend, t.impressions);
-    const totalFreq = ratio(t.impressions, t.reach);
-    const active = t.active != null ? t.active : p.campaigns.filter((c) => c.status === 'Active').length;
-    const linkCtr = ratio(t.linkClicks, t.impressions);
-    const costPerClick = ratio(t.spend, t.linkClicks);
-    // Daily commitment projected out, so the tile answers "what does this cost
-    // us a month if nothing changes" rather than making everyone multiply.
-    const monthlyRun = t.dailyBudget == null ? null : t.dailyBudget * 30;
+    const b = p.budget || {};
+    const rows = b.campaigns || [];
     const flagged = p.noResultCampaigns || [];
 
-    const monthPoints = (p.months || []).map((m) => ({
-      v: m.spend,
-      label: m.label,
-      tip: tipRows(`${m.label} ${p.year}`, [
-        ['Spend', `${cur} ${money(m.spend)}`],
-        ['Impressions', int(m.impressions)],
-        ['Share of year', pct(ratio(m.spend, t.spend))],
-      ]),
-    }));
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = b.month
+      ? `${MONTH_NAMES[Number(b.month.slice(5, 7)) - 1]} ${b.month.slice(0, 4)}`
+      : '';
 
-    // Top 8 by spend, remainder folded into one "Other" row rather than a
-    // 40-bar chart nobody can read from across the room.
-    const ranked = [...p.campaigns].sort((a, b) => b.spend - a.spend);
+    const used = ratio(b.spend, b.allocated);
+    const pace = ratio(b.spend, b.expectedToDate);
+    const resultPerf = ratio(b.results, b.targetResults);
+    const remaining = b.allocated == null ? null : b.allocated - b.spend;
+
+    // On pace means spending roughly in step with the month. Being under is
+    // not automatically good and over is not automatically bad, so the words
+    // say which it is and leave the judgement to the reader.
+    const paceState = pace == null ? null
+      : pace > 1.15 ? 'bad' : pace < 0.85 ? 'watch' : 'good';
+    const paceWord = pace == null ? 'no active budget'
+      : pace > 1.15 ? `${pct(pace - 1)} ahead of pace`
+        : pace < 0.85 ? `${pct(1 - pace)} behind pace` : 'on pace';
+
+    const perfState = resultPerf == null ? null
+      : resultPerf >= 1 ? 'good' : resultPerf >= 0.6 ? 'watch' : 'bad';
+
+    // Kept from the old tab: spend by campaign, biggest first, tail folded.
+    const ranked = [...p.campaigns].sort((a, c) => c.spend - a.spend);
     const shown = ranked.slice(0, 8);
     const rest = ranked.slice(8);
     const barItems = shown.map((c) => ({
@@ -2263,7 +2268,7 @@
       color: objColor(c.objective),
       tip: tipRows(c.name, [
         ['Objective', c.objective],
-        ['Spend', `${cur} ${money(c.spend)}`],
+        ['Spend (year)', `${cur} ${money(c.spend)}`],
         ['Results', int(c.results)],
         ['Cost / result', show(ratio(c.spend, c.results), money)],
         ['Share of spend', pct(ratio(c.spend, t.spend))],
@@ -2281,148 +2286,146 @@
       });
     }
 
-    const segs = p.byObjective.map((o) => ({
-      v: o.spend, label: o.objective, value: money(o.spend), color: objColor(o.objective),
-      tip: tipRows(o.objective, [
-        ['Campaigns', int(o.campaigns)],
-        ['Spend', `${cur} ${money(o.spend)}`],
-        ['Results', int(o.results)],
-        ['Cost / result', show(ratio(o.spend, o.results), money)],
-        ['Share of spend', pct(ratio(o.spend, t.spend))],
-      ]),
-    }));
+    const budgetRows = rows.map((r) => {
+      const usedR = r.usedPct;
+      const paceR = r.pacePct;
+      const perfR = r.performance;
+      const pState = paceR == null ? '' : paceR > 1.15 ? 'cell-bad' : paceR < 0.85 ? 'cell-watch' : 'cell-good';
+      const fState = perfR == null ? '' : perfR >= 1 ? 'cell-good' : perfR >= 0.6 ? 'cell-watch' : 'cell-bad';
+      return `
+        <tr>
+          <td class="cname">${esc(r.name)}
+            <div class="cobj"><i class="odot" style="background:${objColor(r.objective)}"></i>${esc(r.objective || '')}${
+              r.dailyBudget ? ` · ${money(r.dailyBudget)}/day` : ''}</div>
+          </td>
+          <td><span class="cpill ${r.status === 'Active' ? 'on' : 'off'}">${esc(r.status)}</span></td>
+          <td class="num">${show(r.allocated, money)}</td>
+          <td class="num">${money(r.spend)}</td>
+          <td class="num">${show(r.remaining, money)}</td>
+          <td class="num">${show(usedR, pct)}</td>
+          <td class="num ${pState}">${show(paceR, (v) => pct(v))}</td>
+          <td class="num">${int(r.results)}</td>
+          <td class="num">${r.targetResults == null ? '—' : int(Math.round(r.targetResults))}</td>
+          <td class="num ${fState}">${show(perfR, pct)}</td>
+        </tr>`;
+    }).join('');
 
-    const objRows = p.byObjective.map((o) => `
-      <tr>
-        <td class="cname"><i class="odot" style="background:${objColor(o.objective)}"></i>${esc(o.objective)}</td>
-        <td class="num">${int(o.campaigns)}</td>
-        <td class="num">${show(o.dailyBudget, money)}</td>
-        <td class="num">${money(o.spend)}</td>
-        <td class="num">${int(o.results)}</td>
-        <td class="num">${show(ratio(o.spend, o.results), money)}</td>
-        <td class="num">${show(ratio(o.linkClicks, o.impressions), pct)}</td>
-        <td class="num">${int(o.impressions)}</td>
-        <td class="num">${show(cpmOf(o.spend, o.impressions), dec)}</td>
-        <td class="num">${int(o.reach)}</td>
-        <td class="num sharecell"><div class="sharebar" style="width:${((ratio(o.spend, t.spend) || 0) * 100).toFixed(0)}%"></div><span>${pct(ratio(o.spend, t.spend))}</span></td>
-      </tr>`).join('');
+    const tSum = (key) => rows.reduce((sum, r) => sum + (r[key] || 0), 0);
 
     $('campaignsWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
-
-      <div class="panel">
-        <div class="ptitle">Total ad spend · ${p.year}</div>
-        <div class="vhero">
-          <span class="vh-c">${cur}</span><span class="vh-n">${money(t.spend)}</span>
-          <span class="vh-s">${int(t.campaigns)} campaigns · ${active} active · ${int(t.results)} results at ${show(totalCpr, money)} each</span>
-        </div>
-      </div>
-
       ${flagged.length ? `
       <div class="msg warn">
         <b>${flagged.length} campaign${flagged.length === 1 ? '' : 's'} recorded spend but no attributed results:</b>
         ${flagged.map((n) => esc(n)).join(', ')}.
-        Usually means the objective's result event isn't one this board knows how to count yet, rather than a campaign that genuinely achieved nothing — worth checking against Ads Manager.
+        Usually the objective's result event isn't one this board counts yet, rather than a campaign that achieved nothing — worth checking against Ads Manager.
       </div>` : ''}
 
-      <div class="panel skpi-panel mkpi">
+      <div class="panel">
+        <div class="ptitle">Budget vs actual · ${esc(monthName)}</div>
+        <div class="bvhero">
+          <div class="bv-side">
+            <div class="bv-lab">Allocated</div>
+            <div class="bv-n">${show(b.allocated, money)}</div>
+            <div class="bv-s">${cur} · ${b.daysInMonth || 0} days</div>
+          </div>
+          <div class="bv-vs">vs</div>
+          <div class="bv-side">
+            <div class="bv-lab">Actual spend</div>
+            <div class="bv-n bv-act">${money(b.spend)}</div>
+            <div class="bv-s">${show(used, pct)} of budget used</div>
+          </div>
+          <div class="bv-side">
+            <div class="bv-lab">Remaining</div>
+            <div class="bv-n">${show(remaining, money)}</div>
+            <div class="bv-s">${b.daysInMonth ? (b.daysInMonth - b.daysElapsed) + ' days left' : ''}</div>
+          </div>
+        </div>
+
+        <div class="bvbar">
+          <div class="bvbar-track">
+            <div class="bvbar-fill" style="width:${Math.min(100, (used || 0) * 100).toFixed(1)}%"></div>
+            ${b.monthProgress != null ? `<div class="bvbar-now" style="left:${(b.monthProgress * 100).toFixed(1)}%"></div>` : ''}
+          </div>
+          <div class="bvbar-legend">
+            <span>${show(used, pct)} of the month's budget spent</span>
+            <span class="bvbar-mark">│ ${pct(b.monthProgress)} of the month elapsed (day ${b.daysElapsed} of ${b.daysInMonth})</span>
+          </div>
+        </div>
+
+        ${paceState ? `<div class="verdict v-${paceState}" style="margin-top:14px">
+          <span class="v-ico">${STATE_ICON[paceState === 'bad' ? 'act' : paceState]}</span>
+          <span class="v-word">${esc(paceWord)}</span>
+          <span class="v-text">Spending ${money(b.spend)} against ${money(b.expectedToDate)} expected by day ${b.daysElapsed}.</span>
+        </div>` : ''}
+      </div>
+
+      <div class="panel skpi-panel mkpi mkpi-5">
         <div class="skpi">
-          <div class="skpi-n">${money(t.spend)}</div><div class="skpi-l">Total Cost</div>
-          <div class="skpi-sub">${cur} · ${int(t.campaigns)} campaigns</div>
+          <div class="skpi-n">${show(b.allocated, money)}</div><div class="skpi-l">Allocated Budget</div>
+          <div class="skpi-sub">${cur} this month</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${show(totalCpr, money)}</div><div class="skpi-l">Cost / Result</div>
-          <div class="skpi-sub">${int(t.results)} results</div>
+          <div class="skpi-n">${money(b.spend)}</div><div class="skpi-l">Actual Spend</div>
+          <div class="skpi-sub">month to date</div>
         </div>
-        <div class="skpi ${ctrClass(linkCtr)}">
-          <div class="skpi-n">${show(linkCtr, pct)}</div><div class="skpi-l">Link CTR</div>
-          <div class="skpi-sub">${ctrNote(linkCtr)}</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${show(totalCpm, dec)}</div><div class="skpi-l">CPM</div>
-          <div class="skpi-sub">${compact(t.impressions)} impressions</div>
-        </div>
-        <div class="skpi ${freqClass(totalFreq)}">
-          <div class="skpi-n">${show(totalFreq, dec)}</div><div class="skpi-l">Frequency</div>
-          <div class="skpi-sub">${freqNote(totalFreq)}</div>
+        <div class="skpi ${paceState ? 'skpi-' + paceState : ''}">
+          <div class="skpi-n">${show(used, pct)}</div><div class="skpi-l">Budget Used</div>
+          <div class="skpi-sub">${esc(paceWord)}</div>
         </div>
         <div class="skpi">
-          <div class="skpi-n">${show(t.dailyBudget, money)}</div><div class="skpi-l">Daily Budget</div>
-          <div class="skpi-sub">${t.dailyBudget == null ? 'no active ad sets' : show(monthlyRun, money) + ' / 30 days'}</div>
+          <div class="skpi-n">${int(b.results)}</div><div class="skpi-l">Actual Results</div>
+          <div class="skpi-sub">${show(ratio(b.spend, b.results), money)} per result</div>
+        </div>
+        <div class="skpi ${perfState ? 'skpi-' + perfState : ''}">
+          <div class="skpi-n">${show(resultPerf, pct)}</div><div class="skpi-l">Result vs Target</div>
+          <div class="skpi-sub">${b.targetResults ? int(Math.round(b.targetResults)) + ' expected' : 'no target'}</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Budget vs actual by campaign · ${esc(monthName)}</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              <th>Campaign</th><th>Status</th><th>Budget</th><th>Actual Spend</th>
+              <th>Remaining</th><th>Used</th><th>Pace</th>
+              <th>Results</th><th>Target</th><th>Performance</th>
+            </tr></thead>
+            <tbody>${budgetRows || '<tr><td class="cname" colspan="10">No campaign had a budget or spend this month.</td></tr>'}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL</td><td></td>
+              <td class="num">${show(b.allocated, money)}</td>
+              <td class="num">${money(b.spend)}</td>
+              <td class="num">${show(remaining, money)}</td>
+              <td class="num">${show(used, pct)}</td>
+              <td class="num">${show(pace, pct)}</td>
+              <td class="num">${int(b.results)}</td>
+              <td class="num">${b.targetResults ? int(Math.round(b.targetResults)) : '—'}</td>
+              <td class="num">${show(resultPerf, pct)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+        <div class="plan-foot" style="margin-top:12px">
+          <b>Budget</b> is the live daily amount on each campaign's active ad sets, times the ${b.daysInMonth || 0} days in ${esc(monthName)}.
+          <b>Pace</b> compares spend against what should have gone out by day ${b.daysElapsed}, so a campaign early in the month isn't read as underspending.
+          <b>Target</b> is what that budget should return at the plan's ${b.costPerResultTarget ? money(b.costPerResultTarget) + ' per result' : 'planned efficiency'} — paused campaigns carry no allocation, so they show none.
         </div>
       </div>
 
       ${weeklySection(p)}
 
-      ${monthPoints.length ? `
       <div class="panel">
-        <div class="ptitle">Spend by month · ${p.year} (${cur})</div>
-        ${columnChart(monthPoints, { fmt: compact })}
-      </div>` : ''}
-
-      <div class="vgrid2">
-        <div class="panel">
-          <div class="ptitle">Spend by campaign</div>
-          ${barRows(barItems)}
-        </div>
-        <div class="panel">
-          <div class="ptitle">Spend by objective</div>
-          ${stackedBar(segs, t.spend)}
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">All campaigns · ${p.year}</div>
-        <div class="infonote"><span class="ni-ico">💰</span><span>Figures in <b>${cur}</b>, ${esc(p.since)} to ${esc(p.until)}, across ${p.accounts.length} ad account${p.accounts.length === 1 ? '' : 's'}. <b>Reach</b> is de-duplicated over the whole period, so a campaign that ran for several months reads lower here than a spreadsheet that added its months together — the same person reached in June and July counts once.</span></div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              <th>Campaign</th><th>Status</th><th>Daily Budget</th><th>Cost</th>
-              <th>Results</th><th>Cost/Result</th><th>Link CTR</th>
-              <th>Impressions</th><th>Reach</th><th>CPM</th><th>Freq</th>
-              <th>Purchases</th><th>% Cost</th>
-            </tr></thead>
-            <tbody>${p.campaigns.map((c) => campaignRow(c, t.spend)).join('')}</tbody>
-            <tfoot><tr>
-              <td class="cname">TOTAL / AVERAGE</td><td></td>
-              <td class="num">${show(t.dailyBudget, money)}</td>
-              <td class="num">${money(t.spend)}</td>
-              <td class="num">${int(t.results)}</td>
-              <td class="num">${show(totalCpr, money)}</td>
-              <td class="num">${show(linkCtr, pct)}</td>
-              <td class="num">${int(t.impressions)}</td>
-              <td class="num">${int(t.reach)}</td>
-              <td class="num">${show(totalCpm, dec)}</td>
-              <td class="num">${show(totalFreq, dec)}</td>
-              <td class="num">${int(t.purchases)}</td>
-              <td class="num">100.0%</td>
-            </tr></tfoot>
-          </table>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">Performance by campaign objective</div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              <th>Objective</th><th>Campaigns</th><th>Daily Budget</th><th>Cost</th>
-              <th>Results</th><th>Cost/Result</th><th>Link CTR</th>
-              <th>Impressions</th><th>CPM</th><th>Reach</th><th>% of Cost</th>
-            </tr></thead>
-            <tbody>${objRows}</tbody>
-          </table>
-        </div>
+        <div class="ptitle">Spend by campaign · ${p.year} to date</div>
+        ${barRows(barItems)}
       </div>`;
 
     bindViz($('campaignsWrap'));
 
-    // Switching metric redraws the whole tab, the same way the Report tab
-    // handles its granularity buttons — the data is already in hand.
     const seg = $('metricSeg');
     if (seg) {
-      seg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
-        mainMetric = b.dataset.m;
+      seg.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => {
+        mainMetric = btn.dataset.m;
         renderCampaigns();
         saveViewState();
       }));
