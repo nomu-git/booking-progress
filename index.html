@@ -2442,12 +2442,12 @@
         </div>
       </div>
 
-      ${weeklySection(p)}
-
       <div class="panel">
         <div class="ptitle">Spend by campaign · ${p.year} to date</div>
         ${barRows(barItems)}
-      </div>`;
+      </div>
+
+      ${weeklySection(p)}`;
 
     bindViz($('campaignsWrap'));
 
