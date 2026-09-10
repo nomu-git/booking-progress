@@ -390,6 +390,8 @@
   .ctable td.cell-good  { color: var(--fresh); font-weight: 600; }
   .ctable td.cell-watch { color: var(--target); font-weight: 600; }
   .ctable td.cell-bad   { color: var(--danger); font-weight: 700; }
+  .ctable tr.planrow-cancelled td { opacity: .55; }
+  .ctable tr.planrow-cancelled .cname { color: #ffb3ab; }
 
   /* Status and objective read as quiet labels, not as alarm colors — the
      booking board already owns green/yellow/red for capacity meaning. */
@@ -2164,6 +2166,86 @@
 
   /* ================= campaigns tab (current year) ================= */
 
+  /* ---------------- plan vs actual (the budget spreadsheet) ---------------- */
+
+  function planVsActualSection(p) {
+    const pv = p.planVsActual;
+    if (!pv || !pv.rows || !pv.rows.length) return '';
+    const cur = esc(pv.currency || 'SAR');
+    const t = pv.totals;
+
+    const usedAll = ratio(t.spend, t.plannedSar);
+    const perfAll = ratio(t.results, t.plannedResults);
+
+    const rows = pv.rows.map((r) => {
+      const state = r.usedPct == null ? ''
+        : r.usedPct > 1 ? 'cell-bad' : r.usedPct >= 0.85 ? 'cell-watch' : '';
+      const perfState = r.performance == null ? ''
+        : r.performance >= 1 ? 'cell-good' : r.performance >= 0.6 ? 'cell-watch' : 'cell-bad';
+      return `
+        <tr${r.cancelled ? ' class="planrow-cancelled"' : ''}>
+          <td class="cname">
+            ${esc(r.program)}${r.cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}
+            <div class="cobj">${esc(r.dates)}${r.matched
+              ? ` · ${esc(r.campaignName)}`
+              : ' · <span style="color:#6c7f9c">no campaign running</span>'}</div>
+          </td>
+          <td class="num">${money(r.plannedSar)}</td>
+          <td class="num">${r.matched ? money(r.spend) : '—'}</td>
+          <td class="num">${r.matched ? money(r.remaining) : '—'}</td>
+          <td class="num ${r.matched ? state : ''}">${r.matched ? show(r.usedPct, pct) : '—'}</td>
+          <td class="num">${r.plannedResults == null ? '—' : int(r.plannedResults)}</td>
+          <td class="num">${r.matched ? int(r.results) : '—'}</td>
+          <td class="num ${r.matched ? perfState : ''}">${r.matched ? show(r.performance, pct) : '—'}</td>
+        </tr>`;
+    }).join('');
+
+    const orphans = pv.unmatchedCampaigns || [];
+
+    return `
+      <div class="panel">
+        <div class="ptitle">Plan vs actual · ${esc(pv.source)}</div>
+        <div class="infonote">
+          <span class="ni-ico">📋</span>
+          <span>The allocation here is what the budget sheet committed per trip, converted at ${dec(pv.usdSar)}.
+          It is compared with everything that campaign has spent so far, not with a single month —
+          the sheet budgets a whole flight, and a December trip is advertised months ahead of it.
+          <b>${t.matched} of ${t.lines}</b> live plan lines have a campaign running against them.</span>
+        </div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              <th>Trip / Campaign</th><th>Planned (${cur})</th><th>Actual Spend</th>
+              <th>Remaining</th><th>Used</th>
+              <th>Planned Results</th><th>Actual Results</th><th>Performance</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL (live lines)</td>
+              <td class="num">${money(t.plannedSar)}</td>
+              <td class="num">${money(t.spend)}</td>
+              <td class="num">${money(t.plannedSar - t.spend)}</td>
+              <td class="num">${show(usedAll, pct)}</td>
+              <td class="num">${int(t.plannedResults)}</td>
+              <td class="num">${int(t.results)}</td>
+              <td class="num">${show(perfAll, pct)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+        ${orphans.length ? `
+        <div class="msg warn" style="margin-top:12px">
+          <b>${orphans.length} campaign${orphans.length === 1 ? '' : 's'} spending outside the plan:</b>
+          ${orphans.map((o) => `${esc(o.name)} (${money(o.spend)})`).join(', ')}.
+          Either the sheet is missing a line for ${orphans.length === 1 ? 'it' : 'them'}, or the campaign name doesn't carry the month that ties it to one.
+        </div>` : ''}
+        <div class="plan-foot" style="margin-top:12px">
+          A plan line is tied to a campaign by name plus the month the campaign carries — that's what the renaming made possible.
+          Lines with no campaign running are shown with a dash rather than a zero, since nothing has been spent against them yet.
+          Cancelled lines stay listed but are left out of every total.
+        </div>
+      </div>`;
+  }
+
   function renderCampaigns() {
     const p = campaigns;
     if (!p) return;
@@ -2378,6 +2460,8 @@
           <b>Target</b> is what that budget should return at the plan's ${b.costPerResultTarget ? money(b.costPerResultTarget) + ' per result' : 'planned efficiency'} — paused campaigns carry no allocation, so they show none.
         </div>
       </div>
+
+      ${planVsActualSection(p)}
 
       <div class="panel">
         <div class="ptitle">Spend by campaign · ${p.year} to date</div>

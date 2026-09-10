@@ -1,6 +1,6 @@
 const {
   graphGetAll, getAccountMeta, toReportCurrency, budgetToReportCurrency,
-  AD_ACCOUNTS, REPORT_CURRENCY,
+  AD_ACCOUNTS, REPORT_CURRENCY, USD_SAR,
 } = require('./meta-ads');
 const { mapWithConcurrency } = require('./wetravel');
 const { build: buildMediaPlan } = require('./media-plan');
@@ -599,6 +599,120 @@ async function build() {
   const budgetPeriods = [last14Period, ...monthPeriods];
   const budget = last14Period;
 
+  /* ---------------- plan vs actual ----------------
+     The spreadsheet allocates a budget per trip flight, not per month, and
+     its "Date" column is the trip's own window rather than the ad flight's —
+     a December trip is advertised months earlier. So a plan line is compared
+     against its campaign's whole spend to date, never sliced into a period;
+     the period picker above stays with the daily-budget pacing view, which is
+     the question it can actually answer.
+
+     Matching leans on the campaign renaming: a plan line matches a campaign
+     when every word of the plan's programme appears in the campaign's name,
+     disambiguated by the month the campaign name carries when one programme
+     runs more than once. Both sides report what didn't match rather than
+     quietly dropping it. */
+  const MONTH_WORDS = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7,
+    sep: 8, oct: 9, nov: 10, dec: 11,
+  };
+  const words = (s) => String(s || '')
+    .toLowerCase()
+    .replace(/[\u2013\u2014]/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean);
+
+  // "Novemper" and "Decemper" are how the campaigns are actually spelled, so
+  // the first three letters are what's matched on, not the full word.
+  const monthOfName = (name) => {
+    for (const w of words(name)) {
+      const key = w.slice(0, 3);
+      if (MONTH_WORDS[key] != null && w.length >= 3 && /^[a-z]+$/.test(w)) return MONTH_WORDS[key];
+    }
+    return null;
+  };
+
+  let planRows = [];
+  let planUnmatchedCampaigns = [];
+  try {
+    const plan = buildMediaPlan();
+    // Only campaigns that are live or have spent this year are candidates;
+    // a plan line shouldn't bind to a long-dead 2026 campaign by name alone.
+    const pool = campaigns.map((c) => ({
+      c,
+      tokens: new Set(words(c.name)),
+      month: monthOfName(c.name),
+      taken: false,
+    }));
+
+    planRows = plan.lines.map((l) => {
+      const need = words(l.program);
+      const named = pool.filter((x) => !x.taken && need.every((w) => x.tokens.has(w)));
+
+      // The month in the campaign's own name is what binds it to a flight —
+      // several flights share a programme, and the legacy 2026 campaigns
+      // ("Bali Explore 10%", "Vietnam explore sales") carry no month at all,
+      // so requiring one keeps a plan line from latching onto them. A
+      // recurring line has no month to match, so it takes the month-less
+      // campaign instead.
+      const hit = l.recurring
+        ? named.find((x) => x.month == null) || null
+        : named.find((x) => x.month != null && x.month === l.startMonth) || null;
+      if (hit) hit.taken = true;
+
+      const spend = hit ? hit.c.spend : 0;
+      const results = hit ? hit.c.results : 0;
+      const plannedSar = l.budgetSar;
+      return {
+        program: l.program,
+        dates: l.dates,
+        objective: l.objective,
+        cancelled: l.cancelled,
+        plannedUsd: l.budgetUsd,
+        plannedSar,
+        plannedResults: l.resultCount,
+        matched: !!hit,
+        campaignId: hit ? hit.c.id : null,
+        campaignName: hit ? hit.c.name : null,
+        status: hit ? hit.c.status : null,
+        spend,
+        results,
+        remaining: plannedSar - spend,
+        usedPct: plannedSar ? spend / plannedSar : null,
+        performance: l.resultCount ? results / l.resultCount : null,
+        costPerResult: results ? spend / results : null,
+      };
+    });
+
+    planUnmatchedCampaigns = pool
+      .filter((x) => !x.taken && (x.c.status === 'Active' || x.c.spend > 0))
+      .map((x) => ({ id: x.c.id, name: x.c.name, status: x.c.status, spend: x.c.spend, results: x.c.results }))
+      .sort((a, b) => b.spend - a.spend);
+  } catch (err) {
+    console.error(`plan vs actual unavailable: ${err.message}`);
+  }
+
+  const livePlan = planRows.filter((r) => !r.cancelled);
+  const pSum = (key) => livePlan.reduce((total, r) => total + (r[key] || 0), 0);
+  const planVsActual = {
+    source: 'Updated Budget.xlsx',
+    currency: REPORT_CURRENCY,
+    usdSar: USD_SAR,
+    rows: planRows,
+    unmatchedCampaigns: planUnmatchedCampaigns,
+    totals: {
+      lines: livePlan.length,
+      cancelled: planRows.length - livePlan.length,
+      matched: livePlan.filter((r) => r.matched).length,
+      plannedSar: pSum('plannedSar'),
+      plannedResults: pSum('plannedResults'),
+      spend: pSum('spend'),
+      results: pSum('results'),
+    },
+  };
+
   const weekly = {
     days: WEEKLY_DAYS,
     targets,
@@ -643,6 +757,7 @@ async function build() {
     months,
     budget,
     budgetPeriods,
+    planVsActual,
     weekly,
     byObjective,
     campaigns,

@@ -1,4 +1,4 @@
-# Internal planning documents — this repo is public.
-*.xlsx
+# Budget/plan spreadsheets are tracked deliberately — the dashboard reads
+# its allocations from them, so the numbers and the code stay in one place.
 .DS_Store
 node_modules/
