@@ -723,70 +723,9 @@
   .pt-wnum b { color: #fff; }
   .pt-unalloc { font-size: 10.5px; color: var(--text-3); padding: 4px 8px; }
 
-  /* ---------- SA media plan ----------
-     A plan is read as a schedule, so it's laid out as one: month, then the
-     flights inside it. Deliberately plainer than the live tabs — there's no
-     measurement here to interrogate, just what was decided. */
-
-  .plan-split { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-  .plan-chip {
-    flex: 1; min-width: 150px; background: var(--track); border-radius: 8px;
-    padding: 11px 14px; border-left: 3px solid var(--fill);
-  }
-  .plan-chip .pc-n { font-size: 21px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-  .plan-chip .pc-l { font-size: 11px; color: var(--text-2); margin-top: 3px; font-weight: 600; }
-  .plan-chip .pc-s { font-size: 10.5px; color: var(--text-3); margin-top: 2px; }
-
-  .plan-month { margin-bottom: 18px; }
-  .plan-month:last-child { margin-bottom: 0; }
-  .pm-head {
-    display: flex; align-items: baseline; gap: 10px;
-    padding-bottom: 7px; margin-bottom: 9px; border-bottom: 1px solid var(--line);
-  }
-  .pm-name { font-size: 14px; font-weight: 700; color: var(--yellow); letter-spacing: .03em; }
-  .pm-meta { font-size: 11px; color: var(--text-3); }
-  .pm-total { margin-left: auto; font-size: 13px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-
-  /* trip | dates | est. messages | cost each | budget */
-  .pflight {
-    display: grid; grid-template-columns: minmax(0,1.7fr) 100px minmax(0,1fr) 78px 78px;
-    gap: 12px; align-items: center; padding: 7px 2px; font-size: 12.5px;
-  }
-  .pflight + .pflight { border-top: 1px solid rgba(52,81,124,.3); }
-  .pf-trip { color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pf-date { color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
-  .pf-num  { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); white-space: nowrap; }
-  .pf-num b { color: #fff; font-weight: 700; }
-
-  /* Budgets are a flat $750 across every trip, so the bar tracks the estimate
-     that actually varies — expected messages — not the budget. */
-  .pf-est { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .pf-track { flex: 1; height: 7px; background: rgba(134,152,180,.12); border-radius: 4px; overflow: hidden; min-width: 30px; }
-  .pf-fill { height: 100%; background: var(--fill); border-radius: 4px; }
-  .pf-estn { font-size: 11.5px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
-
-  @media (max-width: 780px) {
-    .pflight { grid-template-columns: 1fr auto; row-gap: 4px; }
-    .pf-est { grid-column: 1 / -1; }
-  }
-
-  /* Always-on rows sit inside each month, dimmed so they read as recurring
-     context rather than as another trip launching that month. */
-  .pflight.pf-always .pf-trip { color: var(--text-2); font-weight: 500; }
-  .pflight.pf-always .pf-num, .pflight.pf-always .pf-estn { color: var(--text-3); }
-  .pflight.pf-always .pf-num b { color: var(--text-2); }
-  .pf-tag {
-    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
-    background: rgba(77,157,224,.14); color: var(--info);
-    font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  }
-  .pm-foot {
-    display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 9px; padding-top: 8px;
-    border-top: 1px dashed rgba(134,152,180,.25);
-    font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums;
-  }
-  .pm-foot-tot { color: var(--yellow); font-weight: 700; margin-left: auto; }
-
+  /* .plan-foot is the small print under a panel — kept, the Campaigns tab
+     still uses it. The SA media-plan schedule styles that sat here went with
+     the Budget Plan tab. */
   .plan-foot { font-size: 11.5px; color: var(--text-3); line-height: 1.6; }
   .plan-foot b { color: var(--text-2); }
 
@@ -931,7 +870,6 @@
           <div class="seg">
             <button data-view="campaigns" aria-pressed="false">Campaigns</button>
             <button data-view="history" aria-pressed="false">History</button>
-            <button data-view="plan" aria-pressed="false">Budget Plan</button>
           </div>
         </div>
       </div>
@@ -959,7 +897,6 @@
   <div id="previousWrap" hidden></div>
   <div id="campaignsWrap" hidden></div>
   <div id="historyWrap" hidden></div>
-  <div id="planWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   <div class="tip" id="tip" role="status"></div>
@@ -1030,7 +967,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'previous', 'campaigns', 'history', 'plan'].includes(s.view)) view = s.view;
+      if (['board', 'report', 'previous', 'campaigns', 'history'].includes(s.view)) view = s.view;
       if (s.ptYear) ptYear = s.ptYear;
       if (s.ptMonth) ptMonth = s.ptMonth;
       if (s.mainMetric && METRICS[s.mainMetric]) mainMetric = s.mainMetric;
@@ -2649,215 +2586,6 @@
     }
   }
 
-  /* ================= SA media plan (the plan, not measured data) ================= */
-
-  let mediaPlan = null;
-
-  // The plan writes "Purchase" where Ads Manager reports "Purchases". Same
-  // thing, and it has to wear the same hue as on the Campaigns tab or the two
-  // views would colour the identical objective differently.
-  const PLAN_OBJ_ALIAS = {
-    Purchase: 'Purchases',
-    'Landing Page Views / Engagement': 'Link Clicks',
-  };
-  const planObjColor = (name) => objColor(PLAN_OBJ_ALIAS[name] || name);
-
-  // Plan budgets are whole dollars; money() would render $750.00. Decimals are
-  // kept if a figure ever has them, but nothing in the plan currently does.
-  const usd = (n) => '$' + (Number.isInteger(Number(n)) ? int(n) : money(n));
-
-  /* ---- benchmark thresholds ----
-     Published 2026 Meta benchmarks, used only to colour a tile and add one
-     line of plain English. They are industry-wide averages, not NomuHub
-     targets, so nothing here changes a number — it only says whether a number
-     is in the range advertisers generally consider healthy.
-       Link CTR : most industries land 2–3%; under 0.5% signals a creative or
-                  targeting problem worth acting on.
-       Frequency: above 4 is the fatigue line, especially alongside a falling
-                  CTR and a rising CPM. */
-  const CTR_HEALTHY = 0.02;
-  const CTR_POOR = 0.005;
-  const FREQ_FATIGUE = 4;
-  const FREQ_WATCH = 3;
-
-  const ctrClass = (v) => (v == null ? '' : v < CTR_POOR ? 'skpi-bad' : v >= CTR_HEALTHY ? 'skpi-good' : 'skpi-watch');
-  const ctrNote = (v) => (v == null ? 'no impressions yet'
-    : v < CTR_POOR ? 'below 0.5% — creative or targeting'
-    : v >= CTR_HEALTHY ? 'healthy (2–3% typical)'
-    : 'under the 2% typical range');
-
-  const freqClass = (v) => (v == null ? '' : v >= FREQ_FATIGUE ? 'skpi-bad' : v >= FREQ_WATCH ? 'skpi-watch' : 'skpi-good');
-  const freqNote = (v) => (v == null ? 'no reach yet'
-    : v >= FREQ_FATIGUE ? 'above 4 — refresh creative'
-    : v >= FREQ_WATCH ? 'approaching fatigue'
-    : 'comfortable');
-
-  function renderPlan() {
-    const p = mediaPlan;
-    if (!p) return;
-    if (p.error) {
-      $('planWrap').innerHTML = `<div class="msg err">Could not load the media plan: ${esc(p.error)}</div>`;
-      return;
-    }
-
-    const t = p.totals;
-    const MONTH_FULL = {
-      Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April', May: 'May', Jun: 'June',
-      Jul: 'July', Aug: 'August', Sep: 'September', Oct: 'October', Nov: 'November', Dec: 'December',
-    };
-
-    const trips = p.lines.filter((l) => l.kind === 'prospecting');
-    const always = p.lines.filter((l) => l.kind !== 'prospecting');
-    const maxEst = Math.max(...trips.map((l) => l.resultCount || 0), 1);
-
-    // The retargeting and traffic lines run every month, so they belong inside
-    // each month rather than in a block of their own — a month's real outlay is
-    // its trips plus the always-on spend, and that's the number used to plan.
-    const alwaysUsd = always.reduce((sum, l) => sum + l.budgetUsd, 0);
-
-    const months = p.byMonth.map((m) => {
-      const flights = trips.filter((l) => l.startMonth === m.index);
-      if (!flights.length) return '';
-      const tripUsd = flights.reduce((sum, l) => sum + l.budgetUsd, 0);
-      return `
-        <div class="plan-month">
-          <div class="pm-head">
-            <span class="pm-name">${esc(MONTH_FULL[m.month] || m.month)}</span>
-            <span class="pm-meta">${flights.length} trip campaign${flights.length === 1 ? '' : 's'} + ${always.length} always-on</span>
-            <span class="pm-total">${usd(tripUsd + alwaysUsd)}</span>
-          </div>
-          ${flights.map((l) => `
-            <div class="pflight">
-              <div class="pf-trip">${esc(l.program)}</div>
-              <div class="pf-date">${esc(l.dates)}</div>
-              <div class="pf-est">
-                <div class="pf-track"><div class="pf-fill" style="width:${(((l.resultCount || 0) / maxEst) * 100).toFixed(1)}%"></div></div>
-                <span class="pf-estn">${int(l.resultCount)} msgs</span>
-              </div>
-              <div class="pf-num">${esc(String(l.costPerResult).replace(' / Message', ''))}</div>
-              <div class="pf-num"><b>${usd(l.budgetUsd)}</b></div>
-            </div>`).join('')}
-          ${always.map((l) => `
-            <div class="pflight pf-always">
-              <div class="pf-trip">${esc(l.program)} <span class="pf-tag">always-on</span></div>
-              <div class="pf-date">every month</div>
-              <div class="pf-est"><span class="pf-estn">${esc(l.objective)}</span></div>
-              <div class="pf-num">${esc(l.costPerResult === 'Optimize for Purchase' ? '—' : l.costPerResult)}</div>
-              <div class="pf-num"><b>${usd(l.budgetUsd)}</b></div>
-            </div>`).join('')}
-          <div class="pm-foot">
-            <span>${flights.length} trip${flights.length === 1 ? '' : 's'} ${usd(tripUsd)}</span>
-            <span>+ always-on ${usd(alwaysUsd)}</span>
-            <span class="pm-foot-tot">= ${usd(tripUsd + alwaysUsd)} in ${esc(MONTH_FULL[m.month] || m.month)}</span>
-          </div>
-        </div>`;
-    }).join('');
-
-    // Four months of trips, but always-on recurs in every one of them. The
-    // plan's own headline counts it once; both readings are shown rather than
-    // silently picking whichever is larger.
-    const runMonths = p.byMonth.length;
-    const fullRunUsd = t.prospectingUsd + alwaysUsd * runMonths;
-
-    const detailRows = p.lines.map((l) => `
-      <tr>
-        <td class="cname">${esc(l.program)}
-          <div class="cobj"><i class="odot" style="background:${planObjColor(l.objective)}"></i>${esc(l.objective)}</div>
-        </td>
-        <td class="num">${esc(l.dates)}</td>
-        <td class="num">${esc(l.market)}</td>
-        <td class="num">${usd(l.budgetUsd)}</td>
-        <td class="num">${money(l.budgetSar)}</td>
-        <td class="num">${l.cpm == null ? '—' : dec(l.cpm)}</td>
-        <td class="num">${l.impressions == null ? '—' : int(l.impressions)}</td>
-        <td class="num">${esc(l.costPerResult)}</td>
-        <td class="num">${esc(l.results)}</td>
-      </tr>`).join('');
-
-    // The document's own summary lines, quoted rather than recomputed.
-    const summaryLine = p.summary
-      .map((r) => `<b>${esc(r.label)}${r.objective && r.label.startsWith('Total Media') ? ` (${esc(r.objective)})` : ''}</b> ${usd(r.budgetUsd)}`)
-      .join(' · ');
-
-    $('planWrap').innerHTML = `
-      <div class="panel">
-        <div class="ptitle">Saudi Arabia media plan · monthly</div>
-        <div class="vhero">
-          <span class="vh-c">USD</span><span class="vh-n">${money(t.allUsd)}</span>
-          <span class="vh-s">per month · ≈ SAR ${money(t.allUsd * p.usdSar)} · ${int(t.flights)} campaigns · ~${int(t.results)} messages expected</span>
-        </div>
-        <div class="plan-split">
-          <div class="plan-chip">
-            <div class="pc-n">${usd(t.prospectingUsd)}</div>
-            <div class="pc-l">Prospecting</div>
-            <div class="pc-s">${trips.length} trip campaigns × ${usd(trips.length ? trips[0].budgetUsd : 0)}</div>
-          </div>
-          <div class="plan-chip" style="border-left-color:${planObjColor('Purchase')}">
-            <div class="pc-n">${usd(t.retargetingUsd)}</div>
-            <div class="pc-l">Retargeting</div>
-            <div class="pc-s">website, purchase-optimised</div>
-          </div>
-          <div class="plan-chip" style="border-left-color:${planObjColor('Landing Page Views / Engagement')}">
-            <div class="pc-n">${usd(t.trafficUsd)}</div>
-            <div class="pc-l">Traffic &amp; engagement</div>
-            <div class="pc-s">website, ${esc((always.find((l) => l.kind === 'traffic') || {}).costPerResult || '')}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">Campaign schedule</div>
-        ${months}
-        <div class="plan-foot" style="margin-top:4px">
-          Every month carries the two always-on lines (${always.map((l) => esc(l.program) + ' ' + usd(l.budgetUsd)).join(' · ')}) on top of that month's trip campaigns.
-          Across all ${runMonths} months that is <b>${usd(fullRunUsd)}</b> in total —
-          the plan's own headline of <b>${usd(t.allUsd)}</b> counts the always-on lines once, as a single month's cost.
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">Full plan detail</div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              <th>Program / Campaign</th><th>Date</th><th>Market</th>
-              <th>Budget (USD)</th><th>Budget (SAR)</th><th>Est. CPM</th>
-              <th>Est. Impressions</th><th>Est. Cost / Result</th><th>Est. Results</th>
-            </tr></thead>
-            <tbody>${detailRows}</tbody>
-            <tfoot><tr>
-              <td class="cname">TOTAL</td><td></td><td></td>
-              <td class="num">${usd(t.allUsd)}</td>
-              <td class="num">${money(t.allUsd * p.usdSar)}</td>
-              <td></td>
-              <td class="num">${int(t.impressions)}</td>
-              <td></td>
-              <td class="num">${int(t.results)}</td>
-            </tr></tfoot>
-          </table>
-        </div>
-        <div class="plan-foot" style="margin-top:12px">
-          As written in the plan: ${summaryLine}.<br>
-          Source: <b>${esc(p.source)}</b> · all objectives target <b>${esc(p.market)}</b> · budgets are USD, SAR converted at <b>${dec(p.usdSar)}</b>.
-          These are planned and estimated figures, not measured results — see <b>Campaigns</b> and <b>History</b> for what actually ran.
-        </div>
-      </div>`;
-
-    bindViz($('planWrap'));
-  }
-
-  async function loadPlan() {
-    try {
-      const res = await fetch('/api/media-plan');
-      const p = await res.json();
-      if (!res.ok) throw new Error(p.error || `HTTP ${res.status}`);
-      mediaPlan = p;
-      renderPlan();
-    } catch (err) {
-      $('planWrap').innerHTML = `<div class="msg err">Could not load the media plan: ${esc(err.message)}</div>`;
-    }
-  }
-
   /* ================= previous trips (Booking) ================= */
 
   let previousTrips = null;
@@ -3058,7 +2786,6 @@
     $('previousWrap').hidden = view !== 'previous';
     $('campaignsWrap').hidden = view !== 'campaigns';
     $('historyWrap').hidden = view !== 'history';
-    $('planWrap').hidden = view !== 'plan';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -3078,11 +2805,6 @@
     if (view === 'history') {
       if (!adHistory) $('historyWrap').innerHTML = '<div class="msg">Loading campaign history…</div>';
       loadHistory(false);
-    }
-    // Static reference data, so it's fetched once and kept — a plan doesn't move.
-    if (view === 'plan' && !mediaPlan) {
-      $('planWrap').innerHTML = '<div class="msg">Loading media plan…</div>';
-      loadPlan();
     }
     // Keep the address bar in step, so a reload or a copied link lands on the
     // same tab. replaceState rather than the hash property: no history entry
@@ -3111,7 +2833,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'previous', 'campaigns', 'history', 'plan'];
+  const VIEWS = ['board', 'report', 'previous', 'campaigns', 'history'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;

@@ -1,4 +1,5 @@
 // The Saudi Arabia media plan, transcribed verbatim from
+// "Updated Budget.xlsx" (sheet "Media Plan"), which supersedes the earlier
 // "NomuHub - Saudi Arabia Media Plan.xlsx".
 //
 // This is a *plan*, not measured data — nothing here comes from Meta. It's the
@@ -14,26 +15,31 @@ const USD_SAR = Number(process.env.META_USD_SAR || 3.75);
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-// program, dates, objective, budget, cpm, impressions, cost/result, results, kind
+// program, dates, objective, budget, cpm, impressions, cost/result, results,
+// kind, cancelled — cancelled marks a line the sheet stamped "Cancelled
+// Budget", money the plan no longer commits.
 const ROWS = [
-  ['Zanzibar – Building',          'Sep 6–26',      'Messages', 750, 6.0, 125000, '$4.50 / Message', '167 Messages', 'prospecting'],
-  ['Bali – Wellness',              'Sep 13–19',     'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting'],
-  ['Vietnam – Explore',            'Sep 19–26',     'Messages', 750, 6.5, 115000, '$5.50 / Message', '136 Messages', 'prospecting'],
-  ['Bali – Explore',               'Sep 20–26',     'Messages', 750, 6.0, 125000, '$5.00 / Message', '150 Messages', 'prospecting'],
-  ['South Korea – Explore',        'Oct 24–31',     'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting'],
-  ['Thailand – Wellness',          'Nov 15–20',     'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting'],
-  ['Zanzibar – Building',          'Nov 29–Dec 19', 'Messages', 750, 6.0, 125000, '$4.50 / Message', '167 Messages', 'prospecting'],
-  ['Bali – Explore',               'Dec 5–12',      'Messages', 750, 6.0, 125000, '$5.00 / Message', '150 Messages', 'prospecting'],
-  ['Bali – Teaching',              'Dec 6–19',      'Messages', 750, 5.5, 136000, '$4.50 / Message', '167 Messages', 'prospecting'],
-  ['Zanzibar – Explore',           'Dec 12–18',     'Messages', 750, 6.0, 125000, '$5.00 / Message', '150 Messages', 'prospecting'],
-  ['Bali – Wellness',              'Dec 20–Jan 2',  'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting'],
-  ['Zanzibar – Teaching',          'Dec 20–Jan 2',  'Messages', 750, 5.5, 136000, '$4.50 / Message', '167 Messages', 'prospecting'],
-  ['Website Retargeting',          'Monthly',       'Purchase', 900, null, null, 'Optimize for Purchase', 'Website Purchases', 'retargeting'],
-  ['Website Traffic / Engagement', 'Monthly',       'Landing Page Views / Engagement', 450, 5.0, 90000, '$15/day', 'Engagement', 'traffic'],
+  ['Zanzibar – Building',          'Sep 6–26',      'Messages', 500, 6.0, 125000, '$4.50 / Message', '111 Messages', 'prospecting', false],
+  ['Bali – Wellness',              'Sep 13–19',     'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting', false],
+  ['Vietnam – Explore',            'Sep 19–26',     'Messages', 750, 6.5, 115000, '$5.50 / Message', '136 Messages', 'prospecting', false],
+  ['Bali – Explore',               'Sep 20–26',     'Messages', 750, 6.0, 125000, '$5.00 / Message', '150 Messages', 'prospecting', false],
+  ['South Korea – Explore',        'Oct 24–31',     'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting', true],
+  ['Thailand – Wellness',          'Nov 15–20',     'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting', false],
+  ['Zanzibar – Building',          'Nov 29–Dec 19', 'Messages', 500, 6.0, 125000, '$4.50 / Message', '111 Messages', 'prospecting', false],
+  ['Bali – Explore',               'Dec 5–12',      'Messages', 750, 6.0, 125000, '$5.00 / Message', '150 Messages', 'prospecting', false],
+  ['Bali – Teaching',              'Dec 6–19',      'Messages', 750, 5.5, 136000, '$4.50 / Message', '167 Messages', 'prospecting', false],
+  ['Zanzibar – Explore',           'Dec 12–18',     'Messages', 500, 6.0, 125000, '$5.00 / Message', '111 Messages', 'prospecting', false],
+  ['Bali – Wellness',              'Dec 20–Jan 2',  'Messages', 750, 7.0, 107000, '$6.00 / Message', '125 Messages', 'prospecting', false],
+  ['Zanzibar – Teaching',          'Dec 20–Jan 2',  'Messages', 750, 5.5, 136000, '$4.50 / Message', '167 Messages', 'prospecting', false],
+  ['Website Retargeting',          'Monthly',       'Purchase', 900, null, null, 'Optimize for Purchase', 'Website Purchases', 'retargeting', false],
+  ['Website Traffic / Engagement', 'Monthly',       'Landing Page Views / Engagement', 450, 5.0, 90000, '$15/day', 'Engagement', 'traffic', false],
 ];
 
 // The plan's own summary block, kept as written rather than recomputed — if a
 // derived total ever disagrees with these, that disagreement is worth seeing.
+// It currently does: these four rows were not updated when the line items
+// were cut, so they still describe the previous version of the plan. The
+// derived totals below are the ones that match the line items.
 const SUMMARY = [
   { label: 'Total Prospecting',    objective: 'Messages',                        budgetUsd: 9000,  cpm: 6.21, impressions: 1440000, costPerResult: '~$5.13 / Message', results: '~1,754 Messages' },
   { label: 'Retargeting – 30 Days', objective: 'Purchase',                       budgetUsd: 900,   cpm: null, impressions: null,    costPerResult: 'Purchase Optimization', results: '—' },
@@ -57,13 +63,14 @@ function startMonth(dates) {
 }
 
 function build() {
-  const lines = ROWS.map(([program, dates, objective, budgetUsd, cpm, impressions, costPerResult, results, kind], i) => ({
+  const lines = ROWS.map(([program, dates, objective, budgetUsd, cpm, impressions, costPerResult, results, kind, cancelled], i) => ({
     id: `plan-${i}`,
     program,
     dates,
     objective,
     market: 'Saudi Arabia',
     kind,
+    cancelled: !!cancelled,
     budgetUsd,
     budgetSar: budgetUsd * USD_SAR,
     cpm,
@@ -75,13 +82,16 @@ function build() {
     startMonth: startMonth(dates),
   }));
 
-  const sumBy = (kind, key) => lines
+  // Cancelled lines stay listed — they're part of the document — but they're
+  // money the plan no longer commits, so every total is of the live lines.
+  const live = lines.filter((l) => !l.cancelled);
+  const sumBy = (kind, key) => live
     .filter((l) => l.kind === kind)
     .reduce((total, l) => total + (l[key] || 0), 0);
 
   const byMonth = [];
   for (let i = 0; i < 12; i++) {
-    const group = lines.filter((l) => l.startMonth === i);
+    const group = live.filter((l) => l.startMonth === i);
     if (!group.length) continue;
     byMonth.push({
       month: MONTHS[i],
@@ -95,7 +105,7 @@ function build() {
 
   // One entry per distinct trip, since several run twice on different dates.
   const byProgram = [];
-  for (const line of lines) {
+  for (const line of live) {
     if (line.kind !== 'prospecting') continue;
     let entry = byProgram.find((p) => p.program === line.program);
     if (!entry) {
@@ -118,13 +128,14 @@ function build() {
     market: 'Saudi Arabia',
     currency: 'USD',
     usdSar: USD_SAR,
-    source: 'NomuHub - Saudi Arabia Media Plan.xlsx',
+    source: 'Updated Budget.xlsx',
     lines,
     summary: SUMMARY,
     byMonth,
     byProgram,
     totals: {
-      flights: lines.length,
+      flights: live.length,
+      cancelled: lines.length - live.length,
       programs: byProgram.length,
       prospectingUsd,
       retargetingUsd,
@@ -133,8 +144,8 @@ function build() {
       // Spend / Messages + Purchase" line.
       corePlanUsd: prospectingUsd + retargetingUsd,
       allUsd: prospectingUsd + retargetingUsd + trafficUsd,
-      impressions: lines.reduce((total, l) => total + (l.impressions || 0), 0),
-      results: lines.reduce((total, l) => total + (l.resultCount || 0), 0),
+      impressions: live.reduce((total, l) => total + (l.impressions || 0), 0),
+      results: live.reduce((total, l) => total + (l.resultCount || 0), 0),
     },
   };
 }
