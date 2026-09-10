@@ -1874,7 +1874,7 @@
   // Which budget period the Campaigns tab is showing. Last 14 days by
   // default: a calendar month is thin on data for its first days, and this
   // window never is.
-  let budgetPeriod = 'last14';
+  let budgetPeriod = new Date().toISOString().slice(0, 7);
 
   // Each metric knows how to read itself off a week, how to print itself, which
   // direction is good, and what its reference level is. The chart itself is
@@ -2231,6 +2231,7 @@
               ? ` · ${esc(r.campaignName)}${period && period.dailyBudget ? ` · ${money(period.dailyBudget)}/day` : ''}`
               : ' · <span style="color:#6c7f9c">no campaign running</span>'}</div>
           </td>
+          <td>${r.matched ? `<span class="cpill ${r.status === 'Active' ? 'on' : 'off'}">${esc(r.status)}</span>` : ''}</td>
           <td class="num">${money(r.plannedSar)}</td>
           <td class="num">${r.matched ? money(r.spend) : '—'}</td>
           <td class="num">${r.matched ? money(r.remaining) : '—'}</td>
@@ -2261,7 +2262,7 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Trip / Campaign</th><th>Plan Budget</th><th>Spent (Total)</th>
+              <th>Trip / Campaign</th><th>Status</th><th>Plan Budget</th><th>Spent (Total)</th>
               <th>Remaining</th><th>% Plan Used</th>
               <th>Spend (${esc(periodName)})</th><th>Pace (${esc(periodName)})</th>
               <th>Planned Results</th><th>Actual Results</th><th>Performance</th>
@@ -2270,6 +2271,7 @@
             <tbody>${rows}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL (live lines)</td>
+              <td></td>
               <td class="num">${money(t.plannedSar)}</td>
               <td class="num">${money(t.spend)}</td>
               <td class="num">${money(t.plannedSar - t.spend)}</td>
