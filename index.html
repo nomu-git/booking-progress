@@ -957,7 +957,7 @@
   function saveViewState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        view, rGran, rCount, selectedWeekStart, selectedMonthStart, mainMetric, budgetPeriod, ptYear, ptMonth,
+        view, rGran, rCount, selectedWeekStart, selectedMonthStart, mainMetric, ptYear, ptMonth,
       }));
     } catch (e) { /* storage unavailable (private mode, etc.) — just skip persisting */ }
   }
@@ -973,7 +973,6 @@
       if (s.ptYear) ptYear = s.ptYear;
       if (s.ptMonth) ptMonth = s.ptMonth;
       if (s.mainMetric && METRICS[s.mainMetric]) mainMetric = s.mainMetric;
-      if (s.budgetPeriod) budgetPeriod = s.budgetPeriod;
       if (s.rGran) rGran = s.rGran;
       if (s.rCount) rCount = s.rCount;
       if (s.selectedWeekStart) selectedWeekStart = s.selectedWeekStart;
@@ -1874,6 +1873,10 @@
   // Which budget period the Campaigns tab is showing. Last 14 days by
   // default: a calendar month is thin on data for its first days, and this
   // window never is.
+  // Deliberately not saved/restored like the other view state — a period
+  // picked once shouldn't stick forever and quietly defeat the point of
+  // defaulting to the current month. Always starts here; "Last 14 days" and
+  // every past month stay one click away in the dropdown regardless.
   let budgetPeriod = new Date().toISOString().slice(0, 7);
 
   // Each metric knows how to read itself off a week, how to print itself, which
