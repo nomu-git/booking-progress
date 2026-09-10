@@ -2168,56 +2168,104 @@
 
   /* ---------------- plan vs actual (the budget spreadsheet) ---------------- */
 
-  function planVsActualSection(p) {
+  // Whether to add budget, cut it, or leave a trip's campaign alone — driven
+  // by how much of its whole-flight plan budget is gone versus how it's
+  // performing against the plan's own result estimate. Deliberately not
+  // driven by the period picker: a campaign that's barely touched its total
+  // budget can still look "behind" in the last 14 days for reasons that have
+  // nothing to do with whether it needs more money.
+  const PLAN_USED_HIGH = 0.85; // most of the whole-flight budget is gone
+  const PLAN_USED_LOW = 0.30;  // budget is still largely untouched
+  const PLAN_PERF_GOOD = 1.0;  // hitting or beating the plan's own estimate
+  const PLAN_PERF_WEAK = 0.6;  // notably behind the plan's own estimate
+
+  function planAction(r) {
+    if (r.cancelled) return { text: 'Cancelled', state: '' };
+    if (!r.matched) return { text: 'Needs to launch', state: 'watch' };
+    const used = r.usedPct;
+    const perf = r.performance;
+    if (used == null) return { text: 'On track', state: '' };
+    if (used >= PLAN_USED_HIGH) {
+      return perf != null && perf < PLAN_PERF_WEAK
+        ? { text: 'Consider stopping — budget nearly gone, results below plan', state: 'bad' }
+        : { text: 'Nearing full budget — review before it runs out', state: 'watch' };
+    }
+    if (used <= PLAN_USED_LOW) {
+      if (perf != null && perf >= PLAN_PERF_GOOD) return { text: 'Consider increasing — strong results, budget headroom', state: 'good' };
+      if (perf != null && perf < PLAN_PERF_WEAK) return { text: 'Monitor — underspending and underperforming', state: 'watch' };
+      return { text: 'Early days — budget largely untouched', state: '' };
+    }
+    return { text: 'On track', state: '' };
+  }
+
+  // One table, one row per trip: the plan's whole-flight budget next to that
+  // same campaign's live daily rate and this-period spend, so the picker
+  // still does something (it drives the two "this period" columns) without
+  // pretending a flight total has a "last 14 days" version of itself.
+  function campaignDecisionTable(p, periodRows, periodName, rolling) {
     const pv = p.planVsActual;
     if (!pv || !pv.rows || !pv.rows.length) return '';
     const cur = esc(pv.currency || 'SAR');
     const t = pv.totals;
+    const byId = new Map((periodRows || []).map((r) => [r.id, r]));
 
-    const usedAll = ratio(t.spend, t.plannedSar);
-    const perfAll = ratio(t.results, t.plannedResults);
+    let pSpendTotal = 0;
+    let pExpectedTotal = 0;
 
     const rows = pv.rows.map((r) => {
       const state = r.usedPct == null ? ''
-        : r.usedPct > 1 ? 'cell-bad' : r.usedPct >= 0.85 ? 'cell-watch' : '';
+        : r.usedPct > 1 ? 'cell-bad' : r.usedPct >= PLAN_USED_HIGH ? 'cell-watch' : '';
       const perfState = r.performance == null ? ''
-        : r.performance >= 1 ? 'cell-good' : r.performance >= 0.6 ? 'cell-watch' : 'cell-bad';
+        : r.performance >= PLAN_PERF_GOOD ? 'cell-good' : r.performance >= PLAN_PERF_WEAK ? 'cell-watch' : 'cell-bad';
+      const period = r.matched ? byId.get(r.campaignId) : null;
+      if (period) { pSpendTotal += period.spend || 0; pExpectedTotal += period.expectedToDate || 0; }
+      const periodPaceState = period && period.pacePct != null
+        ? (period.pacePct > 1.15 ? 'cell-bad' : period.pacePct < 0.85 ? 'cell-watch' : 'cell-good') : '';
+      const act = planAction(r);
+
       return `
         <tr${r.cancelled ? ' class="planrow-cancelled"' : ''}>
           <td class="cname">
             ${esc(r.program)}${r.cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}
             <div class="cobj">${esc(r.dates)}${r.matched
-              ? ` · ${esc(r.campaignName)}`
+              ? ` · ${esc(r.campaignName)}${period && period.dailyBudget ? ` · ${money(period.dailyBudget)}/day` : ''}`
               : ' · <span style="color:#6c7f9c">no campaign running</span>'}</div>
           </td>
           <td class="num">${money(r.plannedSar)}</td>
           <td class="num">${r.matched ? money(r.spend) : '—'}</td>
           <td class="num">${r.matched ? money(r.remaining) : '—'}</td>
           <td class="num ${r.matched ? state : ''}">${r.matched ? show(r.usedPct, pct) : '—'}</td>
+          <td class="num">${period ? money(period.spend) : '—'}</td>
+          <td class="num ${periodPaceState}">${period ? show(period.pacePct, pct) : '—'}</td>
           <td class="num">${r.plannedResults == null ? '—' : int(r.plannedResults)}</td>
           <td class="num">${r.matched ? int(r.results) : '—'}</td>
           <td class="num ${r.matched ? perfState : ''}">${r.matched ? show(r.performance, pct) : '—'}</td>
+          <td class="num ${act.state ? 'cell-' + act.state : ''}" style="text-align:left;white-space:normal;min-width:170px">${esc(act.text)}</td>
         </tr>`;
     }).join('');
 
+    const usedAll = ratio(t.spend, t.plannedSar);
+    const perfAll = ratio(t.results, t.plannedResults);
+    const paceAll = ratio(pSpendTotal, pExpectedTotal);
     const orphans = pv.unmatchedCampaigns || [];
 
     return `
       <div class="panel">
-        <div class="ptitle">Plan vs actual · ${esc(pv.source)}</div>
+        <div class="ptitle">Budget vs actual by campaign · ${esc(pv.source)}</div>
         <div class="infonote">
           <span class="ni-ico">📋</span>
-          <span>The allocation here is what the budget sheet committed per trip, converted at ${dec(pv.usdSar)}.
-          It is compared with everything that campaign has spent so far, not with a single month —
-          the sheet budgets a whole flight, and a December trip is advertised months ahead of it.
+          <span><b>Plan Budget</b> through <b>Performance</b> are the whole-flight numbers from the budget sheet, converted at ${dec(pv.usdSar)} — they don't change with the period picker below, since the sheet budgets a whole trip, not a month.
+          <b>Spend (${esc(periodName)})</b> and <b>Pace (${esc(periodName)})</b> are the two columns the picker does drive — Meta's live daily rate over just that window.
           <b>${t.matched} of ${t.lines}</b> live plan lines have a campaign running against them.</span>
         </div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Trip / Campaign</th><th>Planned (${cur})</th><th>Actual Spend</th>
-              <th>Remaining</th><th>Used</th>
+              <th>Trip / Campaign</th><th>Plan Budget</th><th>Spent (Total)</th>
+              <th>Remaining</th><th>% Plan Used</th>
+              <th>Spend (${esc(periodName)})</th><th>Pace (${esc(periodName)})</th>
               <th>Planned Results</th><th>Actual Results</th><th>Performance</th>
+              <th>Suggested Action</th>
             </tr></thead>
             <tbody>${rows}</tbody>
             <tfoot><tr>
@@ -2226,9 +2274,12 @@
               <td class="num">${money(t.spend)}</td>
               <td class="num">${money(t.plannedSar - t.spend)}</td>
               <td class="num">${show(usedAll, pct)}</td>
+              <td class="num">${money(pSpendTotal)}</td>
+              <td class="num">${show(paceAll, pct)}</td>
               <td class="num">${int(t.plannedResults)}</td>
               <td class="num">${int(t.results)}</td>
               <td class="num">${show(perfAll, pct)}</td>
+              <td></td>
             </tr></tfoot>
           </table>
         </div>
@@ -2240,8 +2291,9 @@
         </div>` : ''}
         <div class="plan-foot" style="margin-top:12px">
           A plan line is tied to a campaign by name plus the month the campaign carries — that's what the renaming made possible.
-          Lines with no campaign running are shown with a dash rather than a zero, since nothing has been spent against them yet.
+          Lines with no campaign running are shown with a dash, not a zero, since nothing has been spent against them yet.
           Cancelled lines stay listed but are left out of every total.
+          <b>Suggested Action</b> reads only the Plan columns, not the period ones: budget ≥${pct(PLAN_USED_HIGH)} used with results below ${pct(PLAN_PERF_WEAK)} of plan → consider stopping; budget ≤${pct(PLAN_USED_LOW)} used with results at or above the plan's own estimate → consider increasing. Everything between is "on track" — the picker's columns are there for the day-to-day pacing check, not this call.
         </div>
       </div>`;
   }
@@ -2314,32 +2366,6 @@
         ]),
       });
     }
-
-    const budgetRows = rows.map((r) => {
-      const usedR = r.usedPct;
-      const paceR = r.pacePct;
-      const perfR = r.performance;
-      const pState = paceR == null ? '' : paceR > 1.15 ? 'cell-bad' : paceR < 0.85 ? 'cell-watch' : 'cell-good';
-      const fState = perfR == null ? '' : perfR >= 1 ? 'cell-good' : perfR >= 0.6 ? 'cell-watch' : 'cell-bad';
-      return `
-        <tr>
-          <td class="cname">${esc(r.name)}
-            <div class="cobj"><i class="odot" style="background:${objColor(r.objective)}"></i>${esc(r.objective || '')}${
-              r.dailyBudget ? ` · ${money(r.dailyBudget)}/day` : ''}</div>
-          </td>
-          <td><span class="cpill ${r.status === 'Active' ? 'on' : 'off'}">${esc(r.status)}</span></td>
-          <td class="num">${show(r.allocated, money)}</td>
-          <td class="num">${money(r.spend)}</td>
-          <td class="num">${show(r.remaining, money)}</td>
-          <td class="num">${show(usedR, pct)}</td>
-          <td class="num ${pState}">${show(paceR, (v) => pct(v))}</td>
-          <td class="num">${int(r.results)}</td>
-          <td class="num">${r.targetResults == null ? '—' : int(Math.round(r.targetResults))}</td>
-          <td class="num ${fState}">${show(perfR, pct)}</td>
-        </tr>`;
-    }).join('');
-
-    const tSum = (key) => rows.reduce((sum, r) => sum + (r[key] || 0), 0);
 
     $('campaignsWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
@@ -2427,41 +2453,7 @@
         </div>
       </div>
 
-      <div class="panel">
-        <div class="ptitle">Budget vs actual by campaign · ${esc(periodName)}</div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              <th>Campaign</th><th>Status</th><th>Budget</th><th>Actual Spend</th>
-              <th>Remaining</th><th>Used</th><th>Pace</th>
-              <th>Results</th><th>Target</th><th>Performance</th>
-            </tr></thead>
-            <tbody>${budgetRows || '<tr><td class="cname" colspan="10">No campaign had a budget or spend this month.</td></tr>'}</tbody>
-            <tfoot><tr>
-              <td class="cname">TOTAL</td><td></td>
-              <td class="num">${show(b.allocated, money)}</td>
-              <td class="num">${money(b.spend)}</td>
-              <td class="num">${show(remaining, money)}</td>
-              <td class="num">${show(used, pct)}</td>
-              <td class="num">${show(pace, pct)}</td>
-              <td class="num">${int(b.results)}</td>
-              <td class="num">${b.targetResults ? int(Math.round(b.targetResults)) : '—'}</td>
-              <td class="num">${show(resultPerf, pct)}</td>
-            </tr></tfoot>
-          </table>
-        </div>
-        <div class="plan-foot" style="margin-top:12px">
-          <b>Budget</b> is the live daily amount on each campaign's active ad sets, times the ${b.daysInPeriod || 0} days in ${esc(periodName)}.
-          Past months use today's daily budget as a stand-in, since Meta doesn't expose a history of budget changes.
-          <b>Pace</b> compares spend against what should have gone out ${
-            rolling ? 'over the window'
-            : b.daysInPeriod > b.daysElapsed ? `by day ${b.daysElapsed}`
-            : 'across the whole month'}, so a campaign early in the month isn't read as underspending.
-          <b>Target</b> is what that budget should return at the plan's ${b.costPerResultTarget ? money(b.costPerResultTarget) + ' per result' : 'planned efficiency'} — paused campaigns carry no allocation, so they show none.
-        </div>
-      </div>
-
-      ${planVsActualSection(p)}
+      ${campaignDecisionTable(p, rows, periodName, rolling)}
 
       <div class="panel">
         <div class="ptitle">Spend by campaign · ${p.year} to date</div>
