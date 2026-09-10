@@ -1,3 +1,11 @@
+// One calendar year of Meta ad history, Jan through Dec.
+//
+// This used to be a rolling ~37-month window with every year stacked on one
+// page, which read as a wall of numbers. Muatasam asked for the full 2026
+// year instead, so the unit here is a single year: pick it, see all twelve
+// months of it, see the campaigns that ran in it. Older years are still
+// reachable through the picker, they're just not all on screen at once.
+
 const {
   graphGetAll, getAccountMeta, toReportCurrency, AD_ACCOUNTS, REPORT_CURRENCY,
 } = require('./meta-ads');
@@ -5,10 +13,8 @@ const { mapWithConcurrency } = require('./wetravel');
 
 const CACHE_TTL_MS = Number(process.env.META_HISTORY_CACHE_TTL_MS || 1800000);
 
-// Meta keeps ad insights for roughly 37 months and purges everything older —
-// which is exactly why the archive spreadsheet marks pre-Jul-2023 rows
-// "figures purged by Meta". Asking for more just errors, so the window is
-// derived from that limit rather than reaching back to the first campaign.
+// Meta keeps ad insights for roughly 37 months and purges everything older,
+// so that's how far back the year picker can honestly offer.
 const RETENTION_MONTHS = Number(process.env.META_RETENTION_MONTHS || 37);
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -34,14 +40,20 @@ const RESULT_ACTIONS = {
   Leads: ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead'],
   'Link Clicks': ['link_click'],
 };
-const PURCHASE_ACTIONS = ['purchase', 'offsite_conversion.fb_pixel_purchase', 'omni_purchase'];
 
-let cache = { at: 0, payload: null };
+// year -> payload. Each year is a separate upstream pull, so they cache apart.
+const cache = new Map();
 
 const num = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
+
+// Meta campaign names are typed by hand and carry stray double spaces and
+// trailing separators. Nothing here invents or rewrites a name — the words
+// stay exactly as they are in Ads Manager, so the board and Meta always
+// agree; only the whitespace is tidied.
+const cleanName = (s) => String(s || '').replace(/\s+/g, ' ').replace(/\s*[-–|]\s*$/, '').trim() || '(unnamed)';
 
 function actionValue(actions, types) {
   if (!Array.isArray(actions)) return 0;
@@ -65,54 +77,63 @@ function resultsFor(label, actions, reach) {
   return types ? actionValue(actions, types) : customConversionValue(actions);
 }
 
-// The earliest month Meta will still answer for, floored to the 1st.
-function windowStart() {
-  const override = (process.env.META_HISTORY_SINCE || '').trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(override)) return override;
+// The earliest day Meta will still answer for. Asking past it doesn't return
+// an empty result, it errors — so every request has to be clamped to it.
+function retentionFloor() {
   const now = new Date();
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (RETENTION_MONTHS - 1), 1));
-  return d.toISOString().slice(0, 10);
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (RETENTION_MONTHS - 1), 1))
+    .toISOString().slice(0, 10);
 }
 
-// One request per account per year. A single 3-year monthly pull at campaign
-// level is a lot of rows for one call to survive; per-year keeps each response
-// small and means one bad year can't take the whole archive down with it.
-async function fetchYear(accountId, year, since, until) {
-  const from = year === Number(since.slice(0, 4)) ? since : `${year}-01-01`;
-  const to = year === Number(until.slice(0, 4)) ? until : `${year}-12-31`;
+// The years Meta will still answer for, newest first.
+function availableYears() {
+  const oldest = Number(retentionFloor().slice(0, 4));
+  const years = [];
+  for (let y = new Date().getUTCFullYear(); y >= oldest; y--) years.push(y);
+  return years;
+}
+
+async function fetchYear(accountId, since, until) {
   try {
     return await graphGetAll(`/${accountId}/insights`, {
       level: 'campaign',
-      time_range: JSON.stringify({ since: from, until: to }),
+      time_range: JSON.stringify({ since, until }),
       time_increment: 'monthly',
       fields: 'campaign_id,campaign_name,objective,spend,impressions,reach,actions,date_start',
     });
   } catch (err) {
-    console.error(`history ${accountId} ${year} failed: ${err.message}`);
+    console.error(`history ${accountId} ${since}..${until} failed: ${err.message}`);
     return [];
   }
 }
 
-async function build() {
-  const since = windowStart();
-  const until = new Date().toISOString().slice(0, 10);
-  const firstYear = Number(since.slice(0, 4));
-  const lastYear = Number(until.slice(0, 4));
-
-  const jobs = [];
-  for (const accountId of AD_ACCOUNTS) {
-    for (let year = firstYear; year <= lastYear; year++) jobs.push({ accountId, year });
-  }
+async function build(year) {
+  const today = new Date().toISOString().slice(0, 10);
+  const floor = retentionFloor();
+  // The oldest year in the picker starts mid-year, because Meta has purged
+  // the months before that. Those months aren't "no spend" — they're gone at
+  // the source, and the view has to say so rather than draw them as empty.
+  const yearStart = `${year}-01-01`;
+  const since = yearStart < floor ? floor : yearStart;
+  const purgedBefore = since > yearStart ? since : null;
+  // Meta also rejects a range that runs past today, so the request stops at
+  // today even though the view still shows all twelve months of the year.
+  const until = `${year}-12-31` > today ? today : `${year}-12-31`;
 
   const accountMeta = new Map();
   await Promise.all(AD_ACCOUNTS.map(async (id) => accountMeta.set(id, await getAccountMeta(id))));
 
-  const batches = await mapWithConcurrency(jobs, 3, (job) =>
-    fetchYear(job.accountId, job.year, since, until).then((rows) => ({ ...job, rows })));
+  const batches = await mapWithConcurrency(AD_ACCOUNTS, 3, (accountId) =>
+    fetchYear(accountId, since, until).then((rows) => ({ accountId, rows })));
 
-  // month key -> totals, and campaign+year -> one archive row, built together
-  // so a single pass over the data feeds both the timeline and the table.
+  // Every month of the year exists up front, spend or not — an empty November
+  // is a fact about the year, not a gap to hide.
   const months = new Map();
+  for (let i = 0; i < 12; i++) {
+    const key = `${year}-${String(i + 1).padStart(2, '0')}`;
+    months.set(key, { month: key, label: MONTHS[i], spend: 0, results: 0, campaigns: new Set() });
+  }
+
   const entries = new Map();
 
   for (const { accountId, rows } of batches) {
@@ -125,122 +146,100 @@ async function build() {
       if (spend === 0 && impressions === 0) continue;
 
       const monthKey = String(row.date_start || '').slice(0, 7);
-      if (!/^\d{4}-\d{2}$/.test(monthKey)) continue;
-      const year = Number(monthKey.slice(0, 4));
+      if (!months.has(monthKey)) continue;
 
       const label = OBJECTIVE_LABEL[row.objective] || 'Custom Conversion';
       const results = resultsFor(label, row.actions, reach);
-      const purchases = actionValue(row.actions, PURCHASE_ACTIONS);
 
-      if (!months.has(monthKey)) {
-        months.set(monthKey, {
-          month: monthKey, year,
-          label: `${MONTHS[Number(monthKey.slice(5, 7)) - 1]} ${year}`,
-          spend: 0, results: 0, impressions: 0, reach: 0, purchases: 0, campaigns: new Set(),
-        });
-      }
       const m = months.get(monthKey);
-      m.spend += spend; m.results += results; m.impressions += impressions;
-      m.reach += reach; m.purchases += purchases; m.campaigns.add(row.campaign_id);
+      m.spend += spend;
+      m.results += results;
+      m.campaigns.add(row.campaign_id);
 
-      // The spreadsheet's unit is one row per campaign per year — same here, so
-      // a campaign that ran across two years shows up once under each.
-      const key = `${row.campaign_id}:${year}`;
-      if (!entries.has(key)) {
-        entries.set(key, {
-          id: row.campaign_id, year,
-          name: row.campaign_name || '(unnamed)',
+      // One row per campaign for the whole year, so a campaign that ran in
+      // three separate months is still one line in the table.
+      if (!entries.has(row.campaign_id)) {
+        entries.set(row.campaign_id, {
+          id: row.campaign_id,
+          name: cleanName(row.campaign_name),
           objective: label,
           account: account.name,
-          spend: 0, results: 0, impressions: 0, reach: 0, purchases: 0,
+          spend: 0, results: 0, impressions: 0, reach: 0,
           monthKeys: new Set(),
         });
       }
-      const e = entries.get(key);
-      e.spend += spend; e.results += results; e.impressions += impressions;
-      e.reach += reach; e.purchases += purchases; e.monthKeys.add(monthKey);
+      const e = entries.get(row.campaign_id);
+      e.spend += spend;
+      e.results += results;
+      e.impressions += impressions;
+      e.reach += reach;
+      e.monthKeys.add(monthKey);
     }
   }
 
-  const monthList = [...months.values()]
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .map((m) => ({ ...m, campaigns: m.campaigns.size }));
+  const monthList = [...months.values()].map((m) => ({ ...m, campaigns: m.campaigns.size }));
+  const totalSpend = monthList.reduce((total, m) => total + m.spend, 0);
 
   const campaigns = [...entries.values()]
     .map((e) => {
       const keys = [...e.monthKeys].sort();
-      const pretty = (k) => `${MONTHS[Number(k.slice(5, 7)) - 1]} ${k.slice(0, 4)}`;
+      const short = (k) => MONTHS[Number(k.slice(5, 7)) - 1];
       const { monthKeys, ...rest } = e;
       return {
         ...rest,
-        firstMonth: keys.length ? pretty(keys[0]) : null,
-        lastMonth: keys.length ? pretty(keys[keys.length - 1]) : null,
+        firstMonth: keys.length ? short(keys[0]) : null,
+        lastMonth: keys.length ? short(keys[keys.length - 1]) : null,
         monthsLive: keys.length,
+        share: totalSpend > 0 ? e.spend / totalSpend : 0,
       };
     })
-    .sort((a, b) => b.year - a.year || b.spend - a.spend);
-
-  const years = [];
-  for (let year = lastYear; year >= firstYear; year--) {
-    const rows = campaigns.filter((c) => c.year === year);
-    const ms = monthList.filter((m) => m.year === year);
-    if (!rows.length) continue;
-    const sum = (list, key) => list.reduce((total, r) => total + (r[key] || 0), 0);
-    years.push({
-      year,
-      campaigns: rows.length,
-      spend: sum(rows, 'spend'),
-      results: sum(rows, 'results'),
-      impressions: sum(rows, 'impressions'),
-      reach: sum(rows, 'reach'),
-      purchases: sum(rows, 'purchases'),
-      months: ms.length,
-      // Partial only at the ends of the retention window — flagged so a short
-      // first year doesn't read as a collapse in spend.
-      partial: year === firstYear || year === lastYear,
-    });
-  }
-
-  const sumAll = (key) => campaigns.reduce((total, c) => total + (c[key] || 0), 0);
+    .sort((a, b) => b.spend - a.spend || a.name.localeCompare(b.name));
 
   return {
     asOf: new Date().toISOString(),
+    year,
     since,
     until,
-    currency: REPORT_CURRENCY,
+    today,
+    purgedBefore,
     retentionMonths: RETENTION_MONTHS,
+    currency: REPORT_CURRENCY,
+    availableYears: availableYears(),
     accounts: [...accountMeta.values()].map((a) => ({ id: a.id, name: a.name, currency: a.currency })),
     totals: {
-      spend: sumAll('spend'),
-      results: sumAll('results'),
-      impressions: sumAll('impressions'),
-      reach: sumAll('reach'),
-      purchases: sumAll('purchases'),
-      rows: campaigns.length,
-      campaigns: new Set(campaigns.map((c) => c.id)).size,
+      spend: totalSpend,
+      results: monthList.reduce((total, m) => total + m.results, 0),
+      campaigns: campaigns.length,
+      impressions: campaigns.reduce((total, c) => total + c.impressions, 0),
+      reach: campaigns.reduce((total, c) => total + c.reach, 0),
     },
-    years,
     months: monthList,
     campaigns,
   };
 }
 
 module.exports = async (req, res) => {
+  const years = availableYears();
+  const asked = Number((req.query && req.query.year) || years[0]);
+  const year = years.includes(asked) ? asked : years[0];
+
   try {
     const fresh = req.query && req.query.refresh === '1';
-    if (!fresh && cache.payload && Date.now() - cache.at < CACHE_TTL_MS) {
+    const hit = cache.get(year);
+    if (!fresh && hit && Date.now() - hit.at < CACHE_TTL_MS) {
       res.setHeader('X-Cache', 'HIT');
-      return res.status(200).json(cache.payload);
+      return res.status(200).json(hit.payload);
     }
-    const payload = await build();
-    cache = { at: Date.now(), payload };
+    const payload = await build(year);
+    cache.set(year, { at: Date.now(), payload });
     res.setHeader('X-Cache', 'MISS');
     res.status(200).json(payload);
   } catch (err) {
     console.error(err);
-    if (cache.payload) {
+    const hit = cache.get(year);
+    if (hit) {
       res.setHeader('X-Cache', 'STALE');
-      return res.status(200).json({ ...cache.payload, stale: true, error: err.message });
+      return res.status(200).json({ ...hit.payload, stale: true, error: err.message });
     }
     res.status(500).json({ error: err.message });
   }
