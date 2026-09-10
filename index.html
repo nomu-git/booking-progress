@@ -483,11 +483,9 @@
      against a number printed elsewhere. */
 
   /* ---- budget vs actual ----
-     The one comparison this tab exists to make, so it gets the top of the
-     page and reads as two figures side by side rather than two numbers the
-     reader has to divide in their head. */
-  .bphead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-  .bphead .fselect { margin-left: auto; }
+     The one comparison this tab exists to make: two figures side by side and
+     a single track underneath, rather than numbers the reader has to divide
+     in their head. */
   .bvhero { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
   .bv-side { min-width: 130px; }
   .bv-lab { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
@@ -496,240 +494,25 @@
   .bv-s { font-size: 11px; color: var(--text-3); margin-top: 2px; }
   .bv-vs { font-size: 12px; color: var(--text-3); padding-bottom: 10px; }
 
-  /* A single track: fill is what's been spent, the tick is where the month
-     itself has got to. Level with the tick means on pace. */
   .bvbar { margin-top: 16px; }
-  .bvbar-track {
-    position: relative; height: 14px; border-radius: 7px;
-    background: var(--track); overflow: hidden;
-  }
+  .bvbar-track { position: relative; height: 14px; border-radius: 7px; background: var(--track); overflow: hidden; }
   .bvbar-fill { height: 100%; background: var(--fill); border-radius: 7px; min-width: 2px; }
-  .bvbar-now { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--info); }
-  .bvbar-legend {
-    display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 7px;
-    font-size: 11px; color: var(--text-3);
+
+  /* Per-row actual-vs-budget bar. Amber as it nears the budget, red once it
+     is past it — the number beside it says the same thing, so the colour is
+     never the only signal. */
+  .abar-cell { min-width: 190px; }
+  .abar {
+    display: inline-block; vertical-align: middle; width: 120px; height: 9px;
+    border-radius: 5px; background: var(--track); overflow: hidden;
   }
-  .bvbar-mark { color: var(--info); }
-
-  .mkpi-5 { grid-template-columns: repeat(5, 1fr); }
-  @media (max-width: 1100px) { .mkpi-5 { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 620px)  { .mkpi-5 { grid-template-columns: repeat(2, 1fr); } }
-
-  .mhead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
-  .mnow { margin-left: auto; display: flex; align-items: baseline; gap: 8px; }
-  .mnow-n { font-size: 30px; font-weight: 700; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
-  .mnow-u { font-size: 11px; color: var(--text-3); }
-  .th-d { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
-
-  /* The verdict is the guide: a word, an icon, and a sentence saying what to
-     do. Never colour alone — the word and the shape both carry the state. */
-  .verdict {
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    padding: 10px 13px; border-radius: 8px; margin-bottom: 13px;
-    font-size: 12.5px; line-height: 1.5; border: 1px solid transparent;
+  .abar-fill { height: 100%; border-radius: 5px; background: var(--fresh); min-width: 2px; }
+  .abar-fill.near { background: var(--target); }
+  .abar-fill.over { background: var(--danger); }
+  .abar-pct {
+    display: inline-block; margin-left: 9px; font-size: 12px;
+    color: var(--text-2); font-variant-numeric: tabular-nums;
   }
-  .verdict .v-ico { font-size: 11px; }
-  .verdict .v-word { font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
-  .verdict .v-text { color: var(--text-2); }
-  .v-good  { background: rgba(61,220,132,.10); border-color: rgba(61,220,132,.34); }
-  .v-good .v-ico, .v-good .v-word { color: var(--fresh); }
-  .v-watch { background: rgba(239,139,60,.10); border-color: rgba(239,139,60,.34); }
-  .v-watch .v-ico, .v-watch .v-word { color: var(--target); }
-  .v-act   { background: rgba(224,72,61,.12); border-color: rgba(224,72,61,.38); }
-  .v-act .v-ico, .v-act .v-word { color: #ff9d92; }
-  .v-none  { background: var(--track); }
-
-  .mainvz { padding: 16px 16px 10px; }
-  .mplot svg { height: 250px; }
-  .mscale { height: 250px; min-width: 52px; }
-  .mplot { position: relative; }
-
-  /* Point markers are HTML, not SVG: the plot stretches to the panel width and
-     would turn a circle into an oval. Percentage offsets don't distort. */
-  .mdots { position: absolute; inset: 0; pointer-events: none; }
-  .mk {
-    position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
-    border-radius: 50%; background: var(--fill); box-shadow: 0 0 0 2px var(--track);
-  }
-  .mk-good  { background: var(--fresh); }
-  .mk-watch { background: var(--target); }
-  .mk-act   { background: var(--danger); }
-  .mk-part  { background: var(--track); box-shadow: 0 0 0 2px var(--fill); }
-  .mk-now   { width: 12px; height: 12px; margin: -6px 0 0 -6px; }
-
-  .tgt-tag {
-    position: absolute; right: 4px; transform: translateY(-50%);
-    background: var(--navy); border: 1px solid var(--info-line); color: var(--info);
-    font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
-    pointer-events: none; white-space: nowrap;
-  }
-
-  .mlegend { font-size: 10.5px; }
-  .zk { width: 12px; height: 9px; border-radius: 2px; flex: none; display: inline-block; }
-  .zk-good  { background: rgba(61,220,132,.35); }
-  .zk-watch { background: rgba(239,139,60,.35); }
-  .zk-act   { background: rgba(224,72,61,.38); }
-  .zk-line  { background: var(--info); height: 2px; border-radius: 1px; }
-  .zk-avg   { background: repeating-linear-gradient(90deg,#8698b4 0 4px,transparent 4px 7px); height: 2px; }
-  .zk-part  { background: repeating-linear-gradient(90deg,var(--fill) 0 4px,transparent 4px 7px); height: 2px; }
-
-  /* Direction of change, coloured by whether it is good — which for a cost
-     metric is the opposite of "up". The arrow and the sign carry it too. */
-  .d-up   { color: var(--fresh); }
-  .d-down { color: var(--danger); }
-  .d-flat { color: var(--text-3); }
-
-  /* weekly triage */
-  .sigrow {
-    display: grid; grid-template-columns: minmax(0,1.6fr) 84px repeat(4, minmax(0,1fr)) minmax(0,1.3fr);
-    gap: 10px; align-items: center; padding: 9px 2px; font-size: 12px;
-  }
-  .sigrow + .sigrow { border-top: 1px solid rgba(52,81,124,.3); }
-  .sighead { font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
-    color: var(--text-3); font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-  .sig-name { color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sig-sub { font-size: 10.5px; color: var(--text-3); margin-top: 2px; }
-  .sig-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); }
-  .sig-num b { color: #fff; }
-  .sig-why { font-size: 11px; color: var(--text-3); }
-  .sigpill {
-    display: inline-block; padding: 3px 9px; border-radius: 999px;
-    font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  }
-  .sig-fix   { background: rgba(224,72,61,.16); color: #ff9d92; }
-  .sig-watch { background: rgba(239,139,60,.16); color: var(--target); }
-  .sig-scale { background: rgba(61,220,132,.16); color: var(--fresh); }
-  .sig-new   { background: rgba(77,157,224,.16); color: var(--info); }
-  .sig-stopped { background: rgba(224,72,61,.10); color: #e0a0a0; }
-  .sig-idle  { background: rgba(134,152,180,.13); color: var(--text-3); }
-  @media (max-width: 980px) {
-    .sigrow { grid-template-columns: 1fr auto; row-gap: 5px; }
-    .sig-why { grid-column: 1 / -1; }
-    .sighead { display: none; }
-  }
-
-  .vzlegend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 11px; color: var(--text-2); }
-  .vzlegend span { display: inline-flex; align-items: center; gap: 6px; }
-  .vzlegend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-  .vzlegend b { color: #fff; font-variant-numeric: tabular-nums; font-weight: 600; }
-
-  /* Hero figure — the one number each tab leads with. */
-  .vhero { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-  .vhero .vh-n { font-size: 46px; font-weight: 700; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
-  .vhero .vh-c { font-size: 15px; color: var(--yellow); font-weight: 700; }
-  .vhero .vh-s { font-size: 12px; color: var(--text-3); }
-
-  #campaignsWrap > .panel, #historyWrap > .panel, #campaignsWrap > .vgrid2, #historyWrap > .vgrid2 { margin-bottom: 12px; }
-  .vgrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 900px) { .vgrid2 { grid-template-columns: 1fr; } }
-
-  /* History: one collapsible block per year. */
-  .yrhead {
-    display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer;
-    background: none; border: 0; padding: 4px 0; text-align: left; color: inherit; font: inherit;
-  }
-  .yrhead .yr-n { font-size: 20px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-  .yrhead .yr-s { font-size: 11.5px; color: var(--text-3); }
-  .yrhead .yr-sp { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--yellow); font-variant-numeric: tabular-nums; }
-  .yrhead .yr-ar { color: var(--text-3); font-size: 12px; transition: transform .15s; }
-  .yrhead[aria-expanded="true"] .yr-ar { transform: rotate(90deg); }
-  .yrbody { margin-top: 12px; }
-  .yrpill {
-    display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
-    background: rgba(77,157,224,.14); color: var(--info); font-size: 9.5px; font-weight: 600;
-  }
-
-  /* ---------- previous trips ---------- */
-
-  .fselect {
-    background: var(--track); color: var(--text-2); border: 1px solid var(--line);
-    border-radius: 7px; padding: 6px 10px; font: inherit; font-size: 12px; cursor: pointer;
-  }
-  .fselect:hover { border-color: var(--info-line); color: #fff; }
-
-  .pt-year { margin-bottom: 20px; }
-  .pt-year:last-child { margin-bottom: 0; }
-  .pt-yhead {
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--line);
-  }
-  .pt-yname { font-size: 15px; font-weight: 700; color: var(--yellow); }
-  .pt-ymeta { font-size: 11px; color: var(--text-3); }
-  .pt-ynums { margin-left: auto; display: flex; gap: 16px; font-size: 12px; font-variant-numeric: tabular-nums; }
-  .pt-ynums b { color: #fff; }
-  .pt-ynums .cancel b { color: var(--danger); }
-
-  /* Month is the sub-level inside a year, but still needs to read from
-     across the room — a filled band with its own accent colour (blue, so it
-     never competes with the year header's yellow), not just smaller type. */
-  .pt-month { margin: 0 0 18px 0; }
-  .pt-month:last-child { margin-bottom: 0; }
-  .pt-mhead {
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    background: rgba(242,178,51,.10); border: 1px solid rgba(242,178,51,.32);
-    border-left: 3px solid var(--yellow);
-    border-radius: 7px; padding: 8px 14px; margin-bottom: 10px;
-  }
-  .pt-mname { font-size: 14px; font-weight: 800; color: var(--yellow); text-transform: uppercase; letter-spacing: .04em; }
-  .pt-mmeta { font-size: 11.5px; color: var(--text-2); }
-  .pt-mnums { margin-left: auto; display: flex; gap: 16px; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-2); }
-  .pt-mnums b { color: #fff; font-weight: 700; }
-  .pt-mnums .cancel b { color: var(--danger); }
-
-  .pt-row {
-    display: grid; grid-template-columns: minmax(0,1.7fr) 128px 96px 96px;
-    gap: 12px; align-items: center; padding: 8px 2px; font-size: 12.5px;
-  }
-  .pt-row + .pt-row { border-top: 1px solid rgba(52,81,124,.3); }
-  .pt-name { color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pt-dest { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-  .pt-dates { color: var(--text-2); font-size: 11.5px; text-align: right; white-space: nowrap; }
-  .pt-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); }
-  .pt-num b { color: #fff; font-weight: 700; }
-  .pt-num.pt-cancel b { color: var(--danger); }
-  .pt-charter {
-    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
-    background: rgba(77,157,224,.14); color: var(--info);
-    font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  }
-  @media (max-width: 780px) {
-    .pt-row { grid-template-columns: 1fr auto auto; row-gap: 4px; }
-    .pt-dates { grid-column: 1 / -1; text-align: left; }
-  }
-
-  .pt-row.pt-cancelled-row {
-    background: rgba(224,72,61,.07); border-radius: 6px; margin: 0 -6px; padding-left: 8px; padding-right: 8px;
-  }
-  .pt-row.pt-cancelled-row .pt-name { color: #ffb3ab; }
-  .pt-tag {
-    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
-    background: rgba(224,72,61,.18); color: #ff9d92;
-    font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  }
-  .pt-toggle {
-    background: none; border: 0; color: var(--info); font: inherit; font-size: 11px;
-    cursor: pointer; padding: 2px 0; display: flex; align-items: center; gap: 4px;
-  }
-  .pt-toggle:hover { color: #fff; }
-  .pt-toggle .pt-ar { font-size: 9px; transition: transform .15s; }
-  .pt-toggle[aria-expanded="true"] .pt-ar { transform: rotate(90deg); }
-  .pt-weeks { margin: 6px 0 4px 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--line); }
-  .pt-wrow {
-    display: grid; grid-template-columns: minmax(0,1fr) 90px; gap: 10px; align-items: center;
-    padding: 5px 8px; font-size: 11.5px; border-radius: 5px;
-  }
-  .pt-wrow.pt-cancelled-row { background: rgba(224,72,61,.09); }
-  .pt-wlabel { color: var(--text-2); }
-  .pt-wrow.pt-cancelled-row .pt-wlabel { color: #ffb3ab; }
-  .pt-wnum { text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
-  .pt-wnum b { color: #fff; }
-  .pt-unalloc { font-size: 10.5px; color: var(--text-3); padding: 4px 8px; }
-
-  /* .plan-foot is the small print under a panel — kept, the Campaigns tab
-     still uses it. The SA media-plan schedule styles that sat here went with
-     the Budget Plan tab. */
-  .plan-foot { font-size: 11.5px; color: var(--text-3); line-height: 1.6; }
-  .plan-foot b { color: var(--text-2); }
 
   /* ---------- notes ---------- */
 
@@ -957,7 +740,7 @@
   function saveViewState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        view, rGran, rCount, selectedWeekStart, selectedMonthStart, mainMetric, ptYear, ptMonth,
+        view, rGran, rCount, selectedWeekStart, selectedMonthStart, ptYear, ptMonth,
       }));
     } catch (e) { /* storage unavailable (private mode, etc.) — just skip persisting */ }
   }
@@ -972,7 +755,6 @@
       if (['board', 'report', 'previous', 'campaigns', 'history'].includes(s.view)) view = s.view;
       if (s.ptYear) ptYear = s.ptYear;
       if (s.ptMonth) ptMonth = s.ptMonth;
-      if (s.mainMetric && METRICS[s.mainMetric]) mainMetric = s.mainMetric;
       if (s.rGran) rGran = s.rGran;
       if (s.rCount) rCount = s.rCount;
       if (s.selectedWeekStart) selectedWeekStart = s.selectedWeekStart;
@@ -1757,80 +1539,6 @@
   // title names the measure. A dashed tail marks a week still in progress, so
   // a partial figure never reads as a genuine fall.
   //
-  // The plot is stretched to the panel width (preserveAspectRatio="none"),
-  // which is right for a line but would squash a circle into an oval — so
-  // there are no permanent dot markers. Hover draws a vertical crosshair
-  // instead, which is the specified interaction for a line chart and is
-  // immune to horizontal scaling.
-  let lineSeq = 0;
-
-  function lineChart(points, opts) {
-    const o = opts || {};
-    const uid = `lg${++lineSeq}`;
-    const W = 600, H = 132, PADL = 4, PADR = 4, PADT = 10, PADB = 6;
-    const val = (p) => (Number.isFinite(p.v) ? p.v : 0);
-    const top = niceMax(Math.max(...points.map(val), 0)) || 1;
-    const n = points.length;
-    const x = (i) => (n <= 1 ? W / 2 : PADL + (i * (W - PADL - PADR)) / (n - 1));
-    const y = (v) => PADT + (1 - v / top) * (H - PADT - PADB);
-
-    const pts = points.map((p, i) => ({ ...p, x: x(i), y: y(val(p)) }));
-    const solid = pts.filter((p) => !p.partial);
-    const path = (list) => list.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-    const stroke = o.color || 'var(--fill)';
-
-    const area = solid.length > 1
-      ? `<path d="${path(solid)} L${solid[solid.length - 1].x.toFixed(1)},${(H - PADB).toFixed(1)} L${solid[0].x.toFixed(1)},${(H - PADB).toFixed(1)} Z" fill="url(#${uid})" stroke="none"/>`
-      : '';
-    // The in-progress week is joined by a dashed segment, never a solid one.
-    const tail = pts.length > 1 && pts[pts.length - 1].partial
-      ? `<path d="${path(pts.slice(-2))}" fill="none" stroke="${stroke}" stroke-width="2" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>`
-      : '';
-
-    const hits = pts.map((p) => {
-      const half = (n <= 1 ? W : (W - PADL - PADR) / (n - 1)) / 2;
-      const left = Math.max(0, p.x - half);
-      const width = Math.min(W - left, half * 2);
-      return `<rect class="lhit" x="${left.toFixed(1)}" y="0" width="${width.toFixed(1)}" height="${H}" fill="transparent" data-tip="${attr(p.tip)}" data-cx="${p.x.toFixed(1)}"/>`;
-    }).join('');
-
-    const grid = [0, 0.5, 1].map((f) => {
-      const gy = (PADT + f * (H - PADT - PADB)).toFixed(1);
-      return `<line x1="0" y1="${gy}" x2="${W}" y2="${gy}" stroke="rgba(134,152,180,.13)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
-    }).join('');
-
-    const axis = points.map((p, i) => {
-      const step = Math.ceil(n / 8);
-      const show = n <= 8 || i % step === 0 || i === n - 1;
-      return `<span>${show ? esc(p.label) : ''}</span>`;
-    }).join('');
-
-    return `
-      <div class="vz">
-        <div class="lwrap">
-          <div class="lscale">
-            <div>${o.fmt ? o.fmt(top) : compact(top)}</div>
-            <div>${o.fmt ? o.fmt(top / 2) : compact(top / 2)}</div>
-            <div>0</div>
-          </div>
-          <div class="lplot">
-            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">
-              <defs><linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="${o.color || '#f5b935'}" stop-opacity=".22"/>
-                <stop offset="100%" stop-color="${o.color || '#f5b935'}" stop-opacity="0"/>
-              </linearGradient></defs>
-              ${grid}${area}
-              <path d="${path(solid)}" fill="none" stroke="${stroke}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
-              ${tail}
-              <line class="lcross" x1="0" y1="0" x2="0" y2="${H}" stroke="${stroke}" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" opacity="0"/>
-              ${hits}
-            </svg>
-            <div class="laxis">${axis}</div>
-          </div>
-        </div>
-      </div>`;
-  }
-
   // Horizontal bars — the right form when the category names are long.
   function barRows(items) {
     const top = Math.max(0, ...items.map((i) => i.v)) || 1;
@@ -1844,465 +1552,11 @@
       </div>`).join('')}</div></div>`;
   }
 
-  // Part-to-whole. Legend is always present and every segment is direct-labeled
-  // with its share, so identity never rests on color alone.
-  function stackedBar(segments, total) {
-    const bar = segments.map((s) =>
-      `<div class="vzseg" style="width:${((s.v / (total || 1)) * 100).toFixed(2)}%;background:${s.color}" data-tip="${attr(s.tip)}"></div>`).join('');
-    const legend = segments.map((s) =>
-      `<span><i style="background:${s.color}"></i>${esc(s.label)} <b>${esc(s.value)}</b> · ${pct(ratio(s.v, total))}</span>`).join('');
-    return `<div class="vz"><div class="vzstack">${bar}</div><div class="vzlegend">${legend}</div></div>`;
-  }
+  /* ================= campaigns tab ================= */
 
-  /* ---------------- weekly planning view ---------------- */
-
-  // Direction, with the sign that matters: for cost-style metrics a fall is
-  // the good outcome, so `lowerIsBetter` flips which way earns the green.
-  function deltaChip(v, lowerIsBetter) {
-    if (v == null) return '<span class="th-d d-flat">—</span>';
-    const flat = Math.abs(v) < 0.02;
-    const good = lowerIsBetter ? v < 0 : v > 0;
-    const cls = flat ? 'd-flat' : (good ? 'd-up' : 'd-down');
-    const arrow = flat ? '→' : (v > 0 ? '↑' : '↓');
-    return `<span class="th-d ${cls}">${arrow} ${Math.abs(v * 100).toFixed(0)}%</span>`;
-  }
-
-  /* ---------------- the one weekly chart ---------------- */
-
-  let mainMetric = 'cpr';
-  // Which budget period the Campaigns tab is showing. Last 14 days by
-  // default: a calendar month is thin on data for its first days, and this
-  // window never is.
-  // Deliberately not saved/restored like the other view state — a period
-  // picked once shouldn't stick forever and quietly defeat the point of
-  // defaulting to the current month. Always starts here; "Last 14 days" and
-  // every past month stay one click away in the dropdown regardless.
-  let budgetPeriod = new Date().toISOString().slice(0, 7);
-
-  // Each metric knows how to read itself off a week, how to print itself, which
-  // direction is good, and what its reference level is. The chart itself is
-  // generic — swapping metric changes only this config, never the drawing.
-  const METRICS = {
-    cpr: {
-      label: 'Cost per result', lowerBetter: true,
-      get: (w) => (w.results ? w.spend / w.results : null),
-      fmt: (v) => money(v), axis: (v) => compact(v),
-      target: (t) => t.costPerResult,
-      unit: 'per result',
-    },
-    cost: {
-      label: 'Weekly cost', lowerBetter: true,
-      get: (w) => w.spend, fmt: (v) => money(v), axis: (v) => compact(v),
-      target: (t) => t.weeklyCost,
-      unit: 'spent',
-    },
-    results: {
-      label: 'Results', lowerBetter: false,
-      get: (w) => w.results, fmt: (v) => int(v), axis: (v) => compact(v),
-      target: () => null,
-      unit: 'results',
-    },
-    ctr: {
-      label: 'Link CTR', lowerBetter: false,
-      get: (w) => (w.impressions ? (w.linkClicks / w.impressions) * 100 : null),
-      fmt: (v) => (v == null ? '—' : v.toFixed(2) + '%'), axis: (v) => v.toFixed(1) + '%',
-      target: (t) => (t.linkCtr || 0) * 100,
-      unit: 'link CTR',
-    },
-  };
-
-  // Good / watch / act, expressed as value ranges so the chart can paint them
-  // as bands. A metric with no reference level gets no bands rather than
-  // invented ones.
-  function zonesFor(target, top, lowerBetter) {
-    if (!target) return [];
-    return lowerBetter
-      ? [
-        { from: 0, to: target, state: 'good' },
-        { from: target, to: target * 1.5, state: 'watch' },
-        { from: target * 1.5, to: Math.max(top, target * 1.5), state: 'act' },
-      ]
-      : [
-        { from: target, to: Math.max(top, target), state: 'good' },
-        { from: target * 0.5, to: target, state: 'watch' },
-        { from: 0, to: target * 0.5, state: 'act' },
-      ];
-  }
-
-  const stateOf = (v, target, lowerBetter) => {
-    if (v == null || !target) return null;
-    if (lowerBetter) return v <= target ? 'good' : v <= target * 1.5 ? 'watch' : 'act';
-    return v >= target ? 'good' : v >= target * 0.5 ? 'watch' : 'act';
-  };
-
-  const STATE_WORD = { good: 'Performing well', watch: 'Watch', act: 'Needs attention' };
-  const STATE_ICON = { good: '●', watch: '▲', act: '■' };
-
-  // Trailing average over the last four complete weeks — the trend line a
-  // trading chart carries, so a single good or bad week is visibly a spike
-  // rather than a new normal.
-  function movingAvg(vals, window) {
-    return vals.map((_, i) => {
-      const slice = vals.slice(Math.max(0, i - window + 1), i + 1).filter((v) => v != null);
-      return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null;
-    });
-  }
-
-  function mainChart(weeks, cfg, targets) {
-    const W = 1000, H = 250, PADT = 14, PADB = 8;
-    const raw = weeks.map(cfg.get);
-    const target = cfg.target(targets || {});
-    const top = niceMax(Math.max(...raw.filter((v) => v != null), target || 0)) || 1;
-    const n = weeks.length;
-    const x = (i) => (n <= 1 ? W / 2 : (i * W) / (n - 1));
-    const y = (v) => PADT + (1 - v / top) * (H - PADT - PADB);
-
-    const pts = weeks.map((w, i) => ({
-      w, i, v: raw[i], x: x(i), y: y(raw[i] == null ? 0 : raw[i]), partial: w.partial,
-    }));
-    const solid = pts.filter((p) => !p.partial && p.v != null);
-    const path = (list) => list.map((p, k) => `${k ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-
-    const bands = zonesFor(target, top, cfg.lowerBetter).map((z) => {
-      const yTop = y(Math.min(z.to, top)), yBot = y(Math.max(0, z.from));
-      const h = Math.max(0, yBot - yTop);
-      return h > 0.5 ? `<rect x="0" y="${yTop.toFixed(1)}" width="${W}" height="${h.toFixed(1)}" fill="var(--zone-${z.state})"/>` : '';
-    }).join('');
-
-    const avg = movingAvg(raw, 4);
-    const avgPts = pts.map((p, i) => ({ ...p, y: y(avg[i] == null ? 0 : avg[i]) })).filter((p, i) => avg[i] != null && !p.partial);
-    const avgLine = avgPts.length > 1
-      ? `<path d="${path(avgPts)}" fill="none" stroke="#8698b4" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" opacity=".75"/>` : '';
-
-    const targetLine = target
-      ? `<line x1="0" y1="${y(target).toFixed(1)}" x2="${W}" y2="${y(target).toFixed(1)}" stroke="var(--info)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>` : '';
-
-    const tail = pts.length > 1 && pts[pts.length - 1].partial && pts[pts.length - 2].v != null
-      ? `<path d="${path(pts.slice(-2))}" fill="none" stroke="var(--fill)" stroke-width="2.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" stroke-linecap="round"/>` : '';
-
-    const hits = pts.map((p) => {
-      const half = (n <= 1 ? W : W / (n - 1)) / 2;
-      const left = Math.max(0, p.x - half);
-      const state = stateOf(p.v, target, cfg.lowerBetter);
-      return `<rect class="lhit" x="${left.toFixed(1)}" y="0" width="${Math.min(W - left, half * 2).toFixed(1)}" height="${H}" fill="transparent" data-cx="${p.x.toFixed(1)}" data-tip="${attr(tipRows(
-        `Week of ${p.w.label}${p.partial ? ' · in progress' : ''}`,
-        [[cfg.label, cfg.fmt(p.v)]]
-          .concat(state ? [['Against target', STATE_WORD[state]]] : [])
-          .concat([
-            ['Cost', 'SAR ' + money(p.w.spend)],
-            ['Results', int(p.w.results)],
-            ['Impressions', int(p.w.impressions)],
-            ['Link clicks', int(p.w.linkClicks)],
-          ])))}"/>`;
-    }).join('');
-
-    // Markers live in HTML, not SVG: the plot is stretched to the panel width,
-    // which would turn a circle into an oval. A percentage-positioned div is
-    // immune to that.
-    const dots = pts.filter((p) => p.v != null).map((p) => {
-      const state = stateOf(p.v, target, cfg.lowerBetter) || 'none';
-      const isLast = p.i === pts.length - 1;
-      return `<i class="mk mk-${state}${p.partial ? ' mk-part' : ''}${isLast ? ' mk-now' : ''}" style="left:${((p.x / W) * 100).toFixed(2)}%;top:${((p.y / H) * 100).toFixed(2)}%"></i>`;
-    }).join('');
-
-    const axis = weeks.map((w, i) => {
-      const step = Math.ceil(n / 9);
-      return `<span>${(n <= 9 || i % step === 0 || i === n - 1) ? esc(w.label) : ''}</span>`;
-    }).join('');
-
-    return `
-      <div class="vz mainvz">
-        <div class="lwrap">
-          <div class="lscale mscale">
-            <div>${cfg.axis(top)}</div><div>${cfg.axis(top * 0.5)}</div><div>0</div>
-          </div>
-          <div class="lplot mplot">
-            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">
-              ${bands}
-              <line x1="0" y1="${y(top).toFixed(1)}" x2="${W}" y2="${y(top).toFixed(1)}" stroke="rgba(134,152,180,.14)" stroke-width="1" vector-effect="non-scaling-stroke"/>
-              <line x1="0" y1="${y(top / 2).toFixed(1)}" x2="${W}" y2="${y(top / 2).toFixed(1)}" stroke="rgba(134,152,180,.14)" stroke-width="1" vector-effect="non-scaling-stroke"/>
-              ${targetLine}${avgLine}
-              <path d="${path(solid)}" fill="none" stroke="var(--fill)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
-              ${tail}
-              <line class="lcross" x1="0" y1="0" x2="0" y2="${H}" stroke="#fff" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" opacity="0"/>
-              ${hits}
-            </svg>
-            <div class="mdots">${dots}</div>
-            ${target ? `<div class="tgt-tag" style="top:${((y(target) / H) * 100).toFixed(2)}%">target ${cfg.fmt(target)}</div>` : ''}
-            <div class="laxis">${axis}</div>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  function weeklySection(p) {
-    const wk = p.weekly;
-    if (!wk || !wk.weeks || wk.weeks.length < 2) {
-      return `<div class="panel"><div class="ptitle">Weekly performance</div>
-        <div class="msg">Not enough delivery history yet to show a weekly trend.</div></div>`;
-    }
-
-    const weeks = wk.weeks;
-    const targets = wk.targets || {};
-    const cfg = METRICS[mainMetric] || METRICS.cpr;
-    const target = cfg.target(targets);
-
-    const complete = weeks.filter((w) => !w.partial);
-    const last = complete[complete.length - 1] || null;
-    const prior = complete[complete.length - 2] || null;
-
-    const nowV = last ? cfg.get(last) : null;
-    const prevV = prior ? cfg.get(prior) : null;
-    const state = stateOf(nowV, target, cfg.lowerBetter);
-    const delta = change(nowV, prevV);
-
-    // Where the latest week sits against its own four-week average — the
-    // "is this a spike or a shift" question a trend line exists to answer.
-    const avgSeries = movingAvg(complete.map(cfg.get), 4);
-    const avgNow = avgSeries[avgSeries.length - 1];
-    const vsAvg = change(nowV, avgNow);
-
-    // One sentence of what to do, assembled from the two facts that decide it:
-    // where the number sits against target, and which way it is moving.
-    const improving = delta == null ? null : (cfg.lowerBetter ? delta < -0.02 : delta > 0.02);
-    const worsening = delta == null ? null : (cfg.lowerBetter ? delta > 0.02 : delta < -0.02);
-    // "Off target" is above for a cost metric and below for a rate one, so the
-    // wording follows the metric's direction rather than assuming cost.
-    const off = cfg.lowerBetter ? 'above' : 'below';
-    let advice;
-    if (nowV == null) advice = 'No delivery in the last complete week — nothing to judge yet.';
-    else if (!target) advice = improving ? 'Moving the right way week on week.' : worsening ? 'Moving the wrong way week on week.' : 'Broadly flat week on week.';
-    else if (state === 'good') advice = improving
-      ? 'On target and still improving — this is the one to put more budget behind.'
-      : worsening ? 'Still on target, but slipping. Worth watching next week before it crosses.'
-        : 'Comfortably on target. Hold the current setup.';
-    else if (state === 'watch') advice = improving
-      ? `Slightly ${off} target but recovering. Give it another week before changing anything.`
-      : `Slightly ${off} target and not recovering — review creative and audience this week.`;
-    else advice = improving
-      ? `Well ${off} target, though improving. Keep the change that started the recovery.`
-      : `Well ${off} target. Pause or rebuild the weakest campaigns in the table below.`;
-
-    const rows = wk.campaigns.map((c) => {
-      const cur = c.current;
-      return `
-        <div class="sigrow">
-          <div>
-            <div class="sig-name">${esc(c.name)}</div>
-            <div class="sig-sub">${esc(c.objective || '')}${c.status ? ' · ' + esc(c.status) : ''}</div>
-          </div>
-          <div><span class="sigpill sig-${esc(c.signal)}">${esc(c.signal)}</span></div>
-          <div class="sig-num"><b>${money(cur.spend)}</b><div class="sig-sub">${deltaChip(c.change.spend, false)}</div></div>
-          <div class="sig-num"><b>${int(cur.results)}</b><div class="sig-sub">${deltaChip(c.change.results, false)}</div></div>
-          <div class="sig-num"><b>${show(cur.costPerResult, money)}</b><div class="sig-sub">${deltaChip(c.change.costPerResult, true)}</div></div>
-          <div class="sig-num"><b>${show(cur.ctr, pct)}</b><div class="sig-sub">${deltaChip(c.change.ctr, false)}</div></div>
-          <div class="sig-why">${c.reasons.length ? esc(c.reasons.join(' · ')) : '<span style="color:#6c7f9c">steady</span>'}</div>
-        </div>`;
-    }).join('');
-
-    const counts = ['fix', 'stopped', 'watch', 'scale', 'new', 'idle']
-      .map((k) => ({ k, n: wk.campaigns.filter((c) => c.signal === k).length }))
-      .filter((x) => x.n);
-
-    return `
-      <div class="panel">
-        <div class="mhead">
-          <div class="seg" id="metricSeg">
-            ${Object.keys(METRICS).map((k) =>
-              `<button data-m="${k}" aria-pressed="${k === mainMetric}">${esc(METRICS[k].label)}</button>`).join('')}
-          </div>
-          <div class="mnow">
-            <span class="mnow-n">${cfg.fmt(nowV)}</span>
-            <span class="mnow-u">${esc(cfg.unit)}</span>
-            ${deltaChip(delta, cfg.lowerBetter)}
-          </div>
-        </div>
-
-        ${state ? `<div class="verdict v-${state}">
-          <span class="v-ico">${STATE_ICON[state]}</span>
-          <span class="v-word">${STATE_WORD[state]}</span>
-          <span class="v-text">${esc(advice)}</span>
-        </div>` : `<div class="verdict v-none"><span class="v-text">${esc(advice)}</span></div>`}
-
-        ${mainChart(weeks, cfg, targets)}
-
-        <div class="vzlegend mlegend">
-          ${target ? `
-            <span><i class="zk zk-good"></i>On target — ${cfg.lowerBetter ? 'at or below' : 'at or above'} ${cfg.fmt(target)}</span>
-            <span><i class="zk zk-watch"></i>Watch</span>
-            <span><i class="zk zk-act"></i>Act now</span>
-            <span><i class="zk zk-line"></i>Target ${cfg.fmt(target)}${targets.costPerResultNote && mainMetric === 'cpr' ? ` (${esc(targets.costPerResultNote)})` : ''}</span>` : ''}
-          <span><i class="zk zk-avg"></i>4-week average</span>
-          <span><i class="zk zk-part"></i>Week in progress</span>
-        </div>
-        <div class="plan-foot" style="margin-top:10px">
-          Last complete week <b>${esc(last ? last.label : '—')}</b>${prior ? ` vs <b>${esc(prior.label)}</b>` : ''}${
-            vsAvg != null ? ` · ${Math.abs(vsAvg * 100).toFixed(0)}% ${vsAvg > 0 ? 'above' : 'below'} its 4-week average` : ''}.
-          Weeks run Sunday to Saturday, the same boundary the booking Report uses. The dashed tail is the week still running.
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">What to adjust · week of ${esc(last ? last.label : '—')} vs ${esc(prior ? prior.label : '—')}</div>
-        <div class="vzlegend" style="margin:0 0 12px">
-          ${counts.map((x) => `<span><span class="sigpill sig-${esc(x.k)}">${esc(x.k)}</span> <b>${x.n}</b></span>`).join('')}
-        </div>
-        <div class="tscroll">
-          <div style="min-width:760px">
-            <div class="sigrow sighead">
-              <div>Campaign</div><div>Signal</div><div class="sig-num">Cost</div>
-              <div class="sig-num">Results</div><div class="sig-num">Cost / result</div>
-              <div class="sig-num">Link CTR</div><div>Why</div>
-            </div>
-            ${rows || '<div class="msg">No campaigns delivered in that week.</div>'}
-          </div>
-        </div>
-        <div class="plan-foot" style="margin-top:12px">
-          Compares the last <b>complete</b> week against the one before it, so a Monday reading never looks like a crash.
-          <b>fix</b> = cost per result up more than 25%, link CTR under 0.5%, or spend with no results ·
-          <b>scale</b> = cost per result down more than 15% ·
-          <b>stopped</b> = was delivering, now isn't ·
-          <b>idle</b> = under SAR 50 in both weeks, too little to read.
-        </div>
-      </div>`;
-  }
-
-  /* ================= campaigns tab (current year) ================= */
-
-  /* ---------------- plan vs actual (the budget spreadsheet) ---------------- */
-
-  // Whether to add budget, cut it, or leave a trip's campaign alone — driven
-  // by how much of its whole-flight plan budget is gone versus how it's
-  // performing against the plan's own result estimate. Deliberately not
-  // driven by the period picker: a campaign that's barely touched its total
-  // budget can still look "behind" in the last 14 days for reasons that have
-  // nothing to do with whether it needs more money.
-  const PLAN_USED_HIGH = 0.85; // most of the whole-flight budget is gone
-  const PLAN_USED_LOW = 0.30;  // budget is still largely untouched
-  const PLAN_PERF_GOOD = 1.0;  // hitting or beating the plan's own estimate
-  const PLAN_PERF_WEAK = 0.6;  // notably behind the plan's own estimate
-
-  function planAction(r) {
-    if (r.cancelled) return { text: 'Cancelled', state: '' };
-    if (!r.matched) return { text: 'Needs to launch', state: 'watch' };
-    const used = r.usedPct;
-    const perf = r.performance;
-    if (used == null) return { text: 'On track', state: '' };
-    if (used >= PLAN_USED_HIGH) {
-      return perf != null && perf < PLAN_PERF_WEAK
-        ? { text: 'Consider stopping — budget nearly gone, results below plan', state: 'bad' }
-        : { text: 'Nearing full budget — review before it runs out', state: 'watch' };
-    }
-    if (used <= PLAN_USED_LOW) {
-      if (perf != null && perf >= PLAN_PERF_GOOD) return { text: 'Consider increasing — strong results, budget headroom', state: 'good' };
-      if (perf != null && perf < PLAN_PERF_WEAK) return { text: 'Monitor — underspending and underperforming', state: 'watch' };
-      return { text: 'Early days — budget largely untouched', state: '' };
-    }
-    return { text: 'On track', state: '' };
-  }
-
-  // One table, one row per trip: the plan's whole-flight budget next to that
-  // same campaign's live daily rate and this-period spend, so the picker
-  // still does something (it drives the two "this period" columns) without
-  // pretending a flight total has a "last 14 days" version of itself.
-  function campaignDecisionTable(p, periodRows, periodName, rolling) {
-    const pv = p.planVsActual;
-    if (!pv || !pv.rows || !pv.rows.length) return '';
-    const cur = esc(pv.currency || 'SAR');
-    const t = pv.totals;
-    const byId = new Map((periodRows || []).map((r) => [r.id, r]));
-
-    let pSpendTotal = 0;
-    let pExpectedTotal = 0;
-
-    const rows = pv.rows.map((r) => {
-      const state = r.usedPct == null ? ''
-        : r.usedPct > 1 ? 'cell-bad' : r.usedPct >= PLAN_USED_HIGH ? 'cell-watch' : '';
-      const perfState = r.performance == null ? ''
-        : r.performance >= PLAN_PERF_GOOD ? 'cell-good' : r.performance >= PLAN_PERF_WEAK ? 'cell-watch' : 'cell-bad';
-      const period = r.matched ? byId.get(r.campaignId) : null;
-      if (period) { pSpendTotal += period.spend || 0; pExpectedTotal += period.expectedToDate || 0; }
-      const periodPaceState = period && period.pacePct != null
-        ? (period.pacePct > 1.15 ? 'cell-bad' : period.pacePct < 0.85 ? 'cell-watch' : 'cell-good') : '';
-      const act = planAction(r);
-
-      return `
-        <tr${r.cancelled ? ' class="planrow-cancelled"' : ''}>
-          <td class="cname">
-            ${esc(r.program)}${r.cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}
-            <div class="cobj">${esc(r.dates)}${r.matched
-              ? ` · ${esc(r.campaignName)}${period && period.dailyBudget ? ` · ${money(period.dailyBudget)}/day` : ''}`
-              : ' · <span style="color:#6c7f9c">no campaign running</span>'}</div>
-          </td>
-          <td>${r.matched ? `<span class="cpill ${r.status === 'Active' ? 'on' : 'off'}">${esc(r.status)}</span>` : ''}</td>
-          <td class="num">${money(r.plannedSar)}</td>
-          <td class="num">${r.matched ? money(r.spend) : '—'}</td>
-          <td class="num">${r.matched ? money(r.remaining) : '—'}</td>
-          <td class="num ${r.matched ? state : ''}">${r.matched ? show(r.usedPct, pct) : '—'}</td>
-          <td class="num">${period ? money(period.spend) : '—'}</td>
-          <td class="num ${periodPaceState}">${period ? show(period.pacePct, pct) : '—'}</td>
-          <td class="num">${r.plannedResults == null ? '—' : int(r.plannedResults)}</td>
-          <td class="num">${r.matched ? int(r.results) : '—'}</td>
-          <td class="num ${r.matched ? perfState : ''}">${r.matched ? show(r.performance, pct) : '—'}</td>
-          <td class="num ${act.state ? 'cell-' + act.state : ''}" style="text-align:left;white-space:normal;min-width:170px">${esc(act.text)}</td>
-        </tr>`;
-    }).join('');
-
-    const usedAll = ratio(t.spend, t.plannedSar);
-    const perfAll = ratio(t.results, t.plannedResults);
-    const paceAll = ratio(pSpendTotal, pExpectedTotal);
-    const orphans = pv.unmatchedCampaigns || [];
-
-    return `
-      <div class="panel">
-        <div class="ptitle">Budget vs actual by campaign · ${esc(pv.source)}</div>
-        <div class="infonote">
-          <span class="ni-ico">📋</span>
-          <span><b>Plan Budget</b> through <b>Performance</b> are the whole-flight numbers from the budget sheet, converted at ${dec(pv.usdSar)} — they don't change with the period picker below, since the sheet budgets a whole trip, not a month.
-          <b>Spend (${esc(periodName)})</b> and <b>Pace (${esc(periodName)})</b> are the two columns the picker does drive — Meta's live daily rate over just that window.
-          <b>${t.matched} of ${t.lines}</b> live plan lines have a campaign running against them.</span>
-        </div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              <th>Trip / Campaign</th><th>Status</th><th>Plan Budget</th><th>Spent (Total)</th>
-              <th>Remaining</th><th>% Plan Used</th>
-              <th>Spend (${esc(periodName)})</th><th>Pace (${esc(periodName)})</th>
-              <th>Planned Results</th><th>Actual Results</th><th>Performance</th>
-              <th>Suggested Action</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-            <tfoot><tr>
-              <td class="cname">TOTAL (live lines)</td>
-              <td></td>
-              <td class="num">${money(t.plannedSar)}</td>
-              <td class="num">${money(t.spend)}</td>
-              <td class="num">${money(t.plannedSar - t.spend)}</td>
-              <td class="num">${show(usedAll, pct)}</td>
-              <td class="num">${money(pSpendTotal)}</td>
-              <td class="num">${show(paceAll, pct)}</td>
-              <td class="num">${int(t.plannedResults)}</td>
-              <td class="num">${int(t.results)}</td>
-              <td class="num">${show(perfAll, pct)}</td>
-              <td></td>
-            </tr></tfoot>
-          </table>
-        </div>
-        ${orphans.length ? `
-        <div class="msg warn" style="margin-top:12px">
-          <b>${orphans.length} campaign${orphans.length === 1 ? '' : 's'} spending outside the plan:</b>
-          ${orphans.map((o) => `${esc(o.name)} (${money(o.spend)})`).join(', ')}.
-          Either the sheet is missing a line for ${orphans.length === 1 ? 'it' : 'them'}, or the campaign name doesn't carry the month that ties it to one.
-        </div>` : ''}
-        <div class="plan-foot" style="margin-top:12px">
-          A plan line is tied to a campaign by name plus the month the campaign carries — that's what the renaming made possible.
-          Lines with no campaign running are shown with a dash, not a zero, since nothing has been spent against them yet.
-          Cancelled lines stay listed but are left out of every total.
-          <b>Suggested Action</b> reads only the Plan columns, not the period ones: budget ≥${pct(PLAN_USED_HIGH)} used with results below ${pct(PLAN_PERF_WEAK)} of plan → consider stopping; budget ≤${pct(PLAN_USED_LOW)} used with results at or above the plan's own estimate → consider increasing. Everything between is "on track" — the picker's columns are there for the day-to-day pacing check, not this call.
-        </div>
-      </div>`;
-  }
-
+  // Budget comes from Updated Budget.xlsx; spend and campaign names come live
+  // from Meta. Only campaigns Meta reports as Active are listed, so a renamed
+  // or retired campaign never lingers here under its old name.
   function renderCampaigns() {
     const p = campaigns;
     if (!p) return;
@@ -2311,181 +1565,97 @@
       return;
     }
 
-    const t = p.totals;
-    const cur = esc(p.currency);
-    const flagged = p.noResultCampaigns || [];
+    const pv = p.planVsActual || {};
+    const cur = esc(pv.currency || p.currency || 'SAR');
 
-    // Every period arrives in one payload, so switching between them is
-    // instant and needs no refetch. Last 14 days leads; if a stored choice
-    // points at a month that has since rolled out of range, fall back to it.
-    const periods = p.budgetPeriods && p.budgetPeriods.length
-      ? p.budgetPeriods
-      : (p.budget ? [p.budget] : []);
-    const b = periods.find((x) => x.key === budgetPeriod) || periods[0] || {};
-    const rows = b.campaigns || [];
-    const periodName = b.label || '';
-    const rolling = b.key === 'last14';
+    const rows = (pv.rows || [])
+      .filter((r) => r.matched && r.status === 'Active')
+      .map((r) => ({ name: r.campaignName, budget: r.plannedSar, spend: r.spend }));
 
-    const used = ratio(b.spend, b.allocated);
-    const pace = ratio(b.spend, b.expectedToDate);
-    const resultPerf = ratio(b.results, b.targetResults);
-    const remaining = b.allocated == null ? null : b.allocated - b.spend;
-
-    // On pace means spending roughly in step with the period. Being under is
-    // not automatically good and over is not automatically bad, so the words
-    // say which it is and leave the judgement to the reader.
-    const paceState = pace == null ? null
-      : pace > 1.15 ? 'bad' : pace < 0.85 ? 'watch' : 'good';
-    const paceWord = pace == null ? 'no active budget'
-      : pace > 1.15 ? `${pct(pace - 1)} ahead of pace`
-        : pace < 0.85 ? `${pct(1 - pace)} behind pace` : 'on pace';
-
-    const perfState = resultPerf == null ? null
-      : resultPerf >= 1 ? 'good' : resultPerf >= 0.6 ? 'watch' : 'bad';
-
-    // Kept from the old tab: spend by campaign, biggest first, tail folded.
-    const ranked = [...p.campaigns].sort((a, c) => c.spend - a.spend);
-    const shown = ranked.slice(0, 8);
-    const rest = ranked.slice(8);
-    const barItems = shown.map((c) => ({
-      v: c.spend,
-      label: c.name,
-      value: money(c.spend),
-      color: objColor(c.objective),
-      tip: tipRows(c.name, [
-        ['Objective', c.objective],
-        ['Spend (year)', `${cur} ${money(c.spend)}`],
-        ['Results', int(c.results)],
-        ['Cost / result', show(ratio(c.spend, c.results), money)],
-        ['Share of spend', pct(ratio(c.spend, t.spend))],
-      ]),
-    }));
-    if (rest.length) {
-      const otherSpend = rest.reduce((sum, c) => sum + c.spend, 0);
-      barItems.push({
-        v: otherSpend, label: `Other (${rest.length} campaigns)`, value: money(otherSpend),
-        color: '#8698b4',
-        tip: tipRows('Other campaigns', [
-          ['Campaigns', int(rest.length)],
-          ['Combined spend', `${cur} ${money(otherSpend)}`],
-        ]),
-      });
+    // An active campaign with no line in the sheet still has to show its
+    // spend — it just has no budget to measure against.
+    for (const o of pv.unmatchedCampaigns || []) {
+      rows.push({ name: o.name, budget: null, spend: o.spend });
     }
+    rows.sort((a, b) => (b.budget || 0) - (a.budget || 0) || b.spend - a.spend);
+
+    const totalBudget = rows.reduce((sum, r) => sum + (r.budget || 0), 0);
+    const totalSpend = rows.reduce((sum, r) => sum + r.spend, 0);
+    const totalUsed = ratio(totalSpend, totalBudget);
+
+    const barFor = (spend, budget) => {
+      const usedPct = ratio(spend, budget);
+      const width = Math.min(100, (usedPct || 0) * 100);
+      const state = usedPct == null ? '' : usedPct > 1 ? ' over' : usedPct >= 0.85 ? ' near' : '';
+      return `<div class="abar"><div class="abar-fill${state}" style="width:${width.toFixed(1)}%"></div></div>`;
+    };
+
+    const body = rows.map((r) => {
+      const usedPct = ratio(r.spend, r.budget);
+      return `
+        <tr>
+          <td class="cname">${esc(r.name)}</td>
+          <td class="num">${r.budget == null ? '—' : money(r.budget)}</td>
+          <td class="num">${money(r.spend)}</td>
+          <td class="num">${r.budget == null ? '—' : money(r.budget - r.spend)}</td>
+          <td class="abar-cell">
+            ${barFor(r.spend, r.budget)}
+            <span class="abar-pct">${show(usedPct, pct)}</span>
+          </td>
+        </tr>`;
+    }).join('');
 
     $('campaignsWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
-      ${flagged.length ? `
-      <div class="msg warn">
-        <b>${flagged.length} campaign${flagged.length === 1 ? '' : 's'} recorded spend but no attributed results:</b>
-        ${flagged.map((n) => esc(n)).join(', ')}.
-        Usually the objective's result event isn't one this board counts yet, rather than a campaign that achieved nothing — worth checking against Ads Manager.
-      </div>` : ''}
 
       <div class="panel">
-        <div class="bphead">
-          <div class="ptitle" style="margin:0">Budget vs actual · ${esc(periodName)}</div>
-          <select class="fselect" id="budgetPeriodSel">
-            ${periods.map((x) => `<option value="${attr(x.key)}"${x.key === b.key ? ' selected' : ''}>${esc(x.label)}</option>`).join('')}
-          </select>
-        </div>
+        <div class="ptitle">Budget vs actual</div>
         <div class="bvhero">
           <div class="bv-side">
-            <div class="bv-lab">Allocated</div>
-            <div class="bv-n">${show(b.allocated, money)}</div>
-            <div class="bv-s">${cur} · ${b.daysInPeriod || 0} days</div>
+            <div class="bv-lab">Budget</div>
+            <div class="bv-n">${money(totalBudget)}</div>
+            <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
             <div class="bv-lab">Actual spend</div>
-            <div class="bv-n bv-act">${money(b.spend)}</div>
-            <div class="bv-s">${show(used, pct)} of budget used</div>
+            <div class="bv-n bv-act">${money(totalSpend)}</div>
+            <div class="bv-s">${show(totalUsed, pct)} of budget used</div>
           </div>
           <div class="bv-side">
             <div class="bv-lab">Remaining</div>
-            <div class="bv-n">${show(remaining, money)}</div>
-            <div class="bv-s">${rolling ? 'rolling window'
-              : !b.daysInPeriod ? ''
-              : b.daysInPeriod > b.daysElapsed ? (b.daysInPeriod - b.daysElapsed) + ' days left'
-              : 'month complete'}</div>
+            <div class="bv-n">${money(totalBudget - totalSpend)}</div>
+            <div class="bv-s">${cur}</div>
           </div>
         </div>
-
         <div class="bvbar">
           <div class="bvbar-track">
-            <div class="bvbar-fill" style="width:${Math.min(100, (used || 0) * 100).toFixed(1)}%"></div>
-            ${!rolling && b.periodProgress != null && b.periodProgress < 1 ? `<div class="bvbar-now" style="left:${(b.periodProgress * 100).toFixed(1)}%"></div>` : ''}
-          </div>
-          <div class="bvbar-legend">
-            <span>${show(used, pct)} of the ${rolling ? 'window\u2019s' : 'month\u2019s'} budget spent</span>
-            ${rolling
-              ? `<span class="bvbar-mark">│ the last ${b.daysInPeriod} days, up to today</span>`
-              : (b.periodProgress != null && b.periodProgress < 1
-                ? `<span class="bvbar-mark">│ ${pct(b.periodProgress)} of the month elapsed (day ${b.daysElapsed} of ${b.daysInPeriod})</span>`
-                : '<span class="bvbar-mark">│ full month</span>')}
+            <div class="bvbar-fill" style="width:${Math.min(100, (totalUsed || 0) * 100).toFixed(1)}%"></div>
           </div>
         </div>
-
-        ${paceState ? `<div class="verdict v-${paceState}" style="margin-top:14px">
-          <span class="v-ico">${STATE_ICON[paceState === 'bad' ? 'act' : paceState]}</span>
-          <span class="v-word">${esc(paceWord)}</span>
-          <span class="v-text">Spending ${money(b.spend)} against ${money(b.expectedToDate)} expected ${
-            rolling ? `across the last ${b.daysInPeriod} days`
-            : b.daysInPeriod > b.daysElapsed ? `by day ${b.daysElapsed}`
-            : 'across the whole month'}.</span>
-        </div>` : ''}
       </div>
-
-      <div class="panel skpi-panel mkpi mkpi-5">
-        <div class="skpi">
-          <div class="skpi-n">${show(b.allocated, money)}</div><div class="skpi-l">Allocated Budget</div>
-          <div class="skpi-sub">${cur} this month</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${money(b.spend)}</div><div class="skpi-l">Actual Spend</div>
-          <div class="skpi-sub">month to date</div>
-        </div>
-        <div class="skpi ${paceState ? 'skpi-' + paceState : ''}">
-          <div class="skpi-n">${show(used, pct)}</div><div class="skpi-l">Budget Used</div>
-          <div class="skpi-sub">${esc(paceWord)}</div>
-        </div>
-        <div class="skpi">
-          <div class="skpi-n">${int(b.results)}</div><div class="skpi-l">Actual Results</div>
-          <div class="skpi-sub">${show(ratio(b.spend, b.results), money)} per result</div>
-        </div>
-        <div class="skpi ${perfState ? 'skpi-' + perfState : ''}">
-          <div class="skpi-n">${show(resultPerf, pct)}</div><div class="skpi-l">Result vs Target</div>
-          <div class="skpi-sub">${b.targetResults ? int(Math.round(b.targetResults)) + ' expected' : 'no target'}</div>
-        </div>
-      </div>
-
-      ${campaignDecisionTable(p, rows, periodName, rolling)}
 
       <div class="panel">
-        <div class="ptitle">Spend by campaign · ${p.year} to date</div>
-        ${barRows(barItems)}
-      </div>
-
-      ${weeklySection(p)}`;
-
-    bindViz($('campaignsWrap'));
-
-    const seg = $('metricSeg');
-    if (seg) {
-      seg.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => {
-        mainMetric = btn.dataset.m;
-        renderCampaigns();
-        saveViewState();
-      }));
-    }
-
-    const psel = $('budgetPeriodSel');
-    if (psel) {
-      psel.addEventListener('change', (e) => {
-        budgetPeriod = e.target.value;
-        renderCampaigns();
-        saveViewState();
-      });
-    }
+        <div class="ptitle">Budget vs actual by campaign</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              <th>Campaign</th><th>Budget</th><th>Actual Spend</th><th>Remaining</th><th>Actual vs Budget</th>
+            </tr></thead>
+            <tbody>${body || '<tr><td class="cname" colspan="5">No active campaigns.</td></tr>'}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL</td>
+              <td class="num">${money(totalBudget)}</td>
+              <td class="num">${money(totalSpend)}</td>
+              <td class="num">${money(totalBudget - totalSpend)}</td>
+              <td class="abar-cell">
+                ${barFor(totalSpend, totalBudget)}
+                <span class="abar-pct">${show(totalUsed, pct)}</span>
+              </td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>`;
   }
 
   async function loadCampaigns(force) {
