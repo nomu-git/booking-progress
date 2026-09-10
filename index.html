@@ -464,13 +464,15 @@
   .pt-mnums .cancel b { color: var(--danger); }
 
   .pt-row {
-    display: grid; grid-template-columns: minmax(0,1.5fr) 112px 84px 78px 78px;
+    display: grid; grid-template-columns: minmax(0,1.2fr) 158px 74px 74px 74px;
     gap: 10px; align-items: center; padding: 9px 2px; font-size: 12.5px;
   }
   .pt-row + .pt-row { border-top: 1px solid rgba(52,81,124,.3); }
   .pt-name { color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pt-dest { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-  .pt-dates { color: var(--text-2); font-size: 11.5px; text-align: right; white-space: nowrap; }
+  /* No nowrap — a long "27 Aug 2026 – 30 Aug 2026" range wraps onto a second
+     line rather than overflowing into the next column. */
+  .pt-dates { color: var(--text-2); font-size: 11.5px; text-align: right; line-height: 1.35; }
   .pt-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); }
   .pt-num b { color: #fff; font-weight: 700; }
   .pt-num.pt-cancel b { color: var(--danger); }
@@ -512,7 +514,6 @@
   .pt-toggle .pt-ar { font-size: 8px; transition: transform .15s; }
   .pt-toggle[aria-expanded="true"] .pt-ar { transform: rotate(90deg); }
   .pt-toggle b { color: #fff; font-size: 13.5px; font-weight: 800; text-transform: none; letter-spacing: 0; }
-  .pt-num.pt-nodata { color: var(--text-3); }
   .pt-weeks {
     grid-column: 1 / -1; margin: 8px 0 2px 0; padding: 8px 0 2px 14px; border-left: 2px solid var(--line);
   }
@@ -1723,22 +1724,26 @@
     };
   }
 
-  // Every trip with any week data is clickable, one week or several, so the
-  // detail is always one click away rather than only showing up once a trip
-  // happens to have more than one week.
+  // The dropdown only earns its place on a trip that actually has more than
+  // one week to break down — a single-week trip's own date range already
+  // says everything the expansion would, so it gets no button at all rather
+  // than a "Weeks · 1" that opens onto one row identical to what's already
+  // shown.
   function ptTripRow(t) {
     const weeks = t.weeks || [];
-    const hasWeeks = weeks.length > 0;
+    const multi = weeks.length > 1;
     const cancelled = !!t.cancelledTrip;
     const open = ptOpenTrips.has(t.uuid);
 
-    const weeksCell = hasWeeks ? `
+    // An empty cell still fills its grid column, so Booked/Cancelled stay
+    // aligned whether or not this row has a button in it.
+    const weeksCell = multi ? `
       <button class="pt-toggle" data-toggle="${esc(t.uuid)}" aria-expanded="${open}">
         <span class="pt-toggle-lab"><span class="pt-ar">›</span>Weeks</span>
         <b>${weeks.length}</b>
-      </button>` : `<div class="pt-num pt-nodata">Weeks<br><b>—</b></div>`;
+      </button>` : '<div></div>';
 
-    const weeksPanel = hasWeeks && open ? `
+    const weeksPanel = multi && open ? `
       <div class="pt-weeks">
         ${weeks.map((w) => `
           <div class="pt-wrow${w.unavailable ? ' pt-cancelled-row' : ''}">
