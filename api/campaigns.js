@@ -686,8 +686,11 @@ async function build() {
       };
     });
 
+    // Only campaigns still running matter here. The 2026 legacy campaigns are
+    // inactive and predate this plan entirely — listing them would read as
+    // "13 campaigns spending outside the plan" when nothing is being spent.
     planUnmatchedCampaigns = pool
-      .filter((x) => !x.taken && (x.c.status === 'Active' || x.c.spend > 0))
+      .filter((x) => !x.taken && x.c.status === 'Active')
       .map((x) => ({ id: x.c.id, name: x.c.name, status: x.c.status, spend: x.c.spend, results: x.c.results }))
       .sort((a, b) => b.spend - a.spend);
   } catch (err) {
