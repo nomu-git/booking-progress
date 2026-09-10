@@ -1568,14 +1568,18 @@
     const pv = p.planVsActual || {};
     const cur = esc(pv.currency || p.currency || 'SAR');
 
+    // Every campaign tied to a plan line shows, active or not — the label
+    // says which. Only campaigns with no plan line at all stay restricted to
+    // Active, so a retired campaign from before the renaming can't reappear
+    // here just because it once spent money.
     const rows = (pv.rows || [])
-      .filter((r) => r.matched && r.status === 'Active')
-      .map((r) => ({ name: r.campaignName, budget: r.plannedSar, spend: r.spend }));
+      .filter((r) => r.matched)
+      .map((r) => ({ name: r.campaignName, status: r.status, budget: r.plannedSar, spend: r.spend }));
 
     // An active campaign with no line in the sheet still has to show its
     // spend — it just has no budget to measure against.
     for (const o of pv.unmatchedCampaigns || []) {
-      rows.push({ name: o.name, budget: null, spend: o.spend });
+      rows.push({ name: o.name, status: 'Active', budget: null, spend: o.spend });
     }
     rows.sort((a, b) => (b.budget || 0) - (a.budget || 0) || b.spend - a.spend);
 
@@ -1595,6 +1599,7 @@
       return `
         <tr>
           <td class="cname">${esc(r.name)}</td>
+          <td><span class="cpill ${r.status === 'Active' ? 'on' : 'off'}">${esc(r.status || 'Inactive')}</span></td>
           <td class="num">${r.budget == null ? '—' : money(r.budget)}</td>
           <td class="num">${money(r.spend)}</td>
           <td class="num">${r.budget == null ? '—' : money(r.budget - r.spend)}</td>
@@ -1640,11 +1645,12 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Campaign</th><th>Budget</th><th>Actual Spend</th><th>Remaining</th><th>Actual vs Budget</th>
+              <th>Campaign</th><th>Status</th><th>Budget</th><th>Actual Spend</th><th>Remaining</th><th>Actual vs Budget</th>
             </tr></thead>
-            <tbody>${body || '<tr><td class="cname" colspan="5">No active campaigns.</td></tr>'}</tbody>
+            <tbody>${body || '<tr><td class="cname" colspan="6">No campaigns.</td></tr>'}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL</td>
+              <td></td>
               <td class="num">${money(totalBudget)}</td>
               <td class="num">${money(totalSpend)}</td>
               <td class="num">${money(totalBudget - totalSpend)}</td>
