@@ -4,6 +4,7 @@ const {
 } = require('./meta-ads');
 const { mapWithConcurrency } = require('./wetravel');
 const { build: buildMediaPlan } = require('./media-plan');
+const { classify } = require('./trip-code');
 
 const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
 
@@ -275,21 +276,6 @@ async function build() {
      advertised months earlier — matching those two was what put the wrong
      budget on the wrong campaign before. Every programme that runs twice
      carries the same budget in the sheet, so the pair alone is enough. */
-  const DESTINATIONS = [
-    ['ZNZ', ['znz', 'zanzibar']],
-    ['BA', ['ba', 'bali']],
-    ['VN', ['vn', 'vietnam']],
-    ['TH', ['th', 'thailand', 'thailan']],
-    ['KR', ['kr', 'korea']],
-  ];
-  const PROGRAMMES = [
-    ['BL', ['bl', 'build', 'building']],
-    ['EX', ['ex', 'explore']],
-    ['WL', ['wl', 'wellness']],
-    ['TA', ['ta', 'teach', 'teaching']],
-    ['ME', ['me', 'medical']],
-  ];
-
   const words = (s) => String(s || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
@@ -297,19 +283,12 @@ async function build() {
     .split(' ')
     .filter(Boolean);
 
-  const codeFrom = (table, tokens) => {
-    for (const [code, spellings] of table) {
-      if (tokens.some((w) => spellings.includes(w))) return code;
-    }
-    return null;
-  };
-
-  // "ZNZ-BL-202609-02C" and "ZNZ Build MSG - 2026" both come back "ZNZ-BL".
+  // Both naming eras resolve through the same vocabulary the booking side
+  // uses, so "ZNZ-BL-202609-02C" and "ZNZ Build MSG - 2026" are both ZNZ-BL
+  // and a code can never mean one thing here and another there.
   const projectKey = (name) => {
-    const tokens = words(name);
-    const dest = codeFrom(DESTINATIONS, tokens);
-    const prog = codeFrom(PROGRAMMES, tokens);
-    return dest && prog ? `${dest}-${prog}` : null;
+    const { destination, programme } = classify({ name });
+    return destination && programme ? `${destination}-${programme}` : null;
   };
 
   let plan = null;

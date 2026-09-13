@@ -15,9 +15,9 @@
 const DESTINATIONS = [
   ['JP', ['japan']],
   ['ZNZ', ['znz', 'zanzibar', 'zanzibár']],
-  ['TH', ['th', 'thai', 'thailand']],
+  ['TH', ['th', 'thai', 'thailand', 'thailan']],
   ['VN', ['vn', 'vietnam']],
-  ['KO', ['korea']],
+  ['KO', ['ko', 'korea']],
   ['NP', ['np', 'nepal']],
   ['KN', ['ken', 'kenya']],
   ['SAL', ['salalah', 'salahlah']],
