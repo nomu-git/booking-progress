@@ -7,7 +7,7 @@
 // reachable through the picker, they're just not all on screen at once.
 
 const {
-  graphGetAll, getAccountMeta, toReportCurrency, AD_ACCOUNTS, REPORT_CURRENCY,
+  graphGetAll, getAccountMeta, toReportCurrency, AD_ACCOUNTS, REPORT_CURRENCY, USD_SAR,
 } = require('./meta-ads');
 const { mapWithConcurrency } = require('./wetravel');
 
@@ -16,6 +16,11 @@ const CACHE_TTL_MS = Number(process.env.META_HISTORY_CACHE_TTL_MS || 1800000);
 // Meta keeps ad insights for roughly 37 months and purges everything older,
 // so that's how far back the year picker can honestly offer.
 const RETENTION_MONTHS = Number(process.env.META_RETENTION_MONTHS || 37);
+
+// History has no media plan behind it — the sheet only covers the current
+// year — so every archived campaign is measured against the same assumed
+// budget rather than against a share of the total. Muatasam's figure.
+const DEFAULT_BUDGET_USD = Number(process.env.META_DEFAULT_BUDGET_USD || 500);
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -85,11 +90,13 @@ function retentionFloor() {
     .toISOString().slice(0, 10);
 }
 
-// The years Meta will still answer for, newest first.
+// The years Meta will still answer for, newest first. The current year is
+// deliberately left out: everything in it lives on the Campaigns tab, so
+// History starts at last year and works back.
 function availableYears() {
   const oldest = Number(retentionFloor().slice(0, 4));
   const years = [];
-  for (let y = new Date().getUTCFullYear(); y >= oldest; y--) years.push(y);
+  for (let y = new Date().getUTCFullYear() - 1; y >= oldest; y--) years.push(y);
   return years;
 }
 
@@ -185,12 +192,16 @@ async function build(year) {
       const keys = [...e.monthKeys].sort();
       const short = (k) => MONTHS[Number(k.slice(5, 7)) - 1];
       const { monthKeys, ...rest } = e;
+      const budget = DEFAULT_BUDGET_USD * USD_SAR;
       return {
         ...rest,
         firstMonth: keys.length ? short(keys[0]) : null,
         lastMonth: keys.length ? short(keys[keys.length - 1]) : null,
         monthsLive: keys.length,
-        share: totalSpend > 0 ? e.spend / totalSpend : 0,
+        budget,
+        remaining: budget - e.spend,
+        usedPct: budget ? e.spend / budget : null,
+        costPerResult: e.results ? e.spend / e.results : null,
       };
     })
     .sort((a, b) => b.spend - a.spend || a.name.localeCompare(b.name));
@@ -206,13 +217,25 @@ async function build(year) {
     currency: REPORT_CURRENCY,
     availableYears: availableYears(),
     accounts: [...accountMeta.values()].map((a) => ({ id: a.id, name: a.name, currency: a.currency })),
-    totals: {
-      spend: totalSpend,
-      results: monthList.reduce((total, m) => total + m.results, 0),
-      campaigns: campaigns.length,
-      impressions: campaigns.reduce((total, c) => total + c.impressions, 0),
-      reach: campaigns.reduce((total, c) => total + c.reach, 0),
-    },
+    defaultBudgetUsd: DEFAULT_BUDGET_USD,
+    usdSar: USD_SAR,
+    totals: (() => {
+      const results = monthList.reduce((total, m) => total + m.results, 0);
+      // Summed from the same rows the table foots to, so the headline and
+      // the table can never disagree.
+      const budget = campaigns.reduce((total, c) => total + c.budget, 0);
+      return {
+        spend: totalSpend,
+        results,
+        campaigns: campaigns.length,
+        impressions: campaigns.reduce((total, c) => total + c.impressions, 0),
+        reach: campaigns.reduce((total, c) => total + c.reach, 0),
+        budget,
+        remaining: budget - totalSpend,
+        usedPct: budget ? totalSpend / budget : null,
+        costPerResult: results ? totalSpend / results : null,
+      };
+    })(),
     months: monthList,
     campaigns,
   };

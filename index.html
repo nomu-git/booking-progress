@@ -660,7 +660,7 @@
           <div class="seg">
             <button data-view="board" aria-pressed="true">Dashboard</button>
             <button data-view="report" aria-pressed="false">Report</button>
-            <button data-view="previous" aria-pressed="false">Previous Trips</button>
+            <button data-view="previous" aria-pressed="false">Previous Projects</button>
           </div>
         </div>
         <div class="segdiv"></div>
@@ -1450,11 +1450,23 @@
   const ratio = (a, b) => (Number(b) ? Number(a) / Number(b) : null);
   const show = (v, fmt) => (v == null ? '—' : fmt(v));
 
+  // Spend against budget, as one bar. Amber as it nears the budget, red once
+  // it is past it — the percentage beside it says the same thing, so colour
+  // is never carrying the meaning on its own.
+  const barFor = (spend, budget) => {
+    const usedPct = ratio(spend, budget);
+    const width = Math.min(100, (usedPct || 0) * 100);
+    const state = usedPct == null ? '' : usedPct > 1 ? ' over' : usedPct >= 0.85 ? ' near' : '';
+    return `<div class="abar"><div class="abar-fill${state}" style="width:${width.toFixed(1)}%"></div></div>`
+      + `<span class="abar-pct">${show(usedPct, pct)}</span>`;
+  };
+
   /* ================= campaigns tab ================= */
 
-  // Budget comes from Updated Budget.xlsx; spend and campaign names come live
-  // from Meta. Only campaigns Meta reports as Active are listed, so a renamed
-  // or retired campaign never lingers here under its old name.
+  // Every 2026 campaign, each with its own budget to measure against. Budget
+  // comes from Updated Budget.xlsx where the campaign ties to a plan line and
+  // from a flat default where it doesn't; spend, names and status come live
+  // from Meta.
   function renderCampaigns() {
     const p = campaigns;
     if (!p) return;
@@ -1463,99 +1475,72 @@
       return;
     }
 
-    const pv = p.planVsActual || {};
-    const cur = esc(pv.currency || p.currency || 'SAR');
+    const cur = esc(p.currency || 'SAR');
+    const t = p.totals || {};
+    const rows = [...(p.campaigns || [])].sort((a, b) => b.spend - a.spend || a.name.localeCompare(b.name));
 
-    // Every campaign tied to a plan line shows, active or not — the label
-    // says which. Only campaigns with no plan line at all stay restricted to
-    // Active, so a retired campaign from before the renaming can't reappear
-    // here just because it once spent money.
-    const rows = (pv.rows || [])
-      .filter((r) => r.matched)
-      .map((r) => ({ name: r.campaignName, status: r.status, budget: r.plannedSar, spend: r.spend }));
-
-    // An active campaign with no line in the sheet still has to show its
-    // spend — it just has no budget to measure against.
-    for (const o of pv.unmatchedCampaigns || []) {
-      rows.push({ name: o.name, status: 'Active', budget: null, spend: o.spend });
-    }
-    rows.sort((a, b) => (b.budget || 0) - (a.budget || 0) || b.spend - a.spend);
-
-    const totalBudget = rows.reduce((sum, r) => sum + (r.budget || 0), 0);
-    const totalSpend = rows.reduce((sum, r) => sum + r.spend, 0);
-    const totalUsed = ratio(totalSpend, totalBudget);
-
-    const barFor = (spend, budget) => {
-      const usedPct = ratio(spend, budget);
-      const width = Math.min(100, (usedPct || 0) * 100);
-      const state = usedPct == null ? '' : usedPct > 1 ? ' over' : usedPct >= 0.85 ? ' near' : '';
-      return `<div class="abar"><div class="abar-fill${state}" style="width:${width.toFixed(1)}%"></div></div>`;
-    };
-
-    const body = rows.map((r) => {
-      const usedPct = ratio(r.spend, r.budget);
-      return `
-        <tr>
-          <td class="cname">${esc(r.name)}</td>
-          <td><span class="cpill ${r.status === 'Active' ? 'on' : 'off'}">${esc(r.status || 'Inactive')}</span></td>
-          <td class="num">${r.budget == null ? '—' : money(r.budget)}</td>
-          <td class="num">${money(r.spend)}</td>
-          <td class="num">${r.budget == null ? '—' : money(r.budget - r.spend)}</td>
-          <td class="abar-cell">
-            ${barFor(r.spend, r.budget)}
-            <span class="abar-pct">${show(usedPct, pct)}</span>
-          </td>
-        </tr>`;
-    }).join('');
+    const body = rows.map((c) => `
+      <tr>
+        <td class="cname">${esc(c.name)}</td>
+        <td><span class="cpill ${c.status === 'Active' ? 'on' : 'off'}">${esc(c.status || 'Inactive')}</span></td>
+        <td class="num">${money(c.budgetSar)}</td>
+        <td class="num">${money(c.spend)}</td>
+        <td class="num">${money(c.remaining)}</td>
+        <td class="num">${int(c.results)}</td>
+        <td class="num">${show(c.costPerResult, money)}</td>
+        <td class="num">${int(c.impressions)}</td>
+        <td class="abar-cell">${barFor(c.spend, c.budgetSar)}</td>
+      </tr>`).join('');
 
     $('campaignsWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
 
       <div class="panel">
-        <div class="ptitle">Budget vs actual</div>
+        <div class="ptitle">Budget vs actual · ${p.year}</div>
         <div class="bvhero">
           <div class="bv-side">
             <div class="bv-lab">Budget</div>
-            <div class="bv-n">${money(totalBudget)}</div>
+            <div class="bv-n">${money(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
             <div class="bv-lab">Actual spend</div>
-            <div class="bv-n bv-act">${money(totalSpend)}</div>
-            <div class="bv-s">${show(totalUsed, pct)} of budget used</div>
+            <div class="bv-n bv-act">${money(t.spend)}</div>
+            <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
           </div>
           <div class="bv-side">
             <div class="bv-lab">Remaining</div>
-            <div class="bv-n">${money(totalBudget - totalSpend)}</div>
+            <div class="bv-n">${money(t.remaining)}</div>
             <div class="bv-s">${cur}</div>
           </div>
         </div>
         <div class="bvbar">
           <div class="bvbar-track">
-            <div class="bvbar-fill" style="width:${Math.min(100, (totalUsed || 0) * 100).toFixed(1)}%"></div>
+            <div class="bvbar-fill" style="width:${Math.min(100, (t.usedPct || 0) * 100).toFixed(1)}%"></div>
           </div>
         </div>
       </div>
 
       <div class="panel">
-        <div class="ptitle">Budget vs actual by campaign</div>
+        <div class="ptitle">Budget vs actual by campaign · ${p.year}</div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Campaign</th><th>Status</th><th>Budget</th><th>Actual Spend</th><th>Remaining</th><th>Actual vs Budget</th>
+              <th>Campaign</th><th>Status</th><th>Budget</th><th>Spend</th><th>Remaining</th>
+              <th>Results</th><th>Cost / Result</th><th>Impressions</th><th>Spend vs Budget</th>
             </tr></thead>
-            <tbody>${body || '<tr><td class="cname" colspan="6">No campaigns.</td></tr>'}</tbody>
+            <tbody>${body || '<tr><td class="cname" colspan="9">No campaigns.</td></tr>'}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL</td>
               <td></td>
-              <td class="num">${money(totalBudget)}</td>
-              <td class="num">${money(totalSpend)}</td>
-              <td class="num">${money(totalBudget - totalSpend)}</td>
-              <td class="abar-cell">
-                ${barFor(totalSpend, totalBudget)}
-                <span class="abar-pct">${show(totalUsed, pct)}</span>
-              </td>
+              <td class="num">${money(t.budget)}</td>
+              <td class="num">${money(t.spend)}</td>
+              <td class="num">${money(t.remaining)}</td>
+              <td class="num">${int(t.results)}</td>
+              <td class="num">${show(t.costPerResult, money)}</td>
+              <td class="num">${int(t.impressions)}</td>
+              <td class="abar-cell">${barFor(t.spend, t.budget)}</td>
             </tr></tfoot>
           </table>
         </div>
@@ -1609,13 +1594,13 @@
       <tr>
         <td class="cname">${esc(c.name)}</td>
         <td class="num">${esc(c.firstMonth || '—')}${c.lastMonth && c.lastMonth !== c.firstMonth ? ' – ' + esc(c.lastMonth) : ''}</td>
+        <td class="num">${money(c.budget)}</td>
         <td class="num">${money(c.spend)}</td>
+        <td class="num">${money(c.remaining)}</td>
         <td class="num">${int(c.results)}</td>
-        <td class="num">${show(ratio(c.spend, c.results), money)}</td>
-        <td class="abar-cell">
-          <div class="abar"><div class="abar-fill" style="width:${((c.share || 0) * 100).toFixed(1)}%"></div></div>
-          <span class="abar-pct">${pct(c.share || 0)}</span>
-        </td>
+        <td class="num">${show(c.costPerResult, money)}</td>
+        <td class="num">${int(c.impressions)}</td>
+        <td class="abar-cell">${barFor(c.spend, c.budget)}</td>
       </tr>`).join('');
 
     $('historyWrap').innerHTML = `
@@ -1626,19 +1611,20 @@
         <div class="filters"><div class="seg" id="histYearSeg">${years}</div></div>
         <div class="bvhero">
           <div class="bv-side">
-            <div class="bv-lab">Total spend</div>
-            <div class="bv-n bv-act">${money(t.spend)}</div>
+            <div class="bv-lab">Budget</div>
+            <div class="bv-n">${money(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
+          <div class="bv-vs">vs</div>
           <div class="bv-side">
-            <div class="bv-lab">Results</div>
-            <div class="bv-n">${int(t.results)}</div>
-            <div class="bv-s">${int(t.campaigns)} campaign${t.campaigns === 1 ? '' : 's'}</div>
+            <div class="bv-lab">Actual spend</div>
+            <div class="bv-n bv-act">${money(t.spend)}</div>
+            <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
           </div>
           <div class="bv-side">
             <div class="bv-lab">Cost per result</div>
-            <div class="bv-n">${show(ratio(t.spend, t.results), money)}</div>
-            <div class="bv-s">${cur}</div>
+            <div class="bv-n">${show(t.costPerResult, money)}</div>
+            <div class="bv-s">${int(t.results)} results · ${int(t.campaigns)} campaign${t.campaigns === 1 ? '' : 's'}</div>
           </div>
         </div>
         <div class="mgrid">${monthRows}</div>
@@ -1650,19 +1636,20 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Campaign</th><th>Months</th><th>Spend</th><th>Results</th><th>Cost / Result</th><th>Share of Spend</th>
+              <th>Campaign</th><th>Months</th><th>Budget</th><th>Spend</th><th>Remaining</th>
+              <th>Results</th><th>Cost / Result</th><th>Impressions</th><th>Spend vs Budget</th>
             </tr></thead>
-            <tbody>${body || `<tr><td class="cname" colspan="6">No campaigns ran in ${p.year}.</td></tr>`}</tbody>
+            <tbody>${body || `<tr><td class="cname" colspan="9">No campaigns ran in ${p.year}.</td></tr>`}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL</td>
               <td></td>
+              <td class="num">${money(t.budget)}</td>
               <td class="num">${money(t.spend)}</td>
+              <td class="num">${money(t.remaining)}</td>
               <td class="num">${int(t.results)}</td>
-              <td class="num">${show(ratio(t.spend, t.results), money)}</td>
-              <td class="abar-cell">${t.spend > 0 ? `
-                <div class="abar"><div class="abar-fill" style="width:100%"></div></div>
-                <span class="abar-pct">100.0%</span>` : '—'}
-              </td>
+              <td class="num">${show(t.costPerResult, money)}</td>
+              <td class="num">${int(t.impressions)}</td>
+              <td class="abar-cell">${barFor(t.spend, t.budget)}</td>
             </tr></tfoot>
           </table>
         </div>
@@ -1775,7 +1762,7 @@
     const p = previousTrips;
     if (!p) return;
     if (p.error && !p.trips) {
-      $('previousWrap').innerHTML = `<div class="msg err">Could not load previous trips: ${esc(p.error)}</div>`;
+      $('previousWrap').innerHTML = `<div class="msg err">Could not load previous projects: ${esc(p.error)}</div>`;
       return;
     }
 
@@ -1803,7 +1790,7 @@
           <div class="pt-month">
             <div class="pt-mhead">
               <span class="pt-mname">${esc(PT_MONTHS[month])}</span>
-              <span class="pt-mmeta">${mRows.length} trip${mRows.length === 1 ? '' : 's'}</span>
+              <span class="pt-mmeta">${mRows.length} project${mRows.length === 1 ? '' : 's'}</span>
               <div class="pt-mnums">
                 <span>Booked <b>${int(mTotals.booked)}</b></span>
                 <span class="cancel">Cancelled <b>${int(mTotals.cancelled)}</b></span>
@@ -1825,20 +1812,20 @@
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'WeTravel unreachable')}</div>` : ''}
 
       <div class="panel">
-        <div class="ptitle">Previous trips · ${ptYear ?? '—'}</div>
+        <div class="ptitle">Previous projects · ${ptYear ?? '—'}</div>
         <div class="filters"><div class="seg" id="ptYearSeg">${yearTabs}</div></div>
         <div class="vhero">
           <span class="vh-n">${int(filtered.length)}</span>
-          <span class="vh-s">departed trip${filtered.length === 1 ? '' : 's'} · <b style="color:#fff">${int(yTotals.booked)}</b> booked · <b style="color:var(--danger)">${int(yTotals.cancelled)}</b> cancelled</span>
+          <span class="vh-s">departed project${filtered.length === 1 ? '' : 's'} · <b style="color:#fff">${int(yTotals.booked)}</b> booked · <b style="color:var(--danger)">${int(yTotals.cancelled)}</b> cancelled</span>
         </div>
         <div class="filters" style="margin-top:12px">
           <select class="fselect" id="ptMonthSel">${monthOptions.join('')}</select>
-          <div class="fnote">${p.trips.length} total on record across ${p.years.length} year${p.years.length === 1 ? '' : 's'}</div>
+          <div class="fnote">${p.trips.length} projects on record across ${p.years.length} year${p.years.length === 1 ? '' : 's'}</div>
         </div>
       </div>
 
       <div class="panel">
-        ${body || '<div class="msg">No previous trips match this filter.</div>'}
+        ${body || '<div class="msg">No previous projects match this filter.</div>'}
       </div>`;
 
     $('previousWrap').querySelectorAll('#ptYearSeg button').forEach((b) => {
@@ -1870,7 +1857,7 @@
       renderPreviousTrips();
     } catch (err) {
       if (!previousTrips) {
-        $('previousWrap').innerHTML = `<div class="msg err">Could not load previous trips: ${esc(err.message)}</div>`;
+        $('previousWrap').innerHTML = `<div class="msg err">Could not load previous projects: ${esc(err.message)}</div>`;
       }
     }
   }
@@ -1900,7 +1887,7 @@
       loadReport(false);
     }
     if (view === 'previous' && !previousTrips) {
-      $('previousWrap').innerHTML = '<div class="msg">Loading previous trips…</div>';
+      $('previousWrap').innerHTML = '<div class="msg">Loading previous projects…</div>';
       loadPreviousTrips(false);
     }
     // Meta data is fetched only once someone actually opens the tab — unlike

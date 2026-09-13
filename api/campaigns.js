@@ -11,6 +11,10 @@ const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
 // board rolls into 2027 without a code change.
 const YEAR = Number(process.env.META_YEAR || new Date().getUTCFullYear());
 
+// What a campaign is measured against when it can't be tied to a line in
+// Updated Budget.xlsx. Muatasam's rule: assume $500 rather than show a dash.
+const DEFAULT_BUDGET_USD = Number(process.env.META_DEFAULT_BUDGET_USD || 500);
+
 let cache = { at: 0, payload: null };
 
 // Both the legacy objective names and the newer ODAX ones land on the same
@@ -255,120 +259,106 @@ async function build() {
   // Named so the board can say which campaigns are affected, not just how many.
   const noResultCampaigns = campaigns.filter((c) => c.noResults).map((c) => c.name);
 
-  /* ---------------- plan vs actual ----------------
-     The spreadsheet allocates a budget per trip flight, not per month, and
-     its "Date" column is the trip's own window rather than the ad flight's —
-     a December trip is advertised months earlier. So a plan line is compared
-     against its campaign's whole spend to date, never sliced into a period.
+  /* ---------------- budget per campaign ----------------
+     Every campaign carries its own budget, so the board can show spend
+     against budget on each line rather than a share of the total. Budgets
+     come from Updated Budget.xlsx where the campaign can be tied to a plan
+     line, and from a flat default where it can't — no row is ever left
+     without something to measure against.
 
-     Matching leans on the campaign renaming: a plan line matches a campaign
-     when every word of the plan's programme appears in the campaign's name,
-     disambiguated by the month the campaign name carries when one programme
-     runs more than once. Both sides report what didn't match rather than
-     quietly dropping it. */
-  const MONTH_WORDS = {
-    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7,
-    sep: 8, oct: 9, nov: 10, dec: 11,
-  };
+     Campaigns are named two different ways: the current code form
+     ("ZNZ-BL-202609-02C") and the older long form ("ZNZ Build MSG - 2026",
+     "Thailan Wellness MSG - 2026", typo included). Both resolve to the same
+     destination + programme pair, which is the level the plan budgets at.
+     Deliberately NOT matched on month: the plan's dates are the trip's own
+     window while a campaign's are the ad flight's, and a December trip is
+     advertised months earlier — matching those two was what put the wrong
+     budget on the wrong campaign before. Every programme that runs twice
+     carries the same budget in the sheet, so the pair alone is enough. */
+  const DESTINATIONS = [
+    ['ZNZ', ['znz', 'zanzibar']],
+    ['BA', ['ba', 'bali']],
+    ['VN', ['vn', 'vietnam']],
+    ['TH', ['th', 'thailand', 'thailan']],
+    ['KR', ['kr', 'korea']],
+  ];
+  const PROGRAMMES = [
+    ['BL', ['bl', 'build', 'building']],
+    ['EX', ['ex', 'explore']],
+    ['WL', ['wl', 'wellness']],
+    ['TA', ['ta', 'teach', 'teaching']],
+    ['ME', ['me', 'medical']],
+  ];
+
   const words = (s) => String(s || '')
     .toLowerCase()
-    .replace(/[\u2013\u2014]/g, ' ')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .split(' ')
     .filter(Boolean);
 
-  // "Novemper" and "Decemper" are how the campaigns are actually spelled, so
-  // the first three letters are what's matched on, not the full word.
-  const monthOfName = (name) => {
-    for (const w of words(name)) {
-      const key = w.slice(0, 3);
-      if (MONTH_WORDS[key] != null && w.length >= 3 && /^[a-z]+$/.test(w)) return MONTH_WORDS[key];
+  const codeFrom = (table, tokens) => {
+    for (const [code, spellings] of table) {
+      if (tokens.some((w) => spellings.includes(w))) return code;
     }
     return null;
   };
 
-  let planRows = [];
-  let planUnmatchedCampaigns = [];
+  // "ZNZ-BL-202609-02C" and "ZNZ Build MSG - 2026" both come back "ZNZ-BL".
+  const projectKey = (name) => {
+    const tokens = words(name);
+    const dest = codeFrom(DESTINATIONS, tokens);
+    const prog = codeFrom(PROGRAMMES, tokens);
+    return dest && prog ? `${dest}-${prog}` : null;
+  };
+
+  let plan = null;
   try {
-    const plan = buildMediaPlan();
-    // Only campaigns that are live or have spent this year are candidates;
-    // a plan line shouldn't bind to a long-dead 2026 campaign by name alone.
-    const pool = campaigns.map((c) => ({
-      c,
-      tokens: new Set(words(c.name)),
-      month: monthOfName(c.name),
-      taken: false,
-    }));
-
-    planRows = plan.lines.map((l) => {
-      const need = words(l.program);
-      const named = pool.filter((x) => !x.taken && need.every((w) => x.tokens.has(w)));
-
-      // The month in the campaign's own name is what binds it to a flight —
-      // several flights share a programme, and the legacy 2026 campaigns
-      // ("Bali Explore 10%", "Vietnam explore sales") carry no month at all,
-      // so requiring one keeps a plan line from latching onto them. A
-      // recurring line has no month to match, so it takes the month-less
-      // campaign instead.
-      const hit = l.recurring
-        ? named.find((x) => x.month == null) || null
-        : named.find((x) => x.month != null && x.month === l.startMonth) || null;
-      if (hit) hit.taken = true;
-
-      const spend = hit ? hit.c.spend : 0;
-      const results = hit ? hit.c.results : 0;
-      const plannedSar = l.budgetSar;
-      return {
-        program: l.program,
-        dates: l.dates,
-        objective: l.objective,
-        cancelled: l.cancelled,
-        plannedUsd: l.budgetUsd,
-        plannedSar,
-        plannedResults: l.resultCount,
-        matched: !!hit,
-        campaignId: hit ? hit.c.id : null,
-        campaignName: hit ? hit.c.name : null,
-        status: hit ? hit.c.status : null,
-        spend,
-        results,
-        remaining: plannedSar - spend,
-        usedPct: plannedSar ? spend / plannedSar : null,
-        performance: l.resultCount ? results / l.resultCount : null,
-        costPerResult: results ? spend / results : null,
-      };
-    });
-
-    // Only campaigns still running matter here. The 2026 legacy campaigns are
-    // inactive and predate this plan entirely — listing them would read as
-    // "13 campaigns spending outside the plan" when nothing is being spent.
-    planUnmatchedCampaigns = pool
-      .filter((x) => !x.taken && x.c.status === 'Active')
-      .map((x) => ({ id: x.c.id, name: x.c.name, status: x.c.status, spend: x.c.spend, results: x.c.results }))
-      .sort((a, b) => b.spend - a.spend);
+    plan = buildMediaPlan();
   } catch (err) {
-    console.error(`plan vs actual unavailable: ${err.message}`);
+    console.error(`media plan unavailable, every budget falls back to the default: ${err.message}`);
   }
 
-  const livePlan = planRows.filter((r) => !r.cancelled);
-  const pSum = (key) => livePlan.reduce((total, r) => total + (r[key] || 0), 0);
-  const planVsActual = {
-    source: 'Updated Budget.xlsx',
-    currency: REPORT_CURRENCY,
-    usdSar: USD_SAR,
-    rows: planRows,
-    unmatchedCampaigns: planUnmatchedCampaigns,
-    totals: {
-      lines: livePlan.length,
-      cancelled: planRows.length - livePlan.length,
-      matched: livePlan.filter((r) => r.matched).length,
-      plannedSar: pSum('plannedSar'),
-      plannedResults: pSum('plannedResults'),
-      spend: pSum('spend'),
-      results: pSum('results'),
-    },
+  // project key -> planned USD, and the always-on website lines which have no
+  // destination at all and so are matched on their words instead.
+  const planByProject = new Map();
+  const planByWords = [];
+  for (const line of (plan && plan.lines) || []) {
+    if (line.cancelled) continue;
+    const key = projectKey(line.program);
+    if (key) {
+      if (!planByProject.has(key)) planByProject.set(key, { usd: line.budgetUsd, program: line.program });
+    } else {
+      planByWords.push({ need: words(line.program), usd: line.budgetUsd, program: line.program });
+    }
+  }
+
+  const planFor = (name) => {
+    const key = projectKey(name);
+    if (key && planByProject.has(key)) return planByProject.get(key);
+    const tokens = new Set(words(name));
+    const hit = planByWords.find((l) => l.need.every((w) => tokens.has(w)));
+    return hit || null;
   };
+
+  for (const c of campaigns) {
+    const hit = planFor(c.name);
+    c.budgetUsd = hit ? hit.usd : DEFAULT_BUDGET_USD;
+    c.budgetSar = c.budgetUsd * USD_SAR;
+    c.budgetSource = hit ? 'plan' : 'default';
+    c.planProgram = hit ? hit.program : null;
+    c.remaining = c.budgetSar - c.spend;
+    c.usedPct = c.budgetSar ? c.spend / c.budgetSar : null;
+    c.costPerResult = c.results ? c.spend / c.results : null;
+  }
+
+  // The table foots to these, so they're summed from the same rows rather
+  // than taken from the plan's own total — the two can't drift apart.
+  totals.budget = campaigns.reduce((total, c) => total + c.budgetSar, 0);
+  totals.remaining = totals.budget - totals.spend;
+  totals.usedPct = totals.budget ? totals.spend / totals.budget : null;
+  totals.costPerResult = totals.results ? totals.spend / totals.results : null;
+  totals.onPlan = campaigns.filter((c) => c.budgetSource === 'plan').length;
 
   return {
     asOf: new Date().toISOString(),
@@ -380,7 +370,9 @@ async function build() {
     // converted, so the whole payload reads in one comparable unit.
     currency: REPORT_CURRENCY,
     totals,
-    planVsActual,
+    budgetSource: 'Updated Budget.xlsx',
+    defaultBudgetUsd: DEFAULT_BUDGET_USD,
+    usdSar: USD_SAR,
     campaigns,
   };
 }
