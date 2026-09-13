@@ -12,26 +12,31 @@
 // code — a wrong code is worse than no code, since the code is what people
 // will start referring to the project by.
 
+// Each entry lists the code itself first, then every way the place or
+// programme gets written in a title. The code has to be in its own list:
+// names already following the scheme ("ZNZ-BL-202609-02C") have to resolve
+// back to the same pair as the long form ("ZNZ Building"), or a renamed
+// campaign silently stops matching its budget.
 const DESTINATIONS = [
-  ['JP', ['japan']],
+  ['JP', ['jp', 'japan']],
   ['ZNZ', ['znz', 'zanzibar', 'zanzibár']],
   ['TH', ['th', 'thai', 'thailand', 'thailan']],
   ['VN', ['vn', 'vietnam']],
   ['KO', ['ko', 'korea']],
   ['NP', ['np', 'nepal']],
-  ['KN', ['ken', 'kenya']],
-  ['SAL', ['salalah', 'salahlah']],
+  ['KN', ['kn', 'ken', 'kenya']],
+  ['SAL', ['sal', 'salalah', 'salahlah']],
   ['SL', ['sl', 'sri', 'lanka']],
   ['PH', ['ph', 'philippines']],
   ['BA', ['ba', 'bali']],
 ];
 
 const PROGRAMMES = [
-  ['WL', ['wellness']],
-  ['EX', ['explore']],
-  ['BL', ['building', 'build']],
-  ['TA', ['teaching', 'teach']],
-  ['MED', ['medical']],
+  ['WL', ['wl', 'wellness']],
+  ['EX', ['ex', 'explore']],
+  ['BL', ['bl', 'building', 'build']],
+  ['TA', ['ta', 'teaching', 'teach']],
+  ['MED', ['med', 'medical']],
 ];
 
 // A corporate or university partner on the title means the trip was sold to
