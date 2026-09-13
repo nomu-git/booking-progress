@@ -469,6 +469,13 @@
   }
   .pt-row + .pt-row { border-top: 1px solid rgba(52,81,124,.3); }
   .pt-name { color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* A project code is an identifier, not prose — monospaced and letter-spaced
+     so ZNZ-BL-202607-02C can be read off and compared at a glance. Trips the
+     code list can't place keep their WeTravel title in normal type. */
+  .pt-name.pt-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; letter-spacing: .02em; color: var(--yellow);
+  }
   .pt-dest { font-size: 11px; color: var(--text-3); margin-top: 2px; }
   /* No nowrap — a long "27 Aug 2026 – 30 Aug 2026" range wraps onto a second
      line rather than overflowing into the next column. */
@@ -1743,8 +1750,8 @@
     return `
     <div class="pt-row${cancelled ? ' pt-cancelled-row' : ''}">
       <div>
-        <div class="pt-name">${esc(t.name)}${t.charter ? '<span class="pt-charter">Charter</span>' : ''}${cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
-        <div class="pt-dest">${esc(t.destination || '—')}</div>
+        <div class="pt-name${t.code ? ' pt-code' : ''}">${esc(t.code || t.name)}${t.charter ? '<span class="pt-charter">Charter</span>' : ''}${cancelled ? '<span class="pt-tag">Cancelled</span>' : ''}</div>
+        <div class="pt-dest">${t.code ? esc(t.name) + ' · ' : ''}${esc(t.destination || '—')}</div>
       </div>
       <div class="pt-dates">${esc(ptDate(t.start))}${t.end && t.end !== t.start ? ' – ' + esc(ptDate(t.end)) : ''}</div>
       ${weeksCell}

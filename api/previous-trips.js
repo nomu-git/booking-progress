@@ -3,6 +3,7 @@
 // of the calendar.
 
 const { apiGet, mapWithConcurrency } = require('./wetravel');
+const { buildCode } = require('./trip-code');
 
 const CACHE_TTL_MS = Number(process.env.PREVIOUS_TRIPS_CACHE_TTL_MS || 300000);
 
@@ -194,10 +195,25 @@ async function build() {
     // showing normally; only the closed weeks are flagged inside it.
     const allWeeksCancelled = detail.weeks.length > 0 && detail.weeks.every((w) => w.unavailable);
 
+    // The project code is what the team refers to a trip by now — same scheme
+    // the Meta campaigns use, so a project reads the same on both sides of
+    // the board. Null where the title doesn't name a place and a programme
+    // the code list covers; the original title is shown in that case rather
+    // than a guessed code.
+    const coded = buildCode(
+      { title: trip.title, name: productName(trip.title), destination: trip.destination, charter: CHARTERS.has(String(trip.uuid)) },
+      start,
+      detail.weeks.length,
+    );
+
     trips.push({
       uuid: trip.uuid,
       name: productName(trip.title),
       title: trip.title,
+      code: coded.code,
+      codeDestination: coded.destination,
+      codeProgramme: coded.programme,
+      b2b: coded.b2b,
       destination: trip.destination || '',
       start,
       end,
@@ -223,6 +239,7 @@ async function build() {
     years,
     totals: {
       trips: trips.length,
+      coded: trips.filter((t) => t.code).length,
       booked: trips.reduce((sum, t) => sum + t.booked, 0),
       cancelled: trips.reduce((sum, t) => sum + t.cancelled, 0),
     },
