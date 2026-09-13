@@ -228,6 +228,27 @@ async function build() {
     });
   });
 
+  // Two runs of the same project in the same month generate the identical
+  // code — the scheme has no day or run number in it, just destination,
+  // programme, year-month and week count. Break that tie here rather than in
+  // trip-code.js, since it's a property of the whole list (has this code
+  // been seen before), not of one trip in isolation. Earliest start keeps
+  // the bare code; later ones in the same month get -A, -B, ... appended,
+  // in the order they started.
+  const byCode = new Map();
+  for (const t of trips) {
+    if (!t.code) continue;
+    if (!byCode.has(t.code)) byCode.set(t.code, []);
+    byCode.get(t.code).push(t);
+  }
+  for (const group of byCode.values()) {
+    if (group.length < 2) continue;
+    group.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+    group.forEach((t, i) => {
+      if (i > 0) t.code = `${t.code}-${String.fromCharCode(64 + i)}`; // -A, -B, ...
+    });
+  }
+
   // Most recent departure first — the order asked for.
   trips.sort((a, b) => (b.start || '').localeCompare(a.start || ''));
 
