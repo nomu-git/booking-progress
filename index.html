@@ -608,6 +608,18 @@
   .tip .more { color: var(--text-3); font-size: 11px; margin-top: 3px; }
   .tip .hint { color: var(--text-3); font-size: 10.5px; margin-top: 6px; border-top: 1px solid var(--line); padding-top: 6px; }
 
+  /* Anything with an explanation behind it gets a dotted underline and the
+     help cursor, so it reads as "there is more here" rather than people
+     having to discover it by accident. */
+  [data-help] {
+    cursor: help;
+    text-decoration: underline dotted rgba(134,152,180,.55);
+    text-underline-offset: 3px;
+  }
+  .ctable th[data-help]:hover { color: var(--yellow); }
+  .bv-lab[data-help] { display: inline-block; }
+  .bv-lab[data-help]:hover { color: var(--yellow); }
+
   /* Listeners bind to the bar shapes themselves, not the full-height column,
      so hovering empty space above a short bar doesn't trigger the tooltip. */
   .cbar, .dbar { cursor: pointer; }
@@ -1457,6 +1469,59 @@
   const ratio = (a, b) => (Number(b) ? Number(a) / Number(b) : null);
   const show = (v, fmt) => (v == null ? '—' : fmt(v));
 
+  /* ---- what each column means ----
+     Every figure on the ad tabs is either pulled from Meta or derived from
+     the budget sheet, and which is which isn't obvious from a column header.
+     Hovering any header says what the number is and how it got there, so the
+     board can be read without someone having to explain it first. */
+  const GLOSSARY = {
+    campaign: ['Campaign', 'The campaign name exactly as it stands in Meta Ads Manager. Rename it there and it changes here on the next refresh.'],
+    status: ['Status', 'Active means Meta is running this campaign right now. Inactive means it is paused, finished, or switched off.'],
+    months: ['Months', 'The months this campaign actually delivered in. A campaign that ran in January and again in August shows both, not the gap between them.'],
+    budget: ['Budget', 'What this campaign is allowed to spend. Taken from Updated Budget.xlsx where the campaign matches a plan line, otherwise $500 is assumed.'],
+    budgetAssumed: ['Budget', 'There is no budget sheet for past years, so every campaign in History is measured against the same assumed $500.'],
+    spend: ['Spend', 'Money actually spent, live from Meta. Accounts billed in USD are converted to SAR so every figure on the board reads in one currency.'],
+    remaining: ['Remaining', 'Budget minus spend. A negative number means the campaign spent past its budget.'],
+    results: ['Results', 'The main action the campaign was set up to get, so it means different things on different campaigns: conversations started on a Messages campaign, leads on a Leads campaign, purchases on a Sales campaign.'],
+    costPerResult: ['Cost / Result', 'Spend divided by results — what one result cost on average. Blank when a campaign has no results yet, rather than showing a misleading zero.'],
+    purchases: ['Purchases', 'Purchases Meta actually tracked, counted on every campaign whatever its objective. A Messages campaign can still drive sales, and Results would only show its message count, so those sales appear here instead.'],
+    impressions: ['Impressions', 'How many times the ads were shown. The same person seeing an ad twice counts twice, so this runs higher than the number of people reached.'],
+    spendVsBudget: ['Spend vs Budget', 'Spend as a percentage of budget. The bar fills as it gets closer, turns amber from 85%, and red once it is past 100%.'],
+    actualSpend: ['Actual spend', 'Total spent across every campaign below, live from Meta, against the total budget beside it.'],
+  };
+
+  // data-help carries HTML into an attribute, so it goes through attr() and
+  // not esc() — esc() leaves quotes alone and the value would end early.
+  const hlp = (key) => {
+    const entry = GLOSSARY[key];
+    if (!entry) return '';
+    return `data-help="${attr(`<div class="tt">${esc(entry[0])}</div><div class="tk">${esc(entry[1])}</div>`)}"`;
+  };
+
+  // One tooltip element for the page, same one the Report bars use.
+  function bindHelp(root) {
+    const tip = $('tip');
+    const move = (e) => {
+      const pad = 14;
+      const r = tip.getBoundingClientRect();
+      let x = e.clientX + pad;
+      let y = e.clientY + pad;
+      if (x + r.width > innerWidth) x = e.clientX - r.width - pad;
+      if (y + r.height > innerHeight) y = e.clientY - r.height - pad;
+      tip.style.left = `${x}px`;
+      tip.style.top = `${y}px`;
+    };
+    root.querySelectorAll('[data-help]').forEach((el) => {
+      el.addEventListener('mouseenter', (e) => {
+        tip.innerHTML = el.dataset.help;
+        tip.classList.add('on');
+        move(e);
+      });
+      el.addEventListener('mousemove', move);
+      el.addEventListener('mouseleave', () => tip.classList.remove('on'));
+    });
+  }
+
   // Spend against budget, as one bar. Amber as it nears the budget, red once
   // it is past it — the percentage beside it says the same thing, so colour
   // is never carrying the meaning on its own.
@@ -1507,18 +1572,18 @@
         <div class="ptitle">Budget vs actual · ${p.year}</div>
         <div class="bvhero">
           <div class="bv-side">
-            <div class="bv-lab">Budget</div>
+            <div class="bv-lab" ${hlp('budget')}>Budget</div>
             <div class="bv-n">${money(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
-            <div class="bv-lab">Actual spend</div>
+            <div class="bv-lab" ${hlp('actualSpend')}>Actual spend</div>
             <div class="bv-n bv-act">${money(t.spend)}</div>
             <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
           </div>
           <div class="bv-side">
-            <div class="bv-lab">Remaining</div>
+            <div class="bv-lab" ${hlp('remaining')}>Remaining</div>
             <div class="bv-n">${money(t.remaining)}</div>
             <div class="bv-s">${cur}</div>
           </div>
@@ -1535,8 +1600,11 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Campaign</th><th>Status</th><th>Budget</th><th>Spend</th><th>Remaining</th>
-              <th>Results</th><th>Cost / Result</th><th>Purchases</th><th>Impressions</th><th>Spend vs Budget</th>
+              <th ${hlp('campaign')}>Campaign</th><th ${hlp('status')}>Status</th><th ${hlp('budget')}>Budget</th>
+              <th ${hlp('spend')}>Spend</th><th ${hlp('remaining')}>Remaining</th>
+              <th ${hlp('results')}>Results</th><th ${hlp('costPerResult')}>Cost / Result</th>
+              <th ${hlp('purchases')}>Purchases</th><th ${hlp('impressions')}>Impressions</th>
+              <th ${hlp('spendVsBudget')}>Spend vs Budget</th>
             </tr></thead>
             <tbody>${body || '<tr><td class="cname" colspan="10">No campaigns.</td></tr>'}</tbody>
             <tfoot><tr>
@@ -1554,6 +1622,8 @@
           </table>
         </div>
       </div>`;
+
+    bindHelp($('campaignsWrap'));
   }
 
   async function loadCampaigns(force) {
@@ -1621,18 +1691,18 @@
         <div class="filters"><div class="seg" id="histYearSeg">${years}</div></div>
         <div class="bvhero">
           <div class="bv-side">
-            <div class="bv-lab">Budget</div>
+            <div class="bv-lab" ${hlp('budgetAssumed')}>Budget</div>
             <div class="bv-n">${money(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
-            <div class="bv-lab">Actual spend</div>
+            <div class="bv-lab" ${hlp('actualSpend')}>Actual spend</div>
             <div class="bv-n bv-act">${money(t.spend)}</div>
             <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
           </div>
           <div class="bv-side">
-            <div class="bv-lab">Cost per result</div>
+            <div class="bv-lab" ${hlp('costPerResult')}>Cost per result</div>
             <div class="bv-n">${show(t.costPerResult, money)}</div>
             <div class="bv-s">${int(t.results)} results · ${int(t.campaigns)} campaign${t.campaigns === 1 ? '' : 's'}</div>
           </div>
@@ -1646,8 +1716,11 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th>Campaign</th><th>Months</th><th>Budget</th><th>Spend</th><th>Remaining</th>
-              <th>Results</th><th>Cost / Result</th><th>Purchases</th><th>Impressions</th><th>Spend vs Budget</th>
+              <th ${hlp('campaign')}>Campaign</th><th ${hlp('months')}>Months</th><th ${hlp('budgetAssumed')}>Budget</th>
+              <th ${hlp('spend')}>Spend</th><th ${hlp('remaining')}>Remaining</th>
+              <th ${hlp('results')}>Results</th><th ${hlp('costPerResult')}>Cost / Result</th>
+              <th ${hlp('purchases')}>Purchases</th><th ${hlp('impressions')}>Impressions</th>
+              <th ${hlp('spendVsBudget')}>Spend vs Budget</th>
             </tr></thead>
             <tbody>${body || `<tr><td class="cname" colspan="10">No campaigns ran in ${p.year}.</td></tr>`}</tbody>
             <tfoot><tr>
@@ -1665,6 +1738,8 @@
           </table>
         </div>
       </div>`;
+
+    bindHelp($('historyWrap'));
 
     $('historyWrap').querySelectorAll('#histYearSeg button').forEach((b) => {
       b.addEventListener('click', () => {
