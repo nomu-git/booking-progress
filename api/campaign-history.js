@@ -46,6 +46,14 @@ const RESULT_ACTIONS = {
   'Link Clicks': ['link_click'],
 };
 
+// Purchases are counted on every campaign, whatever its objective. "Results"
+// can't answer this on its own — it means messages on a Messages campaign and
+// leads on a Leads one — so a sale driven by a campaign that was never set up
+// to optimise for sales would otherwise never appear anywhere on the board.
+// Same action list Results uses when the objective *is* purchases, so the two
+// can never disagree about what a purchase is.
+const PURCHASE_ACTIONS = RESULT_ACTIONS.Purchases;
+
 // year -> payload. Each year is a separate upstream pull, so they cache apart.
 const cache = new Map();
 
@@ -138,7 +146,7 @@ async function build(year) {
   const months = new Map();
   for (let i = 0; i < 12; i++) {
     const key = `${year}-${String(i + 1).padStart(2, '0')}`;
-    months.set(key, { month: key, label: MONTHS[i], spend: 0, results: 0, campaigns: new Set() });
+    months.set(key, { month: key, label: MONTHS[i], spend: 0, results: 0, purchases: 0, campaigns: new Set() });
   }
 
   const entries = new Map();
@@ -157,10 +165,12 @@ async function build(year) {
 
       const label = OBJECTIVE_LABEL[row.objective] || 'Custom Conversion';
       const results = resultsFor(label, row.actions, reach);
+      const purchases = actionValue(row.actions, PURCHASE_ACTIONS);
 
       const m = months.get(monthKey);
       m.spend += spend;
       m.results += results;
+      m.purchases += purchases;
       m.campaigns.add(row.campaign_id);
 
       // One row per campaign for the whole year, so a campaign that ran in
@@ -171,13 +181,14 @@ async function build(year) {
           name: cleanName(row.campaign_name),
           objective: label,
           account: account.name,
-          spend: 0, results: 0, impressions: 0, reach: 0,
+          spend: 0, results: 0, purchases: 0, impressions: 0, reach: 0,
           monthKeys: new Set(),
         });
       }
       const e = entries.get(row.campaign_id);
       e.spend += spend;
       e.results += results;
+      e.purchases += purchases;
       e.impressions += impressions;
       e.reach += reach;
       e.monthKeys.add(monthKey);
@@ -227,6 +238,7 @@ async function build(year) {
       return {
         spend: totalSpend,
         results,
+        purchases: campaigns.reduce((total, c) => total + c.purchases, 0),
         campaigns: campaigns.length,
         impressions: campaigns.reduce((total, c) => total + c.impressions, 0),
         reach: campaigns.reduce((total, c) => total + c.reach, 0),
