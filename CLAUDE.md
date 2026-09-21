@@ -62,6 +62,25 @@ Vercel requires a redeploy to take effect** — this has bitten the project
 before (a blank dashboard after an account migration turned out to be an
 env var that was set but never redeployed).
 
+A few more operational details from `README.md` worth having here directly,
+since they're easy to forget mid-session:
+
+- **Vercel Hobby plan runs the daily cron at an approximate time**, not on
+  the minute (Pro does). `slack-notify.js` tolerates ±30 min of drift when
+  picking its reporting window to compensate — don't "fix" an off-by-a-bit
+  cron trigger time, it's expected.
+- **No double-posting, and no stored state to prevent it.** Each Slack run
+  reports exactly the 24h since the *previous scheduled boundary* (not
+  "since last successful post"), so consecutive daily messages tile the
+  calendar without gaps or overlap on their own — this only holds if the
+  cron actually fires roughly on schedule.
+- **`node_modules/` is committed but dead** — leftover `googleapis` packages
+  from an earlier Google Sheets-backed version of this project, before it
+  moved to reading WeTravel/Meta live. Nothing imports them (`fetch` is
+  Node's built-in). `.gitignore` already excludes `node_modules/` going
+  forward; the committed copy is just historical baggage, safe to `git rm`
+  in a cleanup pass if anyone gets around to it.
+
 ### Ad Campaign side
 
 | File | Role |
