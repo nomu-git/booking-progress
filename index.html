@@ -612,13 +612,12 @@
      help cursor, so it reads as "there is more here" rather than people
      having to discover it by accident. */
   [data-help] {
+    display: inline-block;
     cursor: help;
     text-decoration: underline dotted rgba(134,152,180,.55);
     text-underline-offset: 3px;
   }
-  .ctable th[data-help]:hover { color: var(--yellow); }
-  .bv-lab[data-help] { display: inline-block; }
-  .bv-lab[data-help]:hover { color: var(--yellow); }
+  [data-help]:hover { color: var(--yellow); }
 
   /* Listeners bind to the bar shapes themselves, not the full-height column,
      so hovering empty space above a short bar doesn't trigger the tooltip. */
@@ -1498,9 +1497,23 @@
     return `data-help="${attr(`<div class="tt">${esc(entry[0])}</div><div class="tk">${esc(entry[1])}</div>`)}"`;
   };
 
+  // The trigger has to sit on the word itself. A <th> is a full-width cell
+  // with padding either side, so hanging the tooltip off the cell fires it
+  // when the pointer is nowhere near the label.
+  const hcol = (key, label) => `<th><span ${hlp(key)}>${esc(label)}</span></th>`;
+
+  // Scrolling moves the table out from under a pointer that never moves, so
+  // the tooltip has to be dismissed on scroll too, not only on mouseleave.
+  const hideTip = () => $('tip').classList.remove('on');
+  addEventListener('scroll', hideTip, true);
+
   // One tooltip element for the page, same one the Report bars use.
   function bindHelp(root) {
     const tip = $('tip');
+    // Re-rendering replaces the node the pointer is over, so its mouseleave
+    // never arrives and the tooltip would stay up over a table it no longer
+    // belongs to. Clearing on every bind is what closes that hole.
+    hideTip();
     const move = (e) => {
       const pad = 14;
       const r = tip.getBoundingClientRect();
@@ -1518,7 +1531,7 @@
         move(e);
       });
       el.addEventListener('mousemove', move);
-      el.addEventListener('mouseleave', () => tip.classList.remove('on'));
+      el.addEventListener('mouseleave', hideTip);
     });
   }
 
@@ -1572,18 +1585,18 @@
         <div class="ptitle">Budget vs actual · ${p.year}</div>
         <div class="bvhero">
           <div class="bv-side">
-            <div class="bv-lab" ${hlp('budget')}>Budget</div>
+            <div class="bv-lab"><span ${hlp('budget')}>Budget</span></div>
             <div class="bv-n">${money(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
-            <div class="bv-lab" ${hlp('actualSpend')}>Actual spend</div>
+            <div class="bv-lab"><span ${hlp('actualSpend')}>Actual spend</span></div>
             <div class="bv-n bv-act">${money(t.spend)}</div>
             <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
           </div>
           <div class="bv-side">
-            <div class="bv-lab" ${hlp('remaining')}>Remaining</div>
+            <div class="bv-lab"><span ${hlp('remaining')}>Remaining</span></div>
             <div class="bv-n">${money(t.remaining)}</div>
             <div class="bv-s">${cur}</div>
           </div>
@@ -1600,11 +1613,11 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th ${hlp('campaign')}>Campaign</th><th ${hlp('status')}>Status</th><th ${hlp('budget')}>Budget</th>
-              <th ${hlp('spend')}>Spend</th><th ${hlp('remaining')}>Remaining</th>
-              <th ${hlp('results')}>Results</th><th ${hlp('costPerResult')}>Cost / Result</th>
-              <th ${hlp('purchases')}>Purchases</th><th ${hlp('impressions')}>Impressions</th>
-              <th ${hlp('spendVsBudget')}>Spend vs Budget</th>
+              ${hcol('campaign', 'Campaign')}${hcol('status', 'Status')}${hcol('budget', 'Budget')}
+              ${hcol('spend', 'Spend')}${hcol('remaining', 'Remaining')}
+              ${hcol('results', 'Results')}${hcol('costPerResult', 'Cost / Result')}
+              ${hcol('purchases', 'Purchases')}${hcol('impressions', 'Impressions')}
+              ${hcol('spendVsBudget', 'Spend vs Budget')}
             </tr></thead>
             <tbody>${body || '<tr><td class="cname" colspan="10">No campaigns.</td></tr>'}</tbody>
             <tfoot><tr>
@@ -1691,18 +1704,18 @@
         <div class="filters"><div class="seg" id="histYearSeg">${years}</div></div>
         <div class="bvhero">
           <div class="bv-side">
-            <div class="bv-lab" ${hlp('budgetAssumed')}>Budget</div>
+            <div class="bv-lab"><span ${hlp('budgetAssumed')}>Budget</span></div>
             <div class="bv-n">${money(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
-            <div class="bv-lab" ${hlp('actualSpend')}>Actual spend</div>
+            <div class="bv-lab"><span ${hlp('actualSpend')}>Actual spend</span></div>
             <div class="bv-n bv-act">${money(t.spend)}</div>
             <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
           </div>
           <div class="bv-side">
-            <div class="bv-lab" ${hlp('costPerResult')}>Cost per result</div>
+            <div class="bv-lab"><span ${hlp('costPerResult')}>Cost per result</span></div>
             <div class="bv-n">${show(t.costPerResult, money)}</div>
             <div class="bv-s">${int(t.results)} results · ${int(t.campaigns)} campaign${t.campaigns === 1 ? '' : 's'}</div>
           </div>
@@ -1716,11 +1729,11 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              <th ${hlp('campaign')}>Campaign</th><th ${hlp('months')}>Months</th><th ${hlp('budgetAssumed')}>Budget</th>
-              <th ${hlp('spend')}>Spend</th><th ${hlp('remaining')}>Remaining</th>
-              <th ${hlp('results')}>Results</th><th ${hlp('costPerResult')}>Cost / Result</th>
-              <th ${hlp('purchases')}>Purchases</th><th ${hlp('impressions')}>Impressions</th>
-              <th ${hlp('spendVsBudget')}>Spend vs Budget</th>
+              ${hcol('campaign', 'Campaign')}${hcol('months', 'Months')}${hcol('budgetAssumed', 'Budget')}
+              ${hcol('spend', 'Spend')}${hcol('remaining', 'Remaining')}
+              ${hcol('results', 'Results')}${hcol('costPerResult', 'Cost / Result')}
+              ${hcol('purchases', 'Purchases')}${hcol('impressions', 'Impressions')}
+              ${hcol('spendVsBudget', 'Spend vs Budget')}
             </tr></thead>
             <tbody>${body || `<tr><td class="cname" colspan="10">No campaigns ran in ${p.year}.</td></tr>`}</tbody>
             <tfoot><tr>
