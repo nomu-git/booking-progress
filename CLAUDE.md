@@ -361,12 +361,21 @@ webhooks.
     **These are the weekly numbers shown**: they're Marina's official
     figures, and the only source for 22 Jul to 21 Sep.
   - a daily summary (`Leads Quality`): date rows from 23 Sep, IG+WA
-    combined (no channel split).
+    combined (no channel split). The reader also accepts **IG and WA rows
+    under each date** (labelled like the weekly report, `Total No|IG` /
+    `Total No|WA`, or just `IG` / `WA`), with or without the combined row
+    alongside; the day then carries its split, per project too. A week
+    keeps a split only if every logged day in it has one.
   Days come from the log (keeps the IG/WA split) or the daily summary. A
   week with no report row yet (the current one) is summed from its days,
   so it moves as Marina logs. Days no report covers are grouped into 7-day
   weeks of their own. Env: `LEADS_SHEET_URL` (required), `LEADS_CACHE_TTL_MS`
   (default 60s).
+- The **Leads by project** table puts the count straight after the name,
+  and shows WhatsApp/Instagram columns only when that week really has the
+  split. Two columns of dashes read as "no breakdown at all" to Muatasam on
+  his phone, with the numbers scrolled out of sight. On a phone the weekly
+  chart scrolls to the selected week, since it opened on January.
 - **The sheet has known inconsistencies, shown as warnings, not silently
   corrected**: 14/20 July (IG 18 + WA 104 ≠ IG+WA 92; the WA 31 on ZNZ|EX
   looks like a typo for 1), 21-27 July (31 + 124 ≠ 166), 18-24 Aug and

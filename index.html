@@ -667,6 +667,15 @@
   .lleg i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
   .pnote.warn { color: #ffb3ab; }
   .abar-fill.lead { background: var(--lead-all); }
+  /* On a phone the project table should fit without scrolling, so its
+     share bars shrink to leave room for the percentage. */
+  @media (max-width: 600px) {
+    #leadsWrap .abar-cell { min-width: 0; white-space: nowrap; }
+    #leadsWrap .abar { width: 60px; }
+    /* .cname's 190px floor is for long campaign names; project codes are
+       short, and the floor is what pushed the share column off screen. */
+    #leadsWrap .ctable td.cname { min-width: 0; }
+  }
 
   /* ---------- notes ---------- */
 
@@ -1636,7 +1645,7 @@
     project: ['Project', 'The trip the lead asked about, as Marina tagged it. NA means they messaged without naming a trip.'],
     leadsIg: ['Instagram', 'Leads who came in through an Instagram DM.'],
     leadsWa: ['WhatsApp', 'Leads who came in through WhatsApp.'],
-    leadsTotal: ['Total', 'Instagram and WhatsApp together for this project.'],
+    leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
     leadsShare: ['Share of week', "This project's slice of the week's leads."],
   };
 
@@ -2246,13 +2255,18 @@
       ? dailyChart(sel, today)
       : `<div class="pnote">Only the weekly total was recorded for this week, not the daily numbers.</div>`;
 
+    // The count leads, straight after the name, so it's on screen even on a
+    // phone where the table scrolls. The WhatsApp/Instagram columns only
+    // appear when the sheet actually splits this week: a column of dashes
+    // read as "no breakdown at all" and hid the numbers that do exist.
+    const projSplit = sel.projects.length > 0 && sel.projects.every((x) => x.ig != null && x.wa != null);
     const projMax = Math.max(1, ...sel.projects.map((x) => x.total));
+    const projCols = projSplit ? 5 : 3;
     const projRows = sel.projects.map((x) => `
       <tr>
         <td class="cname">${esc(x.code === 'NA' ? 'NA (no trip given)' : x.code)}</td>
-        <td class="num">${x.ig == null ? '—' : int(x.ig)}</td>
-        <td class="num">${x.wa == null ? '—' : int(x.wa)}</td>
-        <td class="num">${int(x.total)}</td>
+        <td class="num"><b>${int(x.total)}</b></td>
+        ${projSplit ? `<td class="num">${int(x.wa)}</td><td class="num">${int(x.ig)}</td>` : ''}
         <td class="abar-cell"><div class="abar"><div class="abar-fill lead" style="width:${((x.total / projMax) * 100).toFixed(1)}%"></div></div><span class="abar-pct">${show(ratio(x.total, sel.total), pct)}</span></td>
       </tr>`).join('');
 
@@ -2302,20 +2316,34 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              ${hcol('project', 'Project')}${hcol('leadsIg', 'Instagram')}${hcol('leadsWa', 'WhatsApp')}
-              ${hcol('leadsTotal', 'Total')}${hcol('leadsShare', 'Share of week')}
+              ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}
+              ${projSplit ? hcol('leadsWa', 'WhatsApp') + hcol('leadsIg', 'Instagram') : ''}
+              ${hcol('leadsShare', 'Share of week')}
             </tr></thead>
-            <tbody>${projRows || '<tr><td class="cname" colspan="5">No leads logged for this week yet.</td></tr>'}</tbody>
+            <tbody>${projRows || `<tr><td class="cname" colspan="${projCols}">No leads logged for this week yet.</td></tr>`}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL</td>
-              <td class="num">${split ? int(sel.ig) : '—'}</td>
-              <td class="num">${split ? int(sel.wa) : '—'}</td>
               <td class="num">${int(sel.total)}</td>
+              ${projSplit ? `<td class="num">${split ? int(sel.wa) : '—'}</td><td class="num">${split ? int(sel.ig) : '—'}</td>` : ''}
               <td></td>
             </tr></tfoot>
           </table>
         </div>
+        ${!projSplit && sel.projects.length ? '<div class="pnote">WhatsApp vs Instagram per project shows here once the sheet splits them for this week.</div>' : ''}
       </div>`;
+
+    // On a phone the weekly chart scrolls sideways and opened on January,
+    // with the week that matters off to the right. Bring the selected week
+    // into view, but only when it isn't already, so clicking a visible week
+    // doesn't make the chart jump.
+    const sc = $('leadsWrap').querySelector('.lscroll');
+    const selCol = sc && sc.querySelector('.lcol.sel');
+    if (sc && selCol && sc.scrollWidth > sc.clientWidth) {
+      const x = selCol.getBoundingClientRect().left - sc.getBoundingClientRect().left;
+      if (x < 0 || x + selCol.offsetWidth > sc.clientWidth) {
+        sc.scrollLeft += x - sc.clientWidth + selCol.offsetWidth * 3;
+      }
+    }
 
     bindHelp($('leadsWrap'));
 

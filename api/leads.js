@@ -111,27 +111,62 @@ function readLog(grid, days) {
     else if (source === 'WA') t.wa += 1;
     else t.other += 1;
     t.total += 1;
-    const p = tripCol >= 0 ? tripProject(row[tripCol]) : 'NA';
-    t.projects.set(p, (t.projects.get(p) || 0) + 1);
+    const code = tripCol >= 0 ? tripProject(row[tripCol]) : 'NA';
+    const p = t.projects.get(code) || { ig: 0, wa: 0, total: 0 };
+    p.total += 1;
+    if (source === 'IG') p.ig += 1;
+    else if (source === 'WA') p.wa += 1;
+    t.projects.set(code, p);
   }
 }
 
+const isDay = (v) => typeof v === 'string' && ISO.test(v);
+const hasCounts = (row) => (row || []).slice(1).some((v) => count(v) != null);
+
+// Each date's counts sit on the rows under it, down to the next date. Today
+// that's one combined row ("IG+WA", or no label at all). If the channels get
+// logged separately, as IG and WA rows the way the weekly report does it,
+// the day gets its split, per project too, with no code change. A combined
+// row alongside them is the total; without one, IG + WA is.
 function readDailySummary(grid, header, days) {
+  const channelOf = (label) => {
+    const l = text(label).toLowerCase().replace(/\s/g, '');
+    if (/(^|\|)(ig|instagram)$/.test(l)) return 'ig';
+    if (/(^|\|)(wa|whatsapp)$/.test(l)) return 'wa';
+    return 'total';
+  };
   for (let r = 0; r < grid.length; r++) {
     const day = (grid[r] || [])[0];
-    if (typeof day !== 'string' || !ISO.test(day)) continue;
-    // The counts sit on the row under the date, unless the date row carries
-    // them itself.
-    const own = grid[r].slice(1).some((v) => count(v) != null);
-    const next = grid[r + 1] || [];
-    const values = own ? grid[r] : (typeof next[0] === 'string' && ISO.test(next[0]) ? [] : next);
-    const cells = header.projects.map((p) => ({ code: p.code, n: count(values[p.col]) }));
-    if (!cells.some((c) => c.n != null) && count(values[header.totalCol]) == null) continue; // not filled in yet
-    if (days.has(day) && days.get(day).from === 'log') continue; // the log also has the split
-    const t = { ...tally(), split: false, from: 'daily' };
-    for (const c of cells) if (c.n) t.projects.set(c.code, (t.projects.get(c.code) || 0) + c.n);
-    const sum = cells.reduce((s, c) => s + (c.n || 0), 0);
-    t.total = count(values[header.totalCol]) ?? sum;
+    if (!isDay(day)) continue;
+    const rows = { total: null, ig: null, wa: null };
+    if (hasCounts(grid[r])) rows.total = grid[r];
+    for (let k = r + 1; k < grid.length && !isDay((grid[k] || [])[0]); k++) {
+      if (!hasCounts(grid[k])) continue;
+      const which = channelOf(grid[k][0]);
+      if (!rows[which]) rows[which] = grid[k];
+    }
+    if (!rows.total && !rows.ig && !rows.wa) continue; // not filled in yet
+    if (days.has(day) && days.get(day).from === 'log') continue; // the log has it already
+
+    const at = (row, col) => (row ? count(row[col]) : null);
+    const totalOf = (row) => (row ? at(row, header.totalCol) ?? header.projects.reduce((s, p) => s + (at(row, p.col) || 0), 0) : null);
+    const split = !!(rows.ig && rows.wa);
+    const t = { ...tally(), split, from: 'daily' };
+    for (const p of header.projects) {
+      const ig = split ? at(rows.ig, p.col) || 0 : null;
+      const wa = split ? at(rows.wa, p.col) || 0 : null;
+      const total = rows.total ? at(rows.total, p.col) ?? (split ? ig + wa : 0) : ig + wa;
+      if (!total && !ig && !wa) continue;
+      const cur = t.projects.get(p.code) || { ig: split ? 0 : null, wa: split ? 0 : null, total: 0 };
+      t.projects.set(p.code, {
+        ig: split ? cur.ig + ig : null,
+        wa: split ? cur.wa + wa : null,
+        total: cur.total + total,
+      });
+    }
+    t.ig = split ? totalOf(rows.ig) : 0;
+    t.wa = split ? totalOf(rows.wa) : 0;
+    t.total = rows.total ? totalOf(rows.total) : t.ig + t.wa;
     days.set(day, t);
   }
 }
@@ -246,12 +281,18 @@ function build(sheets, today = omanToday()) {
     if (r) {
       for (const [code, p] of r.projects) projects.set(code, p);
     } else {
-      for (const d of daysBetween(w.start, w.end)) {
-        const t = days.get(d);
-        if (!t) continue;
-        for (const [code, n] of t.projects) {
-          const cur = projects.get(code) || { ig: null, wa: null, total: 0 };
-          projects.set(code, { ig: null, wa: null, total: cur.total + n });
+      const logged = daysBetween(w.start, w.end).map((d) => days.get(d)).filter(Boolean);
+      // A project's split only holds if every logged day had one; a week half
+      // split and half combined can't be divided honestly.
+      const allSplit = logged.length > 0 && logged.every((t) => t.split);
+      for (const t of logged) {
+        for (const [code, p] of t.projects) {
+          const cur = projects.get(code) || { ig: 0, wa: 0, total: 0 };
+          projects.set(code, {
+            ig: allSplit ? cur.ig + (p.ig || 0) : null,
+            wa: allSplit ? cur.wa + (p.wa || 0) : null,
+            total: cur.total + p.total,
+          });
         }
       }
     }
