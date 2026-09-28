@@ -232,9 +232,23 @@ these by default rather than waiting to be told again:
   `toReportCurrency`/`budgetToReportCurrency`, never assume raw Meta numbers
   are already in the display currency.
 
-## Testing without Node
+## Testing
 
-**There is no Node runtime available in this environment.** Parse-checking
+**There IS a real Node runtime on this Mac, through VS Code's Electron.**
+There's no standalone `node`, but this runs full Node v24 (with `zlib`,
+`Buffer`, `fetch`, `require`):
+
+```bash
+ELECTRON_RUN_AS_NODE=1 '/Applications/Visual Studio Code.app/Contents/MacOS/Code' -e 'require("./api/xlsx.js")'
+```
+
+Use it to run `api/*.js` modules and their `build()` functions directly.
+(Anything that needs the API tokens still can't run locally, since those
+env vars only exist in Vercel.) Found 28 Sep 2026; earlier sessions didn't
+know about it, which is why the harness below exists.
+
+For code inside `index.html`, the older approach still applies:
+**macOS JavaScriptCore via `osascript -l JavaScript`**. Parse-checking
 and rendering JS extracted from `index.html` is done with **macOS
 JavaScriptCore via `osascript -l JavaScript`**, using a stub harness that
 mimics the page's real `$()`, `esc()`, `attr()` exactly (including their
@@ -279,6 +293,27 @@ declaring something done.
 - Git identity for commits from this project: `nomu-git` /
   `info@nomuhub.com` (a work account set up alongside Anton's personal
   `advjr` account, specifically for this repo).
+
+## Leads (in progress)
+
+The full roadmap for lead counts, qualified leads and Instagram engagement
+stats lives in **`docs/LEADS-PLAN.md`**. Read it before touching anything
+leads-related. Short version: Phase 1 (now) reads Marina's hand-maintained
+Excel workbook live from its OneDrive share link and draws it as a new
+Leads tab; Phase 2 (later) replaces the hand count with ManyChat or Meta
+webhooks.
+
+- `api/xlsx.js` is a zero-dependency .xlsx reader (zip + XML, cached formula
+  values, date-formatted cells returned as ISO dates). Verified against
+  `Updated Budget.xlsx` value for value.
+- `api/leads-sheet.js` fetches the workbook from `LEADS_SHEET_URL`, a
+  OneDrive/SharePoint link shared as **"Anyone with the link can view"**.
+  Any other sharing setting answers 200 with a Microsoft sign-in page
+  rather than an error; the zip-signature check turns that into a clear
+  message.
+- **The leads sheet may contain customer names or phone numbers. The site
+  is public with no auth, so only aggregate counts may ever leave the API.
+  Never add a raw-dump or debug endpoint that returns sheet rows.**
 
 ## Open items waiting on Muatasam
 
