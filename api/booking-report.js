@@ -1,4 +1,4 @@
-const { apiGet, mapWithConcurrency } = require('./wetravel');
+const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
 
 // Muatasam's sales target: new bookings taken per calendar week, counted
 // Sunday to Saturday (his example week ran 9 Aug – 15 Aug 2026, a Sunday start).

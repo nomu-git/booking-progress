@@ -34,7 +34,11 @@ no framework.
   (`.segrow` at the top of the page):
   - **BOOKING**: Dashboard, Report, Previous Projects
   - **AD CAMPAIGN**: Campaigns, History, Leads
-- `api/*.js` — CommonJS Vercel functions (`module.exports = async (req, res) => {...}`).
+- `api/*.js`: **endpoints only.** CommonJS Vercel functions (`module.exports = async (req, res) => {...}`).
+- `lib/*.js`: shared helpers (`wetravel`, `meta-ads`, `trip-code`, `xlsx`,
+  `leads-sheet`), required as `require('../lib/…')`. They live outside
+  `api/` on purpose: Vercel turns **every** file in `api/` into a function,
+  and the Hobby plan allows **12 per deployment**. See the pitfall below.
   Each also exports `build()` separately where another function needs its
   logic (e.g. `slack-notify.js` calls `booking-report.js`'s `build()`).
 - No `package.json` dependencies really used — Node's built-in `fetch`.
@@ -47,13 +51,13 @@ no framework.
 
 | File | Role |
 | --- | --- |
-| `api/wetravel.js` | Shared WeTravel client. `WETRAVEL_API_KEY` is a **refresh token**, exchanged here for a 1-hour access token (cached, retried on 429/401). Also exports `mapWithConcurrency`. |
+| `lib/wetravel.js` | Shared WeTravel client. `WETRAVEL_API_KEY` is a **refresh token**, exchanged here for a 1-hour access token (cached, retried on 429/401). Also exports `mapWithConcurrency`. |
 | `api/trips-progress.js` | Dashboard tab — live/upcoming departures, per-week booking bars. Keeps a departure for its whole month, drops it once the month passes. |
 | `api/previous-trips.js` | Previous Projects tab — the complement of trips-progress: everything whose month has already passed. `end < monthStart` is the exact filter, so a trip is never in both views or neither. |
 | `api/booking-report.js` | Report tab — flat list of booking events, last 300 days by default. Exports `build()`, reused by `slack-notify.js`. |
 | `api/slack-notify.js` | Cron target — posts the day's new bookings to Slack. `?preview=1` renders without posting. Gated by `CRON_SECRET` if set. |
 | `api/announcement.js` | Banner text from env vars, editable without a code change. |
-| `api/trip-code.js` | **Shared** by both booking and ad-campaign sides — see "Project code scheme" below. |
+| `lib/trip-code.js` | **Shared** by both booking and ad-campaign sides — see "Project code scheme" below. |
 
 Full env-var reference for the booking side (required/recommended/optional,
 with defaults) is in **`README.md`** — don't duplicate it here, it's kept
@@ -85,11 +89,11 @@ since they're easy to forget mid-session:
 
 | File | Role |
 | --- | --- |
-| `api/meta-ads.js` | Shared Meta Graph API client. `graphGet`/`graphGetAll` (follows Meta's cursor pagination), `getAccountMeta`, `toReportCurrency`/`budgetToReportCurrency` (USD→SAR conversion), `AD_ACCOUNTS` (env `META_AD_ACCOUNT_IDS`, default two accounts), `REPORT_CURRENCY` (env `META_CURRENCY`, default `SAR`), `USD_SAR` (env `META_USD_SAR`, default `3.75`). Token comes from whichever of `META_ACCESS_TOKEN` / `META_ACCESS_KEY` / `META_API_KEY` is set. |
+| `lib/meta-ads.js` | Shared Meta Graph API client. `graphGet`/`graphGetAll` (follows Meta's cursor pagination), `getAccountMeta`, `toReportCurrency`/`budgetToReportCurrency` (USD→SAR conversion), `AD_ACCOUNTS` (env `META_AD_ACCOUNT_IDS`, default two accounts), `REPORT_CURRENCY` (env `META_CURRENCY`, default `SAR`), `USD_SAR` (env `META_USD_SAR`, default `3.75`). Token comes from whichever of `META_ACCESS_TOKEN` / `META_ACCESS_KEY` / `META_API_KEY` is set. |
 | `api/campaigns.js` | **Campaigns tab.** Current year only (env `META_YEAR`, defaults to current calendar year — so this auto-rolls into 2027 with no code change). Every campaign gets its own budget (see "Budget matching" below), live spend/results/purchases from Meta. |
 | `api/campaign-history.js` | **History tab.** One full calendar year at a time, picked via `?year=`. **Deliberately excludes the current year** — that's what Campaigns is for. Offers years back to Meta's retention floor (~37 months, env `META_RETENTION_MONTHS`). Every campaign uses a flat assumed budget (env `META_DEFAULT_BUDGET_USD`, default `$500`) since there's no budget sheet for past years. |
 | `api/media-plan.js` | Reads `Updated Budget.xlsx` — hardcoded `ROWS` array transcribed **verbatim** from the spreadsheet's "Media Plan" sheet. This is the *plan*, not measured data. If the spreadsheet changes, this array has to be hand-updated to match — there's no live file parsing. |
-| `api/trip-code.js` | The project-code generator — see below. |
+| `lib/trip-code.js` | The project-code generator — see below. |
 
 **Budget matching (important, was broken once already):** Meta campaign
 names come in two eras — old descriptive names ("ZNZ Build MSG - 2026") and
@@ -107,7 +111,7 @@ that can't be resolved to a plan line falls back to `META_DEFAULT_BUDGET_USD`
 ### Project code scheme
 
 Muatasam's naming convention, used to label trips on Previous Projects **and**
-to match ad campaigns to budget lines. Lives in `api/trip-code.js`, shared by
+to match ad campaigns to budget lines. Lives in `lib/trip-code.js`, shared by
 `api/previous-trips.js` and `api/campaigns.js` so a code means the same thing
 on both sides of the dashboard.
 
@@ -220,6 +224,14 @@ these by default rather than waiting to be told again:
   vertical list. Before naming a new class, grep for a *standalone*
   selector of that name (`^\s*\.name\b`), not just rules starting with
   your prefix. New feature classes here are prefixed (`l*` for leads).
+- **Vercel Hobby caps a deployment at 12 serverless functions, and every
+  file in `api/` counts, helpers included.** Adding two helper modules to
+  `api/` took it from 11 to 13, and every deploy after that failed while
+  the live site sat on the last good build. From the outside the only sign
+  was "the new page never shows up". Helpers go in `lib/`. To check a
+  deploy, the repo is public, so Vercel's result shows up on GitHub:
+  `curl -s https://api.github.com/repos/nomu-git/booking-progress/commits/<sha>/status`
+  (there's no `gh` or `vercel` CLI on this Mac).
 - **Vercel env var changes need a redeploy.** Setting/changing a var in the
   dashboard does nothing until the next deploy. This was the root cause of
   the original "WETRAVEL_API_KEY is not set" blank-dashboard incident.
@@ -245,7 +257,7 @@ There's no standalone `node`, but this runs full Node v24 (with `zlib`,
 `Buffer`, `fetch`, `require`):
 
 ```bash
-ELECTRON_RUN_AS_NODE=1 '/Applications/Visual Studio Code.app/Contents/MacOS/Code' -e 'require("./api/xlsx.js")'
+ELECTRON_RUN_AS_NODE=1 '/Applications/Visual Studio Code.app/Contents/MacOS/Code' -e 'require("./lib/xlsx.js")'
 ```
 
 Use it to run `api/*.js` modules and their `build()` functions directly.
@@ -317,10 +329,10 @@ Excel workbook live from its OneDrive share link and draws it as a new
 Leads tab; Phase 2 (later) replaces the hand count with ManyChat or Meta
 webhooks.
 
-- `api/xlsx.js` is a zero-dependency .xlsx reader (zip + XML, cached formula
+- `lib/xlsx.js` is a zero-dependency .xlsx reader (zip + XML, cached formula
   values, date-formatted cells returned as ISO dates). Verified against
   `Updated Budget.xlsx` value for value.
-- `api/leads-sheet.js` fetches the workbook from `LEADS_SHEET_URL`, a
+- `lib/leads-sheet.js` fetches the workbook from `LEADS_SHEET_URL`, a
   OneDrive/SharePoint link shared as **"Anyone with the link can view"**.
   Any other sharing setting answers 200 with a Microsoft sign-in page
   rather than an error; the zip-signature check turns that into a clear

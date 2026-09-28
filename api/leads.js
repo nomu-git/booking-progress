@@ -21,7 +21,7 @@
 // The logs hold phone numbers and Instagram profiles. The site is public,
 // so nothing leaves this file except counts.
 
-const { fetchLeadsWorkbook } = require('./leads-sheet');
+const { fetchLeadsWorkbook } = require('../lib/leads-sheet');
 
 const CACHE_TTL_MS = Number(process.env.LEADS_CACHE_TTL_MS || 60000);
 

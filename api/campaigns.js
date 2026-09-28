@@ -1,10 +1,10 @@
 const {
   graphGetAll, getAccountMeta, toReportCurrency, budgetToReportCurrency,
   AD_ACCOUNTS, REPORT_CURRENCY, USD_SAR,
-} = require('./meta-ads');
-const { mapWithConcurrency } = require('./wetravel');
+} = require('../lib/meta-ads');
+const { mapWithConcurrency } = require('../lib/wetravel');
 const { build: buildMediaPlan } = require('./media-plan');
-const { classify } = require('./trip-code');
+const { classify } = require('../lib/trip-code');
 
 const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
 

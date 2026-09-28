@@ -87,7 +87,7 @@ Two very different things depending on what the report actually contains:
 
 - **Ad engagement** (likes, comments, shares, video views, link clicks on
   paid posts): possible **now** with the Marketing API access this dashboard
-  already uses in `api/meta-ads.js`. Just more fields on a request that
+  already uses in `lib/meta-ads.js`. Just more fields on a request that
   already works.
 - **Organic account engagement** (posts that aren't ads, stories, profile
   visits, follower growth, organic reach and impressions): needs

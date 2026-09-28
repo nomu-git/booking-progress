@@ -8,8 +8,8 @@
 
 const {
   graphGetAll, getAccountMeta, toReportCurrency, AD_ACCOUNTS, REPORT_CURRENCY, USD_SAR,
-} = require('./meta-ads');
-const { mapWithConcurrency } = require('./wetravel');
+} = require('../lib/meta-ads');
+const { mapWithConcurrency } = require('../lib/wetravel');
 
 const CACHE_TTL_MS = Number(process.env.META_HISTORY_CACHE_TTL_MS || 1800000);
 

@@ -2,8 +2,8 @@
 // which only shows what's still upcoming. Same WeTravel data, opposite half
 // of the calendar.
 
-const { apiGet, mapWithConcurrency } = require('./wetravel');
-const { buildCode } = require('./trip-code');
+const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
+const { buildCode } = require('../lib/trip-code');
 
 const CACHE_TTL_MS = Number(process.env.PREVIOUS_TRIPS_CACHE_TTL_MS || 300000);
 

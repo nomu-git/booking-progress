@@ -1,5 +1,5 @@
 const { build } = require('./booking-report');
-const { graphGet, AD_ACCOUNTS } = require('./meta-ads');
+const { graphGet, AD_ACCOUNTS } = require('../lib/meta-ads');
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://bookingprogress.vercel.app';

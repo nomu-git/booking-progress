@@ -1,4 +1,4 @@
-const { apiGet, mapWithConcurrency } = require('./wetravel');
+const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
 
 const SEASON_END = process.env.SEASON_END || '2026-12-31';
 const TARGET = Number(process.env.BOOKING_TARGET || 10);

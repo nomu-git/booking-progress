@@ -9,7 +9,7 @@ register. A once-daily Vercel cron posts a summary to Slack.
 | File | Role |
 | --- | --- |
 | `index.html` | The dashboard. Polls `/api/trips-progress` every 30s, plus a Report tab backed by `/api/booking-report`. |
-| `api/wetravel.js` | Shared WeTravel client. Exchanges the Partner API key (a *refresh* token) for a 1-hour access token, caches it, retries on 429/401. |
+| `lib/wetravel.js` | Shared WeTravel client. Exchanges the Partner API key (a *refresh* token) for a 1-hour access token, caches it, retries on 429/401. |
 | `api/trips-progress.js` | Per-departure / per-week booking bars for the Dashboard tab. |
 | `api/booking-report.js` | Flat list of booking events (last 300 days) for the Report tab. Also exports `build()` for the Slack job. |
 | `api/slack-notify.js` | Cron target. Posts the day's new bookings to Slack. `?preview=1` renders the message without posting. |
@@ -26,7 +26,7 @@ env-var changes on a new deployment.
 
 | Variable | Where to get it |
 | --- | --- |
-| `WETRAVEL_API_KEY` | WeTravel Pro → **Account → Profile → Partner API key**. This is a refresh token; `api/wetravel.js` trades it for access tokens. Without it every endpoint returns `500 {"error":"WETRAVEL_API_KEY is not set"}` and the board is blank. |
+| `WETRAVEL_API_KEY` | WeTravel Pro → **Account → Profile → Partner API key**. This is a refresh token; `lib/wetravel.js` trades it for access tokens. Without it every endpoint returns `500 {"error":"WETRAVEL_API_KEY is not set"}` and the board is blank. |
 | `SLACK_WEBHOOK_URL` | api.slack.com/apps → your app → **Incoming Webhooks** → Add New Webhook to Workspace → pick the living-room channel. Looks like `https://hooks.slack.com/services/T…/B…/…`. |
 
 ### Strongly recommended
