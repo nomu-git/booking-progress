@@ -52,19 +52,100 @@
   * { box-sizing: border-box; }
 
   body {
-    margin: 0; padding: 16px 20px 26px;
+    margin: 0;
     background: var(--navy); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
+  /* ---------- sidebar ----------
+     Every tab lives here, grouped by what the data is about (Booking, Ad
+     Campaign). Wide screens: docked, and collapsible to an icon rail that
+     the page reflows beside, remembered across visits. Narrow screens: a
+     drawer over the page, opened from the menu button, closed once a tab is
+     picked, since a permanent rail would eat a phone's width. */
+  :root { --sb-w: 240px; --sb-rail: 64px; }
+  .shell { padding: 16px 20px 26px; margin-left: var(--sb-w); min-width: 0; transition: margin-left .18s ease; }
+
+  .sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 30;
+    width: var(--sb-w); padding: 14px 10px;
+    display: flex; flex-direction: column; gap: 18px;
+    background: var(--card-2); border-right: 1px solid var(--line);
+    overflow-y: auto; overflow-x: hidden;
+    transition: width .18s ease, transform .2s ease;
+  }
+  .sb-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0 6px; }
+  .sb-brand {
+    display: flex; align-items: center; gap: 9px; min-width: 0;
+    font-size: 18px; font-weight: 800; color: var(--yellow); white-space: nowrap;
+  }
+  .sb-brand svg { width: 26px; height: 26px; flex: none; }
+  .sb-btn {
+    flex: none; width: 32px; height: 32px; display: grid; place-items: center;
+    background: var(--track); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text-2); cursor: pointer; padding: 0;
+  }
+  .sb-btn:hover { color: #fff; border-color: var(--info-line); }
+  .sb-btn svg { width: 17px; height: 17px; transition: transform .18s ease; }
+
+  .sb-nav { display: flex; flex-direction: column; gap: 16px; }
+  .sb-group { display: flex; flex-direction: column; gap: 3px; }
+  .sb-cat {
+    font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-3); padding: 0 10px 5px; white-space: nowrap;
+  }
+  .sb-item {
+    position: relative; display: flex; align-items: center; gap: 11px; width: 100%;
+    padding: 9px 10px; border: 0; border-radius: 8px; background: transparent;
+    color: var(--text-2); font: inherit; font-size: 13.5px; font-weight: 600;
+    text-align: left; white-space: nowrap; cursor: pointer;
+  }
+  .sb-item svg { width: 19px; height: 19px; flex: none; }
+  .sb-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .sb-item[aria-pressed="true"] { background: var(--yellow); color: var(--navy); font-weight: 700; }
+  .sb-item:focus-visible, .sb-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+
+  /* The menu button in the header only exists for the drawer. */
+  .sb-menu { display: none; }
+  .sb-backdrop { display: none; }
+
+  @media (min-width: 901px) {
+    html.sb-collapsed .shell { margin-left: var(--sb-rail); }
+    /* The rail is short enough to never scroll, and it has to let the
+       hover labels spill out to its right. */
+    html.sb-collapsed .sidebar { width: var(--sb-rail); overflow: visible; }
+    html.sb-collapsed .sb-top { flex-direction: column; padding: 2px 0 0; gap: 12px; }
+    html.sb-collapsed .sb-brand span { display: none; }
+    html.sb-collapsed .sb-toggle svg { transform: rotate(180deg); }
+    html.sb-collapsed .sb-cat { height: 0; padding: 0; overflow: hidden; border-top: 1px solid var(--line); margin: 2px 8px 6px; }
+    html.sb-collapsed .sb-item { justify-content: center; padding: 10px 0; }
+    /* Icons alone don't say which tab is which, so the label reappears as a
+       flyout beside the icon on hover or keyboard focus. */
+    html.sb-collapsed .sb-label {
+      position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%);
+      padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      background: #0d1c33; color: #fff; border: 1px solid var(--line);
+      box-shadow: 0 8px 20px rgba(0,0,0,.35); opacity: 0; pointer-events: none;
+      transition: opacity .12s;
+    }
+    html.sb-collapsed .sb-item:hover .sb-label,
+    html.sb-collapsed .sb-item:focus-visible .sb-label { opacity: 1; }
+  }
+
+  @media (max-width: 900px) {
+    .shell { margin-left: 0; }
+    .sidebar { width: 264px; transform: translateX(-100%); }
+    html.sb-open .sidebar { transform: none; box-shadow: 0 0 40px rgba(0,0,0,.5); }
+    html.sb-open .sb-backdrop { display: block; position: fixed; inset: 0; z-index: 29; background: rgba(5,12,25,.55); }
+    .sb-menu { display: grid; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shell, .sidebar, .sb-btn svg { transition: none; }
+  }
+
   /* ---------- header ---------- */
   .head { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding-bottom: 16px; }
-  .brand {
-    display: flex; align-items: center; gap: 9px;
-    font-size: 25px; font-weight: 800; color: var(--yellow); white-space: nowrap;
-  }
-  .brand svg { width: 29px; height: 29px; flex: none; }
   .titles h1 { margin: 0; font-size: 16px; font-weight: 700; }
   .asof { margin-top: 2px; font-size: 11.5px; color: var(--text-2); }
   .asof b { color: var(--yellow); font-weight: 600; }
@@ -74,15 +155,7 @@
   .stat .n { font-size: 26px; font-weight: 700; line-height: 1; }
   .stat .l { font-size: 10.5px; color: var(--text-3); margin-top: 4px; }
 
-  /* Desktop: everything on the right stacks as one column under the stats —
-     the stats + live dot + refresh on top, the tab groups directly beneath
-     them, both right-aligned so the tabs read as "belonging to" that block
-     rather than sitting off on their own at the left edge. */
-  .headright { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-  .headright-top { display: flex; align-items: center; gap: 16px; }
-  @media (max-width: 900px) {
-    .headright, .headright-top { align-items: flex-start; }
-  }
+  .headright { display: flex; align-items: center; gap: 16px; }
 
   .btn {
     background: transparent; color: var(--text-2); border: 1px solid var(--line);
@@ -210,6 +283,12 @@
     background: var(--card); border: 1px solid var(--line);
     border-radius: 10px; padding: 14px 16px 15px;
   }
+  /* Panels stacked directly in a tab need air between them. This rule once
+     covered Campaigns and History, went out with the chart CSS in 4bd0a36,
+     and those tabs' panels have touched since; Previous Projects and Leads
+     never had it. */
+  #previousWrap > .panel, #campaignsWrap > .panel,
+  #historyWrap > .panel, #leadsWrap > .panel { margin-bottom: 12px; }
   .ptitle {
     font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-3); margin-bottom: 10px;
@@ -252,21 +331,6 @@
   }
   .seg button[aria-pressed="true"] { background: var(--yellow); color: var(--navy); font-weight: 700; }
 
-  /* Header tab switcher — two named categories (what the data is about),
-     each holding its own pill of tabs (which view of it you're on). The
-     category label answers "Booking or Ads?" before the reader even needs
-     the tab names. */
-  .segrow { display: flex; align-items: center; gap: 10px; }
-  .seggroup { display: flex; align-items: center; gap: 7px; }
-  .segcat {
-    font-size: 9px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
-    color: var(--text-3); white-space: nowrap;
-  }
-  .segdiv { width: 1px; height: 20px; background: var(--line); }
-  @media (max-width: 980px) {
-    .segrow { flex-wrap: wrap; row-gap: 6px; }
-    .segdiv { display: none; }
-  }
   .fnote { font-size: 11px; color: var(--text-3); margin-left: auto; }
   /* A pill only works for one short line — border-radius:20px on wrapped
      text produces the huge lopsided caps a pill was never meant to show. */
@@ -721,45 +785,50 @@
 </style>
 </head>
 <body>
-  <div class="head">
-    <div class="brand">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16,13c1.66,0,2.99-1.34,2.99-3S17.66,7,16,7c-1.66,0-3,1.34-3,3S14.34,13,16,13z M8,13c1.66,0,2.99-1.34,2.99-3S9.66,7,8,7C6.34,7,5,8.34,5,10S6.34,13,8,13z M8,14.9c-2.03,0-6,1.02-6,3.05L2,20h6h2v-1.83c0-1.94,2.09-3.28,4-3.28c0.13,0,0.26,0.01,0.39,0.02C12.15,15.62,9.28,14.9,8,14.9z M16,14.9c-0.31,0-0.59,0.02-0.85,0.05C15.7,15.53,16,16.62,16,17.17V20h6v-2.05C22,15.92,18.03,14.9,16,14.9z"/></svg>
-      NomuHub CRM
+  <script>
+    // Before first paint, so a collapsed sidebar doesn't open and then snap
+    // shut on every load. Storage can be blocked; then it simply starts open.
+    try { if (localStorage.getItem('nomuSidebarCollapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
+  </script>
+
+  <aside class="sidebar" id="sidebar" aria-label="Sections">
+    <div class="sb-top">
+      <div class="sb-brand"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16,13c1.66,0,2.99-1.34,2.99-3S17.66,7,16,7c-1.66,0-3,1.34-3,3S14.34,13,16,13z M8,13c1.66,0,2.99-1.34,2.99-3S9.66,7,8,7C6.34,7,5,8.34,5,10S6.34,13,8,13z M8,14.9c-2.03,0-6,1.02-6,3.05L2,20h6h2v-1.83c0-1.94,2.09-3.28,4-3.28c0.13,0,0.26,0.01,0.39,0.02C12.15,15.62,9.28,14.9,8,14.9z M16,14.9c-0.31,0-0.59,0.02-0.85,0.05C15.7,15.53,16,16.62,16,17.17V20h6v-2.05C22,15.92,18.03,14.9,16,14.9z"/></svg><span>NomuHub CRM</span></div>
+      <button class="sb-btn sb-toggle" id="sbToggle" aria-controls="sidebar" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     </div>
+    <nav class="sb-nav" id="viewSeg">
+      <div class="sb-group">
+        <div class="sb-cat">Booking</div>
+        <button class="sb-item" data-view="board" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="sb-label">Dashboard</span></button>
+        <button class="sb-item" data-view="report" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-8M12 20V5M18 20v-11M3 20h18"/></svg><span class="sb-label">Report</span></button>
+        <button class="sb-item" data-view="previous" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span class="sb-label">Previous Projects</span></button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-cat">Ad Campaign</div>
+        <button class="sb-item" data-view="campaigns" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M19 6a8 8 0 0 1 0 12"/></svg><span class="sb-label">Campaigns</span></button>
+        <button class="sb-item" data-view="history" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span class="sb-label">History</span></button>
+        <button class="sb-item" data-view="leads" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg><span class="sb-label">Leads</span></button>
+      </div>
+    </nav>
+  </aside>
+  <div class="sb-backdrop" id="sbBackdrop"></div>
+
+  <div class="shell">
+  <div class="head">
+    <button class="sb-btn sb-menu" id="sbMenu" aria-controls="sidebar" aria-expanded="false" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="titles">
       <h1 id="range">Booking Data</h1>
       <div class="asof">As of <b id="asof">—</b></div>
     </div>
     <div class="spacer"></div>
     <div class="headright">
-      <div class="headright-top">
-        <div class="stats">
-          <div class="stat" id="sNewWrap"><div class="n" id="sNew">—</div><div class="l">New in 24h</div></div>
-          <div class="stat"><div class="n" id="sLastWeek">—</div><div class="l">Last Week</div></div>
-          <div class="stat"><div class="n" id="sWeeklyTarget">—</div><div class="l">Weekly Target</div></div>
-        </div>
-        <span class="dot" id="dot" title="Live"></span>
-        <button class="btn" id="refreshBtn">Refresh</button>
+      <div class="stats">
+        <div class="stat" id="sNewWrap"><div class="n" id="sNew">—</div><div class="l">New in 24h</div></div>
+        <div class="stat"><div class="n" id="sLastWeek">—</div><div class="l">Last Week</div></div>
+        <div class="stat"><div class="n" id="sWeeklyTarget">—</div><div class="l">Weekly Target</div></div>
       </div>
-      <div class="segrow" id="viewSeg">
-        <div class="seggroup">
-          <span class="segcat">Booking</span>
-          <div class="seg">
-            <button data-view="board" aria-pressed="true">Dashboard</button>
-            <button data-view="report" aria-pressed="false">Report</button>
-            <button data-view="previous" aria-pressed="false">Previous Projects</button>
-          </div>
-        </div>
-        <div class="segdiv"></div>
-        <div class="seggroup">
-          <span class="segcat">Ad Campaign</span>
-          <div class="seg">
-            <button data-view="campaigns" aria-pressed="false">Campaigns</button>
-            <button data-view="history" aria-pressed="false">History</button>
-            <button data-view="leads" aria-pressed="false">Leads</button>
-          </div>
-        </div>
-      </div>
+      <span class="dot" id="dot" title="Live"></span>
+      <button class="btn" id="refreshBtn">Refresh</button>
     </div>
   </div>
 
@@ -787,6 +856,8 @@
   <div id="leadsWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
+  </div>
+
   <div class="tip" id="tip" role="status"></div>
 
   <div class="modal-backdrop" id="modalBackdrop" hidden>
@@ -2341,6 +2412,57 @@
     if (adHistory) loadHistory(true);
     if (leads) loadLeads(true);
   });
+
+  /* ================= sidebar ================= */
+
+  // Wide screens: the toggle docks or collapses the sidebar to an icon rail,
+  // and the choice is kept (the class itself is applied by the snippet at the
+  // top of <body>, before first paint). Narrow screens: the sidebar is a
+  // drawer, opened by the header's menu button, and the same toggle closes it.
+  const SB_KEY = 'nomuSidebarCollapsed';
+  const narrow = matchMedia('(max-width: 900px)');
+  const docEl = document.documentElement;
+
+  function syncSidebar() {
+    const open = docEl.classList.contains('sb-open');
+    const collapsed = docEl.classList.contains('sb-collapsed');
+    const toggle = $('sbToggle');
+    if (narrow.matches) {
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', 'Close menu');
+    } else {
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      toggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    }
+    $('sbMenu').setAttribute('aria-expanded', String(open));
+  }
+  const closeDrawer = () => { docEl.classList.remove('sb-open'); syncSidebar(); };
+
+  $('sbToggle').addEventListener('click', () => {
+    if (narrow.matches) { closeDrawer(); return; }
+    const collapsed = docEl.classList.toggle('sb-collapsed');
+    try { localStorage.setItem(SB_KEY, collapsed ? '1' : '0'); } catch (e) { /* not remembered, still works */ }
+    syncSidebar();
+  });
+  $('sbMenu').addEventListener('click', () => {
+    docEl.classList.add('sb-open');
+    syncSidebar();
+    // Straight to the current tab, so a keyboard user lands inside the menu.
+    const current = $('viewSeg').querySelector('[aria-pressed="true"]');
+    if (current) current.focus();
+  });
+  $('sbBackdrop').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && docEl.classList.contains('sb-open')) closeDrawer();
+  });
+  // Picking a tab from the drawer is the end of the errand, so it closes.
+  $('viewSeg').querySelectorAll('button').forEach((b) => {
+    b.addEventListener('click', () => { if (narrow.matches) closeDrawer(); });
+  });
+  // A tablet rotated across the breakpoint shouldn't keep a drawer open over
+  // what is now a docked layout.
+  narrow.addEventListener('change', () => { docEl.classList.remove('sb-open'); syncSidebar(); });
+  syncSidebar();
 
   // Restore whichever tab/filter/period the screen was showing before this
   // load, so a refresh (or the wall display losing power overnight) picks up

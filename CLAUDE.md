@@ -30,10 +30,20 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~100,000 characters. Six tabs in two categories
-  (`.segrow` at the top of the page):
+  `<script>`, no bundler. ~100,000 characters. Six tabs in two categories,
+  in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
+  holds the `data-view` buttons `setView()` drives):
   - **BOOKING**: Dashboard, Report, Previous Projects
   - **AD CAMPAIGN**: Campaigns, History, Leads
+- **Sidebar**: over 900px it's docked and collapses to a 64px icon rail
+  (labels fly out on hover), remembered in `localStorage` as
+  `nomuSidebarCollapsed`; a snippet at the top of `<body>` applies it before
+  first paint. At 900px and under it's a drawer over the page, opened by the
+  header's ☰ (`#sbMenu`), closed by picking a tab, the backdrop, Escape, or
+  its own button. State lives as classes on `<html>` (`sb-collapsed`,
+  `sb-open`). Everything on the page sits in `.shell`, which carries the old
+  body padding and the sidebar offset; the tooltip and modal stay at body
+  level because they're fixed-position overlays.
 - `api/*.js`: **endpoints only.** CommonJS Vercel functions (`module.exports = async (req, res) => {...}`).
 - `lib/*.js`: shared helpers (`wetravel`, `meta-ads`, `trip-code`, `xlsx`,
   `leads-sheet`), required as `require('../lib/…')`. They live outside
