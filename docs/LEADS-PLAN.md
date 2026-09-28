@@ -120,7 +120,16 @@ Need a screenshot of Maryam's report to know which.
 ## Status
 
 - [x] Access audit done (above)
-- [x] Phase 1 Leads tab: building now, reading Marina's sheet
+- [x] Phase 1 Leads tab built (28 Sep): daily chart for any week, weekly
+      chart for the year split IG/WA, leads by project. Needs
+      `LEADS_SHEET_URL` set in Vercel to go live.
+- [ ] Ask Marina to fix the sheet's inconsistencies (14/20 July and 21-27
+      July don't add up; 18-24 Aug and 24-31 Aug overlap), and to record
+      IG vs WA per day in "Leads Quality", which currently only has the
+      combined count
+- [ ] "HP" (high potential) and the per-lead Status column (HP,
+      interested, Paid, Ghost, ...) already exist in the sheet and could
+      feed a qualified-leads count, if Muatasam wants it
 - [ ] ManyChat check: Cowork prompt sent, waiting on results
 - [ ] Screenshot of Maryam's engagement report, to decide ad vs organic
 - [ ] Start Meta Business verification (Business Settings > Security Center)

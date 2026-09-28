@@ -19,13 +19,40 @@ function downloadUrl(link) {
   return url.toString();
 }
 
+// SharePoint's "Anyone with the link" access is granted by a guest cookie set
+// on the first redirect, and the next hop is refused (403) without it. fetch
+// doesn't keep cookies across the redirects it follows, so they're followed
+// by hand here, carrying every cookie forward.
+async function download(url) {
+  const jar = new Map();
+  for (let hop = 0; hop < 8; hop++) {
+    const res = await fetch(url, {
+      redirect: 'manual',
+      headers: jar.size ? { Cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; ') } : {},
+    });
+    const set = typeof res.headers.getSetCookie === 'function'
+      ? res.headers.getSetCookie()
+      : (res.headers.get('set-cookie') || '').split(/,(?=\s*[^;,=\s]+=)/);
+    for (const c of set) {
+      const m = /^\s*([^=;\s]+)=([^;]*)/.exec(c);
+      if (m) jar.set(m[1], m[2]);
+    }
+    const next = res.headers.get('location');
+    if (res.status >= 300 && res.status < 400 && next) {
+      url = new URL(next, url).toString();
+      continue;
+    }
+    if (!res.ok) throw new Error(`Leads sheet download failed: HTTP ${res.status}`);
+    return Buffer.from(await res.arrayBuffer());
+  }
+  throw new Error('Leads sheet download failed: too many redirects');
+}
+
 async function fetchLeadsWorkbook() {
   const link = (process.env.LEADS_SHEET_URL || '').trim();
   if (!link) throw new Error('LEADS_SHEET_URL is not set');
 
-  const res = await fetch(downloadUrl(link), { redirect: 'follow' });
-  if (!res.ok) throw new Error(`Leads sheet download failed: HTTP ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
+  const buf = await download(downloadUrl(link));
 
   // A link that isn't shared with "Anyone with the link" doesn't fail with an
   // error code: it answers 200 with a Microsoft sign-in page. An .xlsx always

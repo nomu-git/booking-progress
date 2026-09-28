@@ -30,10 +30,10 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~86,000 characters. Five tabs in two categories
+  `<script>`, no bundler. ~100,000 characters. Six tabs in two categories
   (`.segrow` at the top of the page):
   - **BOOKING**: Dashboard, Report, Previous Projects
-  - **AD CAMPAIGN**: Campaigns, History
+  - **AD CAMPAIGN**: Campaigns, History, Leads
 - `api/*.js` — CommonJS Vercel functions (`module.exports = async (req, res) => {...}`).
   Each also exports `build()` separately where another function needs its
   logic (e.g. `slack-notify.js` calls `booking-report.js`'s `build()`).
@@ -214,6 +214,12 @@ these by default rather than waiting to be told again:
   production for a while before it was caught. When deleting CSS/JS during a
   simplification pass, grep every removed class name and function identifier
   across the **whole** file afterward, not just the section being edited.
+- **Generic class names collide with old rules.** A Leads chart axis was
+  given `class="laxis weeks"`, and `.weeks` (line ~142, the trip cards'
+  week meters) is `flex-direction: column`, so the axis rendered as a
+  vertical list. Before naming a new class, grep for a *standalone*
+  selector of that name (`^\s*\.name\b`), not just rules starting with
+  your prefix. New feature classes here are prefixed (`l*` for leads).
 - **Vercel env var changes need a redeploy.** Setting/changing a var in the
   dashboard does nothing until the next deploy. This was the root cause of
   the original "WETRAVEL_API_KEY is not set" blank-dashboard incident.
@@ -248,7 +254,15 @@ env vars only exist in Vercel.) Found 28 Sep 2026; earlier sessions didn't
 know about it, which is why the harness below exists.
 
 For code inside `index.html`, the older approach still applies:
-**macOS JavaScriptCore via `osascript -l JavaScript`**. Parse-checking
+**macOS JavaScriptCore via `osascript -l JavaScript`**. The Electron Node
+above works for this too: slice the functions out of the page's script and
+run them with a stub `$()`.
+
+**To actually see a layout**, render a static snapshot with Quick Look:
+write the page's `<style>` plus the generated markup to an .html file, then
+`qlmanage -t -s 1400 -o <dir> <file>.html` produces a PNG you can Read. JS
+doesn't run in it, so render the markup first. This is how the `.weeks`
+collision was caught; no amount of markup checking had found it. Parse-checking
 and rendering JS extracted from `index.html` is done with **macOS
 JavaScriptCore via `osascript -l JavaScript`**, using a stub harness that
 mimics the page's real `$()`, `esc()`, `attr()` exactly (including their
@@ -310,7 +324,37 @@ webhooks.
   OneDrive/SharePoint link shared as **"Anyone with the link can view"**.
   Any other sharing setting answers 200 with a Microsoft sign-in page
   rather than an error; the zip-signature check turns that into a clear
-  message.
+  message. **SharePoint grants anonymous access through a guest cookie set
+  on the first redirect**, and the next hop 403s without it; `fetch`
+  doesn't carry cookies across redirects, so they're followed by hand.
+- `api/leads.js` serves the **Leads tab** (Ad Campaign group). The workbook
+  ("Leads Feedback & Report_Nomuhub _2026", in the nomuhub1 SharePoint site
+  under `02. Marketing/01 B2C/1. Volunteer Database`) has three kinds of
+  tab, detected by their headers, not their names:
+  - per-lead logs (`Q1 leads`, `Q2 leads`, `July`): one row per lead with
+    Date, Source (IG/WA), Trip. **Stops at 21 Jul.** Column positions differ
+    between tabs, so columns are found by header name.
+  - weekly reports (`Q1/Q2/Q3 Report`): free-text week labels ("8/13 July",
+    "28-3 Aug") parsed into dates, then IG / WA / IG+WA rows by project.
+    **These are the weekly numbers shown**: they're Marina's official
+    figures, and the only source for 22 Jul to 21 Sep.
+  - a daily summary (`Leads Quality`): date rows from 23 Sep, IG+WA
+    combined (no channel split).
+  Days come from the log (keeps the IG/WA split) or the daily summary. A
+  week with no report row yet (the current one) is summed from its days,
+  so it moves as Marina logs. Days no report covers are grouped into 7-day
+  weeks of their own. Env: `LEADS_SHEET_URL` (required), `LEADS_CACHE_TTL_MS`
+  (default 60s).
+- **The sheet has known inconsistencies, shown as warnings, not silently
+  corrected**: 14/20 July (IG 18 + WA 104 ≠ IG+WA 92; the WA 31 on ZNZ|EX
+  looks like a typo for 1), 21-27 July (31 + 124 ≠ 166), 18-24 Aug and
+  24-31 Aug overlap on the 24th, and ~12 weeks where the per-lead log and
+  the weekly report differ by a few leads. When IG + WA don't add up, the
+  bar is drawn as one combined block rather than a split that isn't true.
+- Chart colours (`--lead-wa` aqua, `--lead-ig` orange, `--lead-all` blue for
+  "not split") were validated with the dataviz skill's
+  `validate_palette.js` against `--track` (all pairs pass). Status green/red
+  stay reserved.
 - **The leads sheet may contain customer names or phone numbers. The site
   is public with no auth, so only aggregate counts may ever leave the API.
   Never add a raw-dump or debug endpoint that returns sheet rows.**
