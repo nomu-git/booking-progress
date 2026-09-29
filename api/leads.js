@@ -85,7 +85,22 @@ function projectHeader(grid) {
     if (totalCol < 1) continue;
     const projects = [];
     for (let c = 1; c < totalCol; c++) if (text(row[c])) projects.push({ col: c, code: projectCode(row[c]) });
-    if (projects.length >= 3) return { totalCol, projects };
+    if (projects.length < 3) continue;
+    // A day's channel split can also be two plain columns past Total ("IG",
+    // "WA"), the lightest way to log it: two numbers a day, no extra rows.
+    // Their headers may sit on this row or the one above (row 1 carries
+    // "HP" that way today).
+    let igCol = -1;
+    let waCol = -1;
+    for (const hr of [row, grid[r - 1] || []]) {
+      hr.forEach((v, c) => {
+        if (c <= totalCol) return;
+        const h = text(v).toLowerCase();
+        if (igCol < 0 && /^(ig|instagram)$/.test(h)) igCol = c;
+        if (waCol < 0 && /^(wa|whatsapp)$/.test(h)) waCol = c;
+      });
+    }
+    return { totalCol, projects, igCol, waCol };
   }
   return null;
 }
@@ -148,9 +163,13 @@ function readDailySummary(grid, header, days) {
     if (!rows.total && !rows.ig && !rows.wa) continue; // not filled in yet
     if (days.has(day) && days.get(day).from === 'log') continue; // the log has it already
 
-    const at = (row, col) => (row ? count(row[col]) : null);
+    const at = (row, col) => (row && col >= 0 ? count(row[col]) : null);
     const totalOf = (row) => (row ? at(row, header.totalCol) ?? header.projects.reduce((s, p) => s + (at(row, p.col) || 0), 0) : null);
     const split = !!(rows.ig && rows.wa);
+    // No IG/WA rows, but IG and WA columns filled in beside the total: the
+    // day gets its channel split, though not per project.
+    const colIg = !split ? at(rows.total, header.igCol) : null;
+    const colWa = !split ? at(rows.total, header.waCol) : null;
     const t = { ...tally(), split, from: 'daily' };
     for (const p of header.projects) {
       const ig = split ? at(rows.ig, p.col) || 0 : null;
@@ -167,6 +186,18 @@ function readDailySummary(grid, header, days) {
     t.ig = split ? totalOf(rows.ig) : 0;
     t.wa = split ? totalOf(rows.wa) : 0;
     t.total = rows.total ? totalOf(rows.total) : t.ig + t.wa;
+    if (!split && colIg != null && colWa != null) {
+      t.split = true;
+      t.ig = colIg;
+      t.wa = colWa;
+    }
+    // The day's Total is Marina's own figure; when her project cells don't
+    // add up to it, both are kept and the gap is flagged, rather than one
+    // quietly overruling the other.
+    const cellSum = [...t.projects.values()].reduce((sum, p) => sum + p.total, 0);
+    if (rows.total && at(rows.total, header.totalCol) != null && cellSum !== t.total) {
+      t.issue = `the projects add up to ${cellSum}, but the day's Total says ${t.total}`;
+    }
     days.set(day, t);
   }
 }
@@ -269,8 +300,15 @@ function build(sheets, today = omanToday()) {
       const t = days.get(d);
       const future = d > today;
       const inLog = logSpan && d >= logSpan[0] && d <= logSpan[1];
-      if (t) return { date: d, total: t.total, ig: t.split ? t.ig : null, wa: t.split ? t.wa : null, recorded: true, future };
-      return { date: d, total: inLog ? 0 : null, ig: inLog ? 0 : null, wa: inLog ? 0 : null, recorded: !!inLog, future };
+      if (t) {
+        return {
+          date: d, total: t.total, ig: t.split ? t.ig : null, wa: t.split ? t.wa : null, recorded: true, future,
+          // Tapping a day shows this in the table below the chart.
+          projects: [...t.projects].map(([code, p]) => ({ code, ...p }))
+            .sort((a, b) => b.total - a.total || a.code.localeCompare(b.code)),
+        };
+      }
+      return { date: d, total: inLog ? 0 : null, ig: inLog ? 0 : null, wa: inLog ? 0 : null, recorded: !!inLog, future, projects: [] };
     });
     const recorded = dailies.filter((d) => d.recorded);
     const dailyTotal = recorded.reduce((s, d) => s + d.total, 0);
@@ -281,25 +319,35 @@ function build(sheets, today = omanToday()) {
     if (r) {
       for (const [code, p] of r.projects) projects.set(code, p);
     } else {
+      // A project's split holds for the week only if every day it had leads
+      // on carried that project's split. A day split in total but not per
+      // project (the IG/WA-columns layout) leaves its projects unsplit, and
+      // a project with no leads on a combined day loses nothing by it.
       const logged = daysBetween(w.start, w.end).map((d) => days.get(d)).filter(Boolean);
-      // A project's split only holds if every logged day had one; a week half
-      // split and half combined can't be divided honestly.
-      const allSplit = logged.length > 0 && logged.every((t) => t.split);
       for (const t of logged) {
         for (const [code, p] of t.projects) {
-          const cur = projects.get(code) || { ig: 0, wa: 0, total: 0 };
+          const cur = projects.get(code) || { ig: 0, wa: 0, total: 0, known: true };
+          const known = cur.known && p.ig != null && p.wa != null;
           projects.set(code, {
-            ig: allSplit ? cur.ig + (p.ig || 0) : null,
-            wa: allSplit ? cur.wa + (p.wa || 0) : null,
+            ig: known ? cur.ig + p.ig : 0,
+            wa: known ? cur.wa + p.wa : 0,
             total: cur.total + p.total,
+            known,
           });
         }
+      }
+      for (const [code, p] of projects) {
+        projects.set(code, { ig: p.known ? p.ig : null, wa: p.known ? p.wa : null, total: p.total });
       }
     }
 
     const issues = [];
     if (r && r.ig != null && r.wa != null && r.total != null && r.ig + r.wa !== r.total) {
       issues.push(`In the sheet, IG ${r.ig} + WA ${r.wa} = ${r.ig + r.wa}, but the IG+WA row says ${r.total}`);
+    }
+    for (const d of daysBetween(w.start, w.end)) {
+      const t = days.get(d);
+      if (t && t.issue) issues.push(`${shortDate(d)}: ${t.issue}`);
     }
     if (r && recorded.length === dailies.length && dailyTotal !== r.total) {
       issues.push(`The daily entries add up to ${dailyTotal}; the weekly report says ${r.total}`);

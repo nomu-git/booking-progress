@@ -662,6 +662,12 @@
      turned this axis into a column.) */
   .laxis.lweeks span { overflow: visible; }
   .laxis.lweeks span.on { box-shadow: inset 0 2px 0 var(--yellow); padding-top: 3px; }
+  /* The tapped day, marked the same way as the selected week. */
+  .laxis span.pick { box-shadow: inset 0 2px 0 var(--yellow); padding-top: 3px; }
+  .laxis span.pick, .laxis span.pick b { color: #fff; }
+  .lsplit { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-2); margin: 0 0 8px; }
+  .lsplit i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .lsplit b { color: #fff; font-variant-numeric: tabular-nums; }
 
   .lleg { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); margin-top: 10px; }
   .lleg i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
@@ -1647,6 +1653,7 @@
     leadsWa: ['WhatsApp', 'Leads who came in through WhatsApp.'],
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
     leadsShare: ['Share of week', "This project's slice of the week's leads."],
+    leadsShareDay: ['Share of day', "This project's slice of the day's leads."],
   };
 
   // data-help carries HTML into an attribute, so it goes through attr() and
@@ -2128,6 +2135,10 @@
   // current", so the tab rolls into the next week on its own, which is the
   // behaviour Muatasam asked for.
   let leadsWeek = null;
+  // A day tapped in the daily chart, whose breakdown the table then shows.
+  // Null means the table shows the whole week. Cleared whenever the week
+  // changes, since the day belongs to the week it was picked from.
+  let leadsDay = null;
 
   const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayOf = (day) => new Date(`${day}T00:00:00Z`);
@@ -2165,7 +2176,7 @@
     return `<span class="lstack${thin ? ' thin' : ''}" style="height:${Math.max(2, px)}px">${inner}</span>`;
   }
 
-  function dailyChart(w, today) {
+  function dailyChart(w, today, picked) {
     const H = 130;
     const top = Math.max(1, ...w.days.map((d) => d.total || 0));
     const cols = w.days.map((d) => {
@@ -2175,11 +2186,13 @@
       const rows = splits(d.total, d.ig, d.wa)
         ? [['WhatsApp', int(d.wa)], ['Instagram', int(d.ig)], ['Total', int(d.total)]]
         : [['IG + WA', int(d.total)]];
-      return `<div class="lcol" ${tipOf(name, rows)}><span class="lval">${int(d.total)}</span>${leadStack(d.total, d.ig, d.wa, (d.total / top) * H)}</div>`;
+      const on = d.date === picked;
+      return `<button class="lcol${on ? ' sel' : ''}" data-day="${attr(d.date)}" aria-pressed="${on}" ${tipOf(name, rows, on ? 'Tap again for the whole week' : 'Tap for this day\'s breakdown')}><span class="lval">${int(d.total)}</span>${leadStack(d.total, d.ig, d.wa, (d.total / top) * H)}</button>`;
     }).join('');
     const axis = w.days.map((d) => {
       const dt = dayOf(d.date);
-      return `<span class="${d.date === today ? 'on' : ''}">${WEEKDAYS[dt.getUTCDay()]}<b>${dt.getUTCDate()}</b></span>`;
+      const cls = [d.date === today ? 'on' : '', d.date === picked ? 'pick' : ''].filter(Boolean).join(' ');
+      return `<span class="${cls}">${WEEKDAYS[dt.getUTCDay()]}<b>${dt.getUTCDate()}</b></span>`;
     }).join('');
     return `<div class="lchart"><div class="lplot" style="height:${H + 20}px">${cols}</div><div class="laxis">${axis}</div></div>`;
   }
@@ -2251,24 +2264,45 @@
           <div class="bv-s">${best ? esc(dayName(best.date)) : 'days not logged'}</div>
         </div>`;
 
+    // A tapped day only counts if it's a logged day in the week on screen.
+    const day = leadsDay && sel.days ? sel.days.find((d) => d.date === leadsDay && d.recorded && !d.future) || null : null;
+    if (!day) leadsDay = null;
+
     const daily = sel.days
-      ? dailyChart(sel, today)
+      ? `${dailyChart(sel, today, day && day.date)}<div class="pnote">Tap a day to see its breakdown below.</div>`
       : `<div class="pnote">Only the weekly total was recorded for this week, not the daily numbers.</div>`;
 
-    // The count leads, straight after the name, so it's on screen even on a
-    // phone where the table scrolls. The WhatsApp/Instagram columns only
-    // appear when the sheet actually splits this week: a column of dashes
-    // read as "no breakdown at all" and hid the numbers that do exist.
-    const projSplit = sel.projects.length > 0 && sel.projects.every((x) => x.ig != null && x.wa != null);
-    const projMax = Math.max(1, ...sel.projects.map((x) => x.total));
+    // ---- the breakdown table: the tapped day, or the whole week ----
+    // The count comes straight after the name, so it's on screen even on a
+    // phone where the table scrolls. WhatsApp/Instagram columns only appear
+    // when the sheet splits every project: columns of dashes read as "no
+    // breakdown at all" and hid the numbers that do exist.
+    const src = day || sel;
+    const scope = day ? 'day' : 'week';
+    const srcLabel = day ? dayName(day.date) : sel.label;
+    const srcSplit = splits(src.total, src.ig, src.wa);
+    const projSplit = src.projects.length > 0 && src.projects.every((x) => x.ig != null && x.wa != null);
+    const projMax = Math.max(1, ...src.projects.map((x) => x.total));
+    // Shares are of the rows shown, so they always add up to 100%. When the
+    // sheet's own total disagrees with its project cells (flagged above),
+    // dividing by that total would print shares summing past 100%.
+    const rowSum = src.projects.reduce((sum, x) => sum + x.total, 0);
     const projCols = projSplit ? 5 : 3;
-    const projRows = sel.projects.map((x) => `
+    const projRows = src.projects.map((x) => `
       <tr>
         <td class="cname">${esc(x.code === 'NA' ? 'NA (no trip given)' : x.code)}</td>
         <td class="num"><b>${int(x.total)}</b></td>
         ${projSplit ? `<td class="num">${int(x.wa)}</td><td class="num">${int(x.ig)}</td>` : ''}
-        <td class="abar-cell"><div class="abar"><div class="abar-fill lead" style="width:${((x.total / projMax) * 100).toFixed(1)}%"></div></div><span class="abar-pct">${show(ratio(x.total, sel.total), pct)}</span></td>
+        <td class="abar-cell"><div class="abar"><div class="abar-fill lead" style="width:${((x.total / projMax) * 100).toFixed(1)}%"></div></div><span class="abar-pct">${show(ratio(x.total, rowSum), pct)}</span></td>
       </tr>`).join('');
+    // The channel split, said in words when the sheet has it for the total
+    // but not project by project, so it's never only in a hover tooltip.
+    const splitLine = srcSplit && !projSplit
+      ? `<div class="lsplit"><span><i style="background:var(--lead-wa)"></i>WhatsApp <b>${int(src.wa)}</b></span><span><i style="background:var(--lead-ig)"></i>Instagram <b>${int(src.ig)}</b></span></div>`
+      : '';
+    const splitNote = !srcSplit && src.projects.length
+      ? `<div class="pnote">WhatsApp vs Instagram isn't split in the sheet for this ${scope} yet, so it can't be shown here.</div>`
+      : '';
 
     const anyCombined = weeks.some((w) => w.total && !splits(w.total, w.ig, w.wa));
 
@@ -2301,6 +2335,31 @@
         ${sel.issues.map((t) => `<div class="pnote warn">⚠ ${esc(t)} — worth checking in the sheet.</div>`).join('')}
       </div>
 
+      <div class="panel" id="leadsBreakdown">
+        <div class="lhead">
+          <div class="ptitle">Leads by project · ${esc(srcLabel)}</div>
+          ${day ? '<div class="lnav"><button data-day-clear>Whole week</button></div>' : ''}
+        </div>
+        ${splitLine}
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}
+              ${projSplit ? hcol('leadsWa', 'WhatsApp') + hcol('leadsIg', 'Instagram') : ''}
+              ${hcol(day ? 'leadsShareDay' : 'leadsShare', day ? 'Share of day' : 'Share of week')}
+            </tr></thead>
+            <tbody>${projRows || `<tr><td class="cname" colspan="${projCols}">No leads logged for this ${scope} yet.</td></tr>`}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL</td>
+              <td class="num">${int(src.total)}</td>
+              ${projSplit ? `<td class="num">${srcSplit ? int(src.wa) : '—'}</td><td class="num">${srcSplit ? int(src.ig) : '—'}</td>` : ''}
+              <td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+        ${splitNote}
+      </div>
+
       <div class="panel">
         <div class="ptitle">Weekly leads · ${esc(String(p.year))} · ${int(p.totals.leads)} so far</div>
         ${weeklyChart(weeks, sel)}
@@ -2309,27 +2368,6 @@
           <span><i style="background:var(--lead-ig)"></i>Instagram</span>
           ${anyCombined ? '<span><i style="background:var(--lead-all)"></i>WhatsApp + Instagram together (the sheet has no clean split)</span>' : ''}
         </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">Leads by project · ${esc(sel.label)}</div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}
-              ${projSplit ? hcol('leadsWa', 'WhatsApp') + hcol('leadsIg', 'Instagram') : ''}
-              ${hcol('leadsShare', 'Share of week')}
-            </tr></thead>
-            <tbody>${projRows || `<tr><td class="cname" colspan="${projCols}">No leads logged for this week yet.</td></tr>`}</tbody>
-            <tfoot><tr>
-              <td class="cname">TOTAL</td>
-              <td class="num">${int(sel.total)}</td>
-              ${projSplit ? `<td class="num">${split ? int(sel.wa) : '—'}</td><td class="num">${split ? int(sel.ig) : '—'}</td>` : ''}
-              <td></td>
-            </tr></tfoot>
-          </table>
-        </div>
-        ${!projSplit && sel.projects.length ? '<div class="pnote">WhatsApp vs Instagram per project shows here once the sheet splits them for this week.</div>' : ''}
       </div>`;
 
     // On a phone the weekly chart scrolls sideways and opened on January,
@@ -2347,8 +2385,9 @@
 
     bindHelp($('leadsWrap'));
 
+    // A new week always opens on its whole-week breakdown.
     $('leadsWrap').querySelectorAll('[data-week]').forEach((b) => {
-      b.addEventListener('click', () => { leadsWeek = b.dataset.week; renderLeads(); });
+      b.addEventListener('click', () => { leadsWeek = b.dataset.week; leadsDay = null; renderLeads(); });
     });
     $('leadsWrap').querySelectorAll('[data-step]').forEach((b) => {
       b.addEventListener('click', () => {
@@ -2358,9 +2397,26 @@
           const next = weeks[at + step];
           if (next) leadsWeek = next.current ? null : next.start;
         }
+        leadsDay = null;
         renderLeads();
       });
     });
+    // Tapping a day shows its breakdown; tapping it again goes back to the
+    // week. The table is brought into view (only as far as needed), since on
+    // a phone it can sit below the fold.
+    const showBreakdown = () => {
+      const t = $('leadsBreakdown');
+      if (t && typeof t.scrollIntoView === 'function') t.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    };
+    $('leadsWrap').querySelectorAll('[data-day]').forEach((b) => {
+      b.addEventListener('click', () => {
+        leadsDay = leadsDay === b.dataset.day ? null : b.dataset.day;
+        renderLeads();
+        showBreakdown();
+      });
+    });
+    const clear = $('leadsWrap').querySelector('[data-day-clear]');
+    if (clear) clear.addEventListener('click', () => { leadsDay = null; renderLeads(); });
   }
 
   async function loadLeads(force) {

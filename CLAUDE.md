@@ -364,13 +364,24 @@ webhooks.
     combined (no channel split). The reader also accepts **IG and WA rows
     under each date** (labelled like the weekly report, `Total No|IG` /
     `Total No|WA`, or just `IG` / `WA`), with or without the combined row
-    alongside; the day then carries its split, per project too. A week
-    keeps a split only if every logged day in it has one.
+    alongside; the day then carries its split, per project too. Or, the
+    lightest option for Marina: **two columns headed `IG` and `WA` past the
+    Total column** (header on the Total row or the row above), giving the
+    day's split but not per project. A week keeps a split only if every
+    logged day in it has one; a project keeps one only if every day it had
+    leads on split that project. A day whose project cells don't add up to
+    its Total (28 Sep: 7 vs 6) is flagged, not corrected.
   Days come from the log (keeps the IG/WA split) or the daily summary. A
   week with no report row yet (the current one) is summed from its days,
   so it moves as Marina logs. Days no report covers are grouped into 7-day
   weeks of their own. Env: `LEADS_SHEET_URL` (required), `LEADS_CACHE_TTL_MS`
   (default 60s).
+- **Tapping a day** in the daily chart shows that day's breakdown in the
+  table, which sits directly under the daily chart (Muatasam: "When I press
+  daily should show daily leads breakdown in table below"); tapping it
+  again, or "Whole week", goes back. Each `days[]` entry in `/api/leads`
+  carries its own `projects`. Shares are of the rows shown, so they always
+  total 100% even when the sheet's own Total disagrees.
 - The **Leads by project** table puts the count straight after the name,
   and shows WhatsApp/Instagram columns only when that week really has the
   split. Two columns of dashes read as "no breakdown at all" to Muatasam on

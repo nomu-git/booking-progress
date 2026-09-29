@@ -123,10 +123,15 @@ Need a screenshot of Maryam's report to know which.
 - [x] Phase 1 Leads tab built (28 Sep): daily chart for any week, weekly
       chart for the year split IG/WA, leads by project. Needs
       `LEADS_SHEET_URL` set in Vercel to go live.
-- [ ] **Ask Marina to add an IG row and a WA row under each date in
-      "Leads Quality"** (same labels as her weekly report). The tab already
-      reads them, per day and per project; Muatasam asked for this week's
-      breakdown (29 Sep) and it can't come from the combined row.
+- [ ] **Ask Marina to record WhatsApp vs Instagram per day in "Leads
+      Quality".** Either works, and the tab reads both already:
+      (a) simplest, two columns headed `IG` and `WA` beside each day's
+      Total (day split only), or (b) an IG row and a WA row under each date,
+      same labels as her weekly report (day and per-project split).
+      Muatasam asked for the split daily and weekly (29 Sep); it can't come
+      from the combined row. Also: 28 Sep's projects add up to 7 but its
+      Total says 6.
+- [x] Tap a day to see its breakdown in the table below (29 Sep)
 - [ ] Ask Marina to fix the sheet's inconsistencies (14/20 July and 21-27
       July don't add up; 18-24 Aug and 24-31 Aug overlap), and to record
       IG vs WA per day in "Leads Quality", which currently only has the
