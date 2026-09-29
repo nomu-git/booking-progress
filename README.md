@@ -44,7 +44,7 @@ env-var changes on a new deployment.
 | `SEASON_END` | `2026-12-31` | Latest departure date shown on the board. |
 | `BOOKING_TARGET` | `10` | Seats-per-week target marker on each bar. |
 | `WEEKLY_BOOKING_TARGET` | `12` | New bookings/week target in the Report tab (Sun–Sat, Muscat). |
-| `EXCLUDED_TRIP_UUIDS` | `8612103268,9638755524,10127626` | Departures hidden from the board. |
+| `EXCLUDED_TRIP_UUIDS` | `8612103268,9638755524,10127626,14919204,3489299932,6460642141,7328359188` | Departures hidden from the board: two charters (`8612103268`, `9638755524`), a broken record (`10127626`), Salalah Wellness & Explore Aug (`14919204`), Bali Teaching 20–26 Sep (`3489299932`), Bali Explore 20–26 Sep (`6460642141`), Korea Explore 24–31 Oct (`7328359188`). Look a trip up by ID at `wetravel.com/trips/<id>`. |
 | `CANCELLED_TRIP_UUIDS` | *(empty)* | Departures kept on the board but stamped CANCELLED. |
 | `CHARTER_TRIP_UUIDS` | `8612103268,9638755524,0885576464` | Counted separately and left out of the Slack total. |
 | `REPORT_SKIP_UUIDS` | `10127626,17245052` | Broken/duplicated records dropped from every view. |
