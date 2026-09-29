@@ -35,6 +35,9 @@ const tidy = (s) => String(s || '').replace(/\s+/g, ' ').replace(/\s+\)/g, ')').
 function productName(title) {
   let name = String(title || '').trim();
   name = name.replace(/\s*-?\s*\/\s*\d{1,2}\s+[A-Za-z]+\.?\s*[-–]\s*\d{1,2}\s+[A-Za-z]+\.?\s*/g, ' ');
+  // The same range in brackets, "(28 Nov - 05 Dec)", which a few titles use
+  // instead of the slash form. Left in, its dash became a "|" below.
+  name = name.replace(/\s*-?\s*\(\s*\d{1,2}\s+[A-Za-z]+\.?\s*[-–|]\s*\d{1,2}\s+[A-Za-z]+\.?\s*\)/g, ' ');
   name = name.replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s*20\d{2}\b/gi, ' ');
   name = name.replace(/\b20\d{2}\b/g, ' ');
   name = name.replace(/\s*[-–|]\s*$/, '').replace(/^\s*[-–|]\s*/, '');
