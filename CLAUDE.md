@@ -421,6 +421,12 @@ Story Engagement Question).
   recorded", shown as a dash, not 0.
 - Story Responses can be text ("8 Link Clicks"): the number is kept and the
   unit shown under it. Response rate (responses / views) is computed here.
+- **Filters: Month and Type** (Reel, Carousel, Static, Photo dump, plus any
+  new type Maryam adds, in that order). They combine; the hero, chart and
+  posts table all follow them, stories follow the month only (they have a
+  poll type, not a content type). Each type shows its count for the chosen
+  month; a type with none is hidden unless it's the one selected. Type is
+  its own column on wide screens and moves under the post name on a phone.
 - UI: month pills, hero (posts, views, engagement, best post), a
   views-per-post bar chart (single series, `--fill`), a posts table with an
   engagement bar per row, and a stories table. Chart width scales with the

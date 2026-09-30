@@ -681,6 +681,19 @@
   .lseg.eng { background: var(--fill); }
   .abar-fill.eng { background: var(--fill); }
   .esub { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 500; color: var(--text-3); }
+  .efilters { display: flex; gap: 10px 22px; flex-wrap: wrap; margin-bottom: 14px; }
+  .efilter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  /* On a phone the buttons wrap as a group; a label never splits from its count. */
+  .efilter .seg { flex-wrap: wrap; }
+  .efilter .seg button { white-space: nowrap; }
+  .efl { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+  .ecount { font-size: 10px; opacity: .6; margin-left: 2px; font-variant-numeric: tabular-nums; }
+  .seg button[aria-pressed="true"] .ecount { opacity: .75; }
+  #engagementsWrap .ctable td.etype { text-align: left; color: var(--text-2); white-space: nowrap; }
+  #engagementsWrap .ctable th.etype { text-align: left; }
+  /* Type is its own column on wide screens and moves under the post name on
+     a phone, so it's always on screen without pushing engagement off it. */
+  .etype-sub { display: none; }
   .eres { white-space: normal; font-size: 11.5px; color: var(--text-2); min-width: 180px; text-align: left !important; }
   #engagementsWrap .ctable td.cname { min-width: 200px; max-width: 320px; }
   /* On a phone the post name, views and engagement have to fit on screen;
@@ -691,6 +704,8 @@
     #engagementsWrap .abar { width: 38px; }
     #engagementsWrap .abar-pct { min-width: 38px; margin-left: 6px; }
     #engagementsWrap .abar-cell { min-width: 0; white-space: nowrap; }
+    #engagementsWrap .ctable .etype { display: none; }
+    .etype-sub { display: inline; }
   }
   /* On a phone the project table should fit without scrolling, so its
      share bars shrink to leave room for the percentage. */
@@ -1683,6 +1698,7 @@
     engComments: ['Comments', 'Comments on the post.'],
     engShares: ['Shares', 'Times the post was shared or sent on.'],
     engSaves: ['Saves', "Times the post was saved (bookmarked). A dash means it wasn't recorded for that post, not zero."],
+    engType: ['Content type', 'Reel, Carousel, Static or Photo dump, as Maryam recorded it. Pick one above to see only those posts.'],
     engCta: ['CTA', "The post's call to action, as Maryam tagged it: the specific word used (Trip, Grow...), or Open when there's no specific one."],
     stViews: ['Views', 'How many people viewed the story.'],
     stResponses: ['Responses', 'Poll votes, slider taps, replies or link clicks, depending on the story type.'],
@@ -2470,6 +2486,9 @@
   let engagements = null;
   // 'all' or a 'YYYY-MM' month key.
   let engMonth = 'all';
+  // 'all' or a content type as Maryam writes it (Reel, Carousel...). Posts
+  // only: stories have a poll type instead, so they follow the month alone.
+  let engType = 'all';
 
   const shortDay = (day) => {
     const d = dayOf(day);
@@ -2515,9 +2534,18 @@
       return;
     }
     if (engMonth !== 'all' && !p.months.includes(engMonth)) engMonth = 'all';
+    // Types in the order people think of them, then anything else Maryam
+    // adds, so a new type shows up as a filter without a code change.
+    const TYPE_ORDER = ['Reel', 'Carousel', 'Static', 'Photo dump'];
+    const types = [...new Set(p.posts.map((x) => x.type).filter(Boolean))]
+      .sort((a, b) => ((TYPE_ORDER.indexOf(a) + 1 || 99) - (TYPE_ORDER.indexOf(b) + 1 || 99)) || a.localeCompare(b));
+    if (engType !== 'all' && !types.includes(engType)) engType = 'all';
     const inMonth = (x) => engMonth === 'all' || (x.date || '').slice(0, 7) === engMonth;
-    const posts = p.posts.filter(inMonth);
+    const posts = p.posts.filter((x) => inMonth(x) && (engType === 'all' || x.type === engType));
     const stories = p.stories.filter(inMonth);
+    // "Reels", "Carousels", but "Static posts": Static isn't a noun.
+    const typeLabel = engType === 'all' ? ''
+      : ` · ${/^static$/i.test(engType) ? `${engType} posts` : /s$/i.test(engType) ? engType : `${engType}s`}`;
     const period = engMonth === 'all'
       ? (p.months.length ? `${PT_MONTHS_SHORT[Number(p.months[0].slice(5)) - 1]} – ${PT_MONTHS_SHORT[Number(p.months[p.months.length - 1].slice(5)) - 1]} ${p.year}` : String(p.year))
       : `${PT_MONTHS[Number(engMonth.slice(5)) - 1]} ${engMonth.slice(0, 4)}`;
@@ -2529,12 +2557,18 @@
     const best = posts.reduce((b, x) => (x.engagement != null && (!b || x.engagement > b.engagement) ? x : b), null);
 
     const pills = ['all', ...p.months].map((m) => `<button data-eng-month="${attr(m)}" aria-pressed="${m === engMonth}">${m === 'all' ? 'All' : PT_MONTHS_SHORT[Number(m.slice(5)) - 1]}</button>`).join('');
+    const typeCount = (t) => p.posts.filter((x) => inMonth(x) && (t === 'all' || x.type === t)).length;
+    // A type with nothing in the chosen month is left out, unless it's the
+    // one selected, so the empty result still says which filter caused it.
+    const typePills = ['all', ...types].filter((t) => t === 'all' || t === engType || typeCount(t) > 0)
+      .map((t) => `<button data-eng-type="${attr(t)}" aria-pressed="${t === engType}">${t === 'all' ? 'All' : esc(t)} <span class="ecount">${typeCount(t)}</span></button>`).join('');
 
     const maxRate = Math.max(0.0001, ...posts.map((x) => x.engagement || 0));
     const newestFirst = [...posts].reverse();
     const postRows = newestFirst.map((x) => `
       <tr>
-        <td class="cname"><span dir="auto">${esc(x.name)}</span><span class="esub">${esc([x.type, x.date ? shortDay(x.date) : x.dateText, x.language].filter(Boolean).join(' · '))}</span></td>
+        <td class="cname"><span dir="auto">${esc(x.name)}</span><span class="esub"><span class="etype-sub">${esc(x.type || '—')} · </span>${esc([x.date ? shortDay(x.date) : x.dateText, x.language].filter(Boolean).join(' · '))}</span></td>
+        <td class="etype">${esc(x.type || '—')}</td>
         <td class="num"><b>${int(x.views)}</b></td>
         <td class="abar-cell"><div class="abar"><div class="abar-fill eng" style="width:${(((x.engagement || 0) / maxRate) * 100).toFixed(1)}%"></div></div><span class="abar-pct">${pctOf(x.engagement)}</span></td>
         <td class="num">${int(x.likes)}</td>
@@ -2563,9 +2597,10 @@
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
 
       <div class="panel">
-        <div class="lhead">
-          <div class="ptitle">Instagram posts · ${esc(period)}</div>
-          <div class="seg" id="engMonthSeg">${pills}</div>
+        <div class="ptitle">Instagram posts · ${esc(period)}${esc(typeLabel)}</div>
+        <div class="efilters">
+          <div class="efilter"><span class="efl">Month</span><div class="seg">${pills}</div></div>
+          <div class="efilter"><span class="efl" ${hlp('engType')}>Type</span><div class="seg">${typePills}</div></div>
         </div>
         <div class="bvhero">
           <div class="bv-side">
@@ -2589,21 +2624,22 @@
             <div class="bv-s" dir="auto">${best ? esc(best.name) : ''}</div>
           </div>
         </div>
-        ${posts.length ? `<div class="ptitle" style="margin-top:16px">Views per post</div>${engChart(posts)}` : '<div class="pnote">No posts in the sheet for this month.</div>'}
+        ${posts.length ? `<div class="ptitle" style="margin-top:16px">Views per post</div>${engChart(posts)}` : '<div class="pnote">No posts match these filters.</div>'}
       </div>
 
       <div class="panel">
-        <div class="ptitle">Posts · ${esc(period)}</div>
+        <div class="ptitle">Posts · ${esc(period)}${esc(typeLabel)}</div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              ${hcol('engPosts', 'Post')}${hcol('engViews', 'Views')}${hcol('engRate', 'Engagement')}
+              ${hcol('engPosts', 'Post')}<th class="etype"><span ${hlp('engType')}>Type</span></th>${hcol('engViews', 'Views')}${hcol('engRate', 'Engagement')}
               ${hcol('engLikes', 'Likes')}${hcol('engComments', 'Comments')}${hcol('engShares', 'Shares')}
               ${hcol('engSaves', 'Saves')}${hcol('engCta', 'CTA')}
             </tr></thead>
-            <tbody>${postRows || '<tr><td class="cname" colspan="8">No posts for this month.</td></tr>'}</tbody>
+            <tbody>${postRows || '<tr><td class="cname" colspan="9">No posts match these filters.</td></tr>'}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL</td>
+              <td class="etype"></td>
               <td class="num">${int(views)}</td>
               <td class="abar-cell"><span class="abar-pct">${pctOf(rate)}</span></td>
               <td class="num">${int(sum(posts, 'likes'))}</td>
@@ -2640,6 +2676,9 @@
     bindHelp($('engagementsWrap'));
     $('engagementsWrap').querySelectorAll('[data-eng-month]').forEach((b) => {
       b.addEventListener('click', () => { engMonth = b.dataset.engMonth; renderEngagements(); });
+    });
+    $('engagementsWrap').querySelectorAll('[data-eng-type]').forEach((b) => {
+      b.addEventListener('click', () => { engType = b.dataset.engType; renderEngagements(); });
     });
   }
 
