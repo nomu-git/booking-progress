@@ -989,8 +989,21 @@
   .fb-kind { padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: #fff; background: rgba(255,255,255,.08); }
   .fb-kind.fb-k-concern { background: color-mix(in srgb, var(--q-low) 35%, transparent); }
   .fb-kind.fb-k-suggestion { background: color-mix(in srgb, var(--yellow) 28%, transparent); }
+  /* Ratings: a row per question, a column per trip. The question column
+     stays put while the trips scroll sideways. */
+  #feedbackWrap .fb-matrix th.fb-trip-h { white-space: normal; min-width: 118px; max-width: 150px; text-align: left; vertical-align: bottom; line-height: 1.3; }
+  #feedbackWrap .fb-matrix th.fb-trip-h small { display: block; margin-top: 2px; font-weight: 500; letter-spacing: .04em; color: var(--text-3); }
+  #feedbackWrap .fb-matrix td.fb-q { white-space: normal; min-width: 170px; max-width: 240px; color: var(--text-2); font-weight: 500; }
+  #feedbackWrap .fb-matrix th:first-child, #feedbackWrap .fb-matrix td.fb-q { position: sticky; left: 0; z-index: 1; background: var(--card); }
+  #feedbackWrap .fb-matrix tr.fb-overall td { font-weight: 700; color: #fff; }
+  #feedbackWrap .fb-matrix td.fb-cell { text-align: left; }
+  .fb-cell .abar { width: 56px; }
+  .fb-cell b { display: inline-block; min-width: 30px; margin-left: 8px; color: #fff; font-variant-numeric: tabular-nums; }
+  #feedbackWrap .fb-matrix td.fb-txt { text-align: left; white-space: normal; min-width: 118px; max-width: 170px; font-size: 11.5px; line-height: 1.4; }
+  .fb-matrix + .pnote { margin-top: 10px; }
   @media (max-width: 600px) {
     .fb-detail { max-width: calc(100vw - 110px); }
+    #feedbackWrap .fb-matrix td.fb-q { min-width: 120px; max-width: 140px; }
     .fb-scores { grid-template-columns: 1fr; }
     .fb-score, .fb-low .fb-score { grid-template-columns: minmax(0, 1fr) 70px 30px; }
     .fb-score .abar, .fb-low .fb-score .abar { width: 70px; }
@@ -1901,6 +1914,7 @@
     fbRate: ['Response rate', 'Responses divided by travellers: how much of the group answered.'],
     fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
     fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
+    fbQuestion: ['Question', "Each question on this programme's survey, in the sheet's order. Scores are the average of the people who answered, 1 to 5; text answers are the sheet's own summary. Not asked means the question isn't on that trip's form."],
     fbLow: ['Lowest scores', 'Every question, hotel or activity that averaged under 4.0, lowest first.'],
     stResult: ['Result', 'What the audience said, as Maryam recorded it (poll percentages, or the replies received).'],
   };
@@ -3167,7 +3181,7 @@
   /* ================= feedback tab (trip survey sheet) ================= */
 
   let feedback = null;
-  // Which sub-tab of Feedback is open: 'overview' or 'comments'.
+  // Which sub-tab of Feedback is open: 'overview', 'ratings' or 'comments'.
   let fbSub = 'overview';
   const fbFilter = { prog: 'all', kind: 'all' };
   // Trips whose scores are open, by id, so they survive the 5-minute refresh.
@@ -3269,6 +3283,44 @@
         <div class="fb-low">${lows.map((l) => fbScore(l.label, l.where, l.v)).join('')}</div>
       </div>` : ''}`;
 
+    // ---- ratings: every question, trip by trip ----
+    // One table per survey, since each programme asks its own questions: a
+    // row per question, a column per trip. The sheet's own layout turned on
+    // its side, so a phone scrolls down it rather than across 20 columns.
+    const ratingsHtml = p.programmes.map((g) => {
+      const answered = (x) => x.scores.length || x.facts.length;
+      const trips = p.trips.filter((x) => x.template === g.name && answered(x));
+      const silent = p.trips.filter((x) => x.template === g.name && !answered(x));
+      if (!trips.length && !silent.length) return '';
+      const cell = (x, q) => {
+        const sc = x.scores.find((a) => a.q === q);
+        if (sc) return `<td class="fb-cell">${fbBar(sc.v, fbBand(sc.v))}<b>${fbNum(sc.v)}</b></td>`;
+        const f = x.facts.find((a) => a.q === q);
+        if (f) return `<td class="fb-txt">${esc(f.text)}</td>`;
+        return `<td class="fb-cell fb-na">${x.notAsked.includes(q) ? 'Not asked' : '—'}</td>`;
+      };
+      // A question none of these trips was asked is left out, not shown as
+      // a row of "Not asked".
+      const qs = (g.questions || []).filter((q) => trips.some((x) => x.scores.some((a) => a.q === q) || x.facts.some((a) => a.q === q)));
+      const overall = `<tr class="fb-overall"><td class="fb-q">Overall satisfaction</td>${trips.map((x) => (x.overall == null ? '<td class="fb-cell fb-na">—</td>' : `<td class="fb-cell">${fbBar(x.overall, fbBand(x.overall))}<b>${fbNum(x.overall)}</b></td>`)).join('')}</tr>`;
+      const rows = qs.map((q) => `<tr><td class="fb-q">${esc(q)}</td>${trips.map((x) => cell(x, q)).join('')}</tr>`).join('');
+      return `
+      <div class="panel">
+        <div class="ptitle">${esc(g.name)} survey · ${int(trips.length)} trip${trips.length === 1 ? '' : 's'}</div>
+        ${trips.length ? `
+        <div class="tscroll">
+          <table class="ctable fb-matrix">
+            <thead><tr>
+              <th class="fb-l"><span ${hlp('fbQuestion')}>Question</span></th>
+              ${trips.map((x) => `<th class="fb-trip-h">${esc(x.name)}<small>${esc(fbMonth(x.month))} · ${esc(x.responsesText || '')}</small></th>`).join('')}
+            </tr></thead>
+            <tbody>${overall}${rows}</tbody>
+          </table>
+        </div>` : ''}
+        ${silent.length ? `<div class="pnote">No answers yet: ${silent.map((x) => esc(`${x.name}, ${fbMonth(x.month)}`)).join('; ')}.</div>` : ''}
+      </div>`;
+    }).join('') || '<div class="msg">No ratings in the sheet yet.</div>';
+
     // ---- what people wrote ----
     const progOf = new Map(p.trips.map((x) => [x.id, x.template || x.programme || 'Other']));
     const progs = p.programmes.map((g) => g.name);
@@ -3316,13 +3368,14 @@
     const subtabs = `
       <div class="seg subtabs" role="tablist" aria-label="Feedback sections">
         <button role="tab" data-fb-sub="overview" aria-pressed="${fbSub === 'overview'}" aria-selected="${fbSub === 'overview'}">Overview</button>
+        <button role="tab" data-fb-sub="ratings" aria-pressed="${fbSub === 'ratings'}" aria-selected="${fbSub === 'ratings'}">Ratings</button>
         <button role="tab" data-fb-sub="comments" aria-pressed="${fbSub === 'comments'}" aria-selected="${fbSub === 'comments'}">What people wrote <span class="ecount">${int(p.comments.length)}</span></button>
       </div>`;
 
     $('feedbackWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
       ${subtabs}
-      ${fbSub === 'comments' ? commentsHtml : overviewHtml}`;
+      ${fbSub === 'comments' ? commentsHtml : fbSub === 'ratings' ? ratingsHtml : overviewHtml}`;
 
     bindHelp($('feedbackWrap'));
     $('feedbackWrap').querySelectorAll('[data-fb-sub]').forEach((b) => {

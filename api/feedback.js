@@ -109,7 +109,10 @@ function readSummary(grid) {
   return out;
 }
 
-const FIXED = /^(trip|month|responses|response rate|overall|satisfaction)/i;
+// The columns every programme table starts with. Matched whole: "Trip" is a
+// fixed column but "Trip Manual / On-boarding Pack" is a question, and a
+// prefix match silently dropped it.
+const FIXED = /^(trip|month|responses\b.*|response rate|overall\b.*|satisfaction\b.*)$/i;
 
 function readProgrammes(grid) {
   const programmes = [];
@@ -128,12 +131,19 @@ function readProgrammes(grid) {
     const head = single(g);
     if (!row.some(Boolean)) continue;
 
-    if (row[0] === 'Trip' && row[1] === 'Month') { header = row; mode = 'scores'; continue; }
+    if (row[0] === 'Trip' && row[1] === 'Month') {
+      header = row;
+      mode = 'scores';
+      // The survey's questions in the sheet's order, for the Ratings view's
+      // question-by-trip table.
+      if (current) current.questions = row.filter((q) => q && !FIXED.test(q));
+      continue;
+    }
     // A programme block starts with its name on the line above a Trip/Month
     // table header.
     const after = nextRow(grid, r);
     if (head && after[0] === 'Trip' && after[1] === 'Month') {
-      current = { name: head, summary: null };
+      current = { name: head, summary: null, questions: [] };
       programmes.push(current);
       mode = null;
       continue;
@@ -182,13 +192,17 @@ function readProgrammes(grid) {
     if (mode === 'scores' && header && row[0] && current) {
       const scores = [];
       const facts = [];
+      // "Not asked" (not on this trip's form) is kept apart from "—" (no
+      // answer yet), so the Ratings table can say which it is.
+      const notAsked = [];
       header.forEach((q, c) => {
         if (!q || FIXED.test(q)) return;
         const v = g[c];
         if (num(v) != null) scores.push({ q, v: num(v) });
-        else if (text(v) && !/^not asked$/i.test(text(v)) && text(v) !== '—') facts.push({ q, text: text(v) });
+        else if (/^not asked$/i.test(text(v))) notAsked.push(q);
+        else if (text(v) && text(v) !== '—') facts.push({ q, text: text(v) });
       });
-      scored.set(tripId(row[0], monthKey(row[1])), { template: current.name, scores, facts });
+      scored.set(tripId(row[0], monthKey(row[1])), { template: current.name, scores, facts, notAsked });
     }
   }
   return { programmes, scored, comments, quiet, items };
@@ -213,6 +227,7 @@ function build(sheets) {
       template: s.template || null,
       scores: s.scores || [],
       facts: s.facts || [],
+      notAsked: s.notAsked || [],
       items: prog.items.get(id) || [],
       comments: mine.length,
       escalations: mine.filter((c) => c.escalate).length,
@@ -223,7 +238,7 @@ function build(sheets) {
   for (const [id, s] of prog.scored) {
     if (trips.some((t) => t.id === id)) continue;
     const [name, month] = id.split('|');
-    trips.push({ id, name, month, template: s.template, programme: s.template, scores: s.scores, facts: s.facts, items: prog.items.get(id) || [], comments: 0, escalations: 0, noComments: null });
+    trips.push({ id, name, month, template: s.template, programme: s.template, scores: s.scores, facts: s.facts, notAsked: s.notAsked, items: prog.items.get(id) || [], comments: 0, escalations: 0, noComments: null });
   }
   trips.sort((a, b) => b.month.localeCompare(a.month));
 

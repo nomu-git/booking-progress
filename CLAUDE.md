@@ -510,7 +510,16 @@ by their content, not their names:
   `Kind — Source[ — ESCALATE]` / text rows), then an `Item | Type | Score`
   itinerary table of named hotels and excursions. Text cells in the score
   table ("2/2 positive", "Penglipuran 3.00") are kept as facts; "Not asked"
-  and "—" are dropped. Trips join across tabs on name + month.
+  goes in the trip's `notAsked` list and "—" is dropped. Each programme
+  carries its `questions` in the sheet's column order. Trips join across
+  tabs on name + month.
+- **Pitfall, hit once:** the fixed leading columns (Trip, Month,
+  Responses..., Overall..., Satisfaction %) are matched **whole** (`FIXED`
+  in `api/feedback.js`). A prefix match on "trip" silently dropped the
+  "Trip Manual / On-boarding Pack" and "Trip Testimonials" questions from
+  every survey until the Ratings view listed them. The build was
+  cross-checked afterwards: all 105 numeric question cells in the sheet
+  reach the payload.
 - **Coverage Gaps** (trips with no survey) is **not read**. It had its own
   "No survey" sub-tab and an Overview tile at first; Anton had both removed
   (30 Sep 2026).
@@ -528,7 +537,7 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
   it without being asked. It's flagged ⚑ Escalate with a red edge, and the
   Overview's red callout has a "Read it" button that opens What people
   wrote. The sheet's "Notes" bullets are still not sent (nothing uses them).
-- UI, two sub-tabs (`fbSub`: `'overview' | 'comments'`):
+- UI, three sub-tabs (`fbSub`: `'overview' | 'ratings' | 'comments'`):
   - **Overview**: tiles (Satisfaction with a bar, Trips reported,
     Responses), a red escalation callout, a By trip table grouped by month
     (Trip | Overall 1–5 | Responses | Response rate | Comments with a red
@@ -536,6 +545,14 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
     hotel/activity scores and the text facts, and a Lowest scores list
     (everything under 4.0, lowest first; matches the sheet's own "weakest
     items" note).
+  - **Ratings** (Anton asked to see every question per trip): one table
+    per survey (Building / Medical, Teaching, Wellness, Explorer), a row per
+    question and a column per trip, Overall satisfaction first. Scores get
+    a band-coloured bar and the number; text answers show as the sheet has
+    them; "Not asked" / "—" per cell. A question none of the survey's trips
+    was asked is left out. The question column is sticky so trips scroll
+    under it on a phone. A trip with no answers (Bali Building MKS B2B) is
+    named under its table instead of getting an empty column.
   - **What people wrote**: Programme and Type filters (each button counts
     given the other), comments grouped programme > trip, verbatim.
 - Score bars use the sheet's own bands (4.0+ / 3.0–3.9 / under 3.0) in the
