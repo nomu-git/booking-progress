@@ -30,12 +30,12 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~190,000 characters. Nine tabs in three categories,
+  `<script>`, no bundler. ~215,000 characters. Ten tabs in three categories,
   in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
   holds the `data-view` buttons `setView()` drives):
   - **BOOKING**: Booking, Report, Previous Projects
-  - **OPERATIONS**: Trips & R&D, Feedback (group added 30 Sep 2026; Trips
-    & R&D moved here from Booking)
+  - **OPERATIONS**: Trips & R&D, Feedback, Trip Revenue (group added 30 Sep
+    2026; Trips & R&D moved here from Booking)
   - **AD CAMPAIGN**: Ads, History Campaign, Leads, Engagements
 
   (Sidebar labels only, both renamed by Muatasam, 30 Sep 2026:
@@ -57,6 +57,16 @@ no framework.
   body padding and the sidebar offset; the tooltip and modal stay at body
   level because they're fixed-position overlays.
 - `api/*.js`: **endpoints only.** CommonJS Vercel functions (`module.exports = async (req, res) => {...}`).
+- **Sheet-mirror tabs all go through one function, `api/sheets.js?name=`**
+  (`leads`, `engagements`, `trips`, `feedback`, `revenue`). Each tab's
+  builder lives in `lib/tabs/<name>.js` and exports `{ build, envVar, ttl }`;
+  `api/sheets.js` fetches the workbook from that env var, caches per tab,
+  and serves stale on error. The page fetches `/api/sheets?name=<name>`
+  (`&refresh=1` to bypass the cache); `vercel.json` rewrites the old
+  `/api/leads`, `/api/engagements`, `/api/trips`, `/api/feedback` URLs to
+  it. **A new sheet tab = a new `lib/tabs/<name>.js` plus one line in
+  `TABS`, never a new file in `api/`.** Merged 30 Sep 2026 when the site
+  sat at exactly 12 functions and Trip Revenue would have been the 13th.
 - `lib/*.js`: shared helpers (`wetravel`, `meta-ads`, `trip-code`, `xlsx`,
   `sheet`), required as `require('../lib/…')`. They live outside
   `api/` on purpose: Vercel turns **every** file in `api/` into a function,
@@ -363,7 +373,7 @@ webhooks.
   message. **SharePoint grants anonymous access through a guest cookie set
   on the first redirect**, and the next hop 403s without it; `fetch`
   doesn't carry cookies across redirects, so they're followed by hand.
-- `api/leads.js` serves the **Leads tab** (Ad Campaign group). The workbook
+- `lib/tabs/leads.js` builds the **Leads tab** (Ad Campaign group). The workbook
   ("Leads Feedback & Report_Nomuhub _2026", in the nomuhub1 SharePoint site
   under `02. Marketing/01 B2C/1. Volunteer Database`) has three kinds of
   tab, detected by their headers, not their names:
@@ -393,7 +403,7 @@ webhooks.
 - **Tapping a day** in the daily chart shows that day's breakdown in the
   table, which sits directly under the daily chart (Muatasam: "When I press
   daily should show daily leads breakdown in table below"); tapping it
-  again, or "Whole week", goes back. Each `days[]` entry in `/api/leads`
+  again, or "Whole week", goes back. Each `days[]` entry in `/api/sheets?name=leads`
   carries its own `projects`. Shares are of the rows shown, so they always
   total 100% even when the sheet's own Total disagrees.
 - The **Leads by project** table puts the count straight after the name,
@@ -417,7 +427,7 @@ webhooks.
 
 ## Engagements tab
 
-`api/engagements.js`, same idea as Leads: mirrors **Maryam's** social media
+`lib/tabs/engagements.js`, same idea as Leads: mirrors **Maryam's** social media
 workbook ("Marketing Data: Social Media Nomuhub", nomuhub1 SharePoint) live
 from `ENGAGEMENT_SHEET_URL`. Two tabs, detected by headers: **Posts** (Content
 Name, languages, Content Type, Post Date, Views, Likes, Comments, Shares,
@@ -450,7 +460,7 @@ Story Engagement Question).
 
 ## Trips tab
 
-`api/trips.js` mirrors the **"NomuHub Trip Decision Dashboard"** workbook
+`lib/tabs/trips.js` mirrors the **"NomuHub Trip Decision Dashboard"** workbook
 ("which products to grow, optimise, or stop") from `TRIPS_SHEET_URL`.
 
 - The master tab is found by a header row with TRIP NAME and QUALITY (it
@@ -495,7 +505,7 @@ Story Engagement Question).
 
 ## Feedback tab
 
-`api/feedback.js` mirrors the **"NomuHub — 2026 Feedback"** workbook (trip
+`lib/tabs/feedback.js` mirrors the **"NomuHub — 2026 Feedback"** workbook (trip
 survey results) from `FEEDBACK_SHEET_URL`. Two of its tabs are read, found
 by their content, not their names:
 
@@ -515,7 +525,7 @@ by their content, not their names:
   tabs on name + month.
 - **Pitfall, hit once:** the fixed leading columns (Trip, Month,
   Responses..., Overall..., Satisfaction %) are matched **whole** (`FIXED`
-  in `api/feedback.js`). A prefix match on "trip" silently dropped the
+  in `lib/tabs/feedback.js`). A prefix match on "trip" silently dropped the
   "Trip Manual / On-boarding Pack" and "Trip Testimonials" questions from
   every survey until the Ratings view listed them. The build was
   cross-checked afterwards: all 105 numeric question cells in the sheet
@@ -567,11 +577,50 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
   URL with no login.** No traveller names are in the sheet. Flagged to
   Anton when it was built; he chose to proceed.
 
-**Function budget: 12 of Vercel Hobby's 12, the cap.** The next endpoint
-won't deploy (and the failure is silent from the site, see Known pitfalls)
-unless something is merged first. The four sheet-mirror endpoints (leads,
-engagements, trips, feedback) all share `lib/sheet.js` and could become one
-`api/sheets.js?name=` to free three slots.
+## Trip Revenue tab
+
+`lib/tabs/revenue.js` mirrors the **"NomuHub Trips 2026"** revenue workbook
+from `REVENUE_SHEET_URL` (Operations group, `data-view="revenue"`).
+
+- The **Trips** sheet is the source: found by a header row with Trip,
+  Revenue and Expenses; columns matched by name (#, Month, Trip,
+  Destination, Program, Start, End, Weeks, Project Manager, Trip Revenue,
+  Actual Expenses, Profit, Profit %, Gain / Loss). The TOTAL row is skipped
+  and recomputed. The **Dashboard** sheet is formulas over those rows, so
+  totals and the month / programme / manager breakdowns are recomputed from
+  the rows, not scraped. **Settings** gives the currency label (USD today;
+  anything else is shown as a code prefix).
+- Verified against the sheet's own Dashboard on 30 Sep 2026: all five KPIs
+  (39 trips, $195,037.11 revenue, $131,917.86 expenses, $63,119.25 profit,
+  32.4% margin) and all 23 month / programme / manager rows match.
+- Blank revenue/expenses count as 0 in sums, as the sheet does. Trips with
+  no project manager get a "Not assigned" row (10 today) so the manager
+  table adds up to the same total; the sheet's own manager table leaves
+  them out.
+- UI, two sub-tabs (`rvSub`: `'overview' | 'trips'`):
+  - **Overview**: tiles (Revenue, Expenses, Net profit, Margin, Trips with
+    "N not entered yet"), a year bar split Expenses / Profit, an amber
+    callout listing trips that have **ended** (end < today) with the
+    result still "Not entered", then By month, By programme and By project
+    manager tables (Revenue | Profit | Margin | bar | Expenses | Trips,
+    programme and manager sorted by revenue).
+  - **All trips**: Programme / Manager / Result filters (counts given the
+    other two), rows grouped by month, a TOTAL of what's shown.
+- The bar is the row's revenue: expenses (`--q-none` slate) plus profit
+  (`--q-high` green), or on a loss revenue in slate and the expense overrun
+  in `--q-low` red. One scale per table. Result shows a glyph + label
+  (▲ Gain, ▼ Loss, ■ Break-even, ○ Not entered). Negative money and
+  margins use a true minus (−). Dates are "6 Sep" built by hand (en-GB
+  gives "Sept"). Classes are prefixed `rv-`.
+- Sheet quirks, shown as the sheet has them and flagged to Anton, not
+  corrected: ~10 trips that didn't run (or whose figures are missing) sit
+  at $0 revenue and read **"Break-even"** in the sheet; "Bali| Building,
+  B2B Trip MKS" has Destination ZNZ; two rows are both numbered 6.
+- **This tab puts company revenue, costs and profit per trip and per
+  manager on a public URL with no login.** Flagged to Anton when built.
+
+**Function budget: 9 of Vercel Hobby's 12** after the sheets merge (see
+Architecture). New sheet tabs don't add to it.
 
 ## Open items waiting on Muatasam
 

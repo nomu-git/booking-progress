@@ -302,7 +302,7 @@
      and those tabs' panels have touched since; Previous Projects and Leads
      never had it. */
   #previousWrap > .panel, #campaignsWrap > .panel,
-  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel { margin-bottom: 12px; }
+  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel, #revenueWrap > .panel { margin-bottom: 12px; }
   .ptitle {
     font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-3); margin-bottom: 10px;
@@ -989,6 +989,39 @@
   .fb-kind { padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: #fff; background: rgba(255,255,255,.08); }
   .fb-kind.fb-k-concern { background: color-mix(in srgb, var(--q-low) 35%, transparent); }
   .fb-kind.fb-k-suggestion { background: color-mix(in srgb, var(--yellow) 28%, transparent); }
+  /* ---------- trip revenue ----------
+     One bar per row is the row's revenue: expenses (neutral slate) plus
+     profit (status green), or on a loss, revenue in slate and the expense
+     overrun in status red. The numbers sit in their own columns, so colour
+     is never the only signal. */
+  #revenueWrap .ctable th.rv-l, #revenueWrap .ctable td.rv-l { text-align: left; }
+  #revenueWrap .ctable td.cname { min-width: 170px; }
+  #revenueWrap .ctable tr.rv-month td {
+    background: transparent; border-bottom: 0; text-align: left; padding: 14px 10px 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+  }
+  .rv-bar { display: flex; gap: 2px; width: 180px; height: 10px; border-radius: 5px; overflow: hidden; background: var(--track); }
+  .rv-bar.big { width: 100%; height: 24px; border-radius: 6px; margin: 16px 0 8px; }
+  .rv-bar > div { min-width: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #0b1a2e; overflow: hidden; white-space: nowrap; }
+  .rv-exp { background: var(--q-none); }
+  .rv-pro { background: var(--q-high); }
+  .rv-loss { background: var(--q-low); }
+  .rv-leg { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11.5px; color: var(--text-2); }
+  .rv-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .rv-leg b { color: #fff; font-variant-numeric: tabular-nums; }
+  .rv-na { color: var(--text-3); }
+  .rv-res { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+  .rv-res i { font-style: normal; font-size: 9px; }
+  .rv-alert {
+    margin-top: 16px; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--q-med);
+    background: color-mix(in srgb, var(--q-med) 10%, transparent); font-size: 12.5px; line-height: 1.55; color: var(--text-2);
+  }
+  .rv-alert b { color: #fff; }
+  @media (max-width: 600px) {
+    .rv-bar { width: 120px; }
+    #revenueWrap .ctable td.cname { min-width: 140px; }
+  }
+
   /* Ratings: a row per question, a column per trip. The question column
      stays put while the trips scroll sideways. */
   #feedbackWrap .fb-matrix th.fb-trip-h { white-space: normal; min-width: 118px; max-width: 150px; text-align: left; vertical-align: bottom; line-height: 1.3; }
@@ -1034,6 +1067,7 @@
         <div class="sb-cat">Operations</div>
         <button class="sb-item" data-view="trips" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg><span class="sb-label">Trips &amp; R&amp;D</span></button>
         <button class="sb-item" data-view="feedback" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="sb-label">Feedback</span></button>
+        <button class="sb-item" data-view="revenue" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg><span class="sb-label">Trip Revenue</span></button>
       </div>
       <div class="sb-group">
         <div class="sb-cat">Ad Campaign</div>
@@ -1090,6 +1124,7 @@
   <div id="engagementsWrap" hidden></div>
   <div id="tripsWrap" hidden></div>
   <div id="feedbackWrap" hidden></div>
+  <div id="revenueWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   </div>
@@ -1162,7 +1197,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'previous', 'trips', 'feedback', 'campaigns', 'history', 'leads', 'engagements'].includes(s.view)) view = s.view;
+      if (['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements'].includes(s.view)) view = s.view;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -1915,6 +1950,17 @@
     fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
     fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
     fbQuestion: ['Question', "Each question on this programme's survey, in the sheet's order. Scores are the average of the people who answered, 1 to 5; text answers are the sheet's own summary. Not asked means the question isn't on that trip's form."],
+    rvRevenue: ['Revenue', "What the trip brought in, from the Trip Revenue sheet. Trips not filled in yet count as nothing."],
+    rvExpenses: ['Expenses', 'What the trip actually cost to run, from the sheet.'],
+    rvProfit: ['Profit', 'Revenue minus expenses. Negative is a loss.'],
+    rvMargin: ['Margin', 'Profit as a share of revenue. Blank when there is no revenue to divide by.'],
+    rvTrips: ['Trips', 'Departures in this group, including ones not filled in yet.'],
+    rvSplit: ['Expenses and profit', 'The bar is revenue: expenses in grey plus profit in green. On a loss the expenses run past revenue and the overrun is red. Bars share one scale within each table.'],
+    rvResult: ['Result', "Gain, Loss or Break-even as the sheet works it out, or Not entered when the trip's figures aren't in yet. A trip with no revenue and no expenses reads Break-even in the sheet."],
+    rvManager: ['Project manager', 'Who ran the trip, as picked in the sheet. Not assigned means none was picked.'],
+    rvMonth: ['Month', 'The month the sheet files the trip under (its start month).'],
+    rvProgramme: ['Programme', 'Building, Explore, Medical, Teaching or Wellness, as the sheet has it.'],
+    rvTrip: ['Trip', 'The trip as the sheet names it, with destination, programme and dates underneath.'],
     fbLow: ['Lowest scores', 'Every question, hotel or activity that averaged under 4.0, lowest first.'],
     stResult: ['Result', 'What the audience said, as Maryam recorded it (poll percentages, or the replies received).'],
   };
@@ -2684,7 +2730,7 @@
 
   async function loadLeads(force) {
     try {
-      const res = await fetch('/api/leads' + (force ? '?refresh=1' : ''));
+      const res = await fetch('/api/sheets?name=leads' + (force ? '&refresh=1' : ''));
       const p = await res.json();
       if (!res.ok && !p.weeks) throw new Error(p.error || `HTTP ${res.status}`);
       leads = p;
@@ -2897,7 +2943,7 @@
 
   async function loadEngagements(force) {
     try {
-      const res = await fetch('/api/engagements' + (force ? '?refresh=1' : ''));
+      const res = await fetch('/api/sheets?name=engagements' + (force ? '&refresh=1' : ''));
       const p = await res.json();
       if (!res.ok && !p.posts) throw new Error(p.error || `HTTP ${res.status}`);
       engagements = p;
@@ -3168,7 +3214,7 @@
 
   async function loadTrips(force) {
     try {
-      const res = await fetch('/api/trips' + (force ? '?refresh=1' : ''));
+      const res = await fetch('/api/sheets?name=trips' + (force ? '&refresh=1' : ''));
       const p = await res.json();
       if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
       tripsData = p;
@@ -3401,13 +3447,227 @@
 
   async function loadFeedback(force) {
     try {
-      const res = await fetch('/api/feedback' + (force ? '?refresh=1' : ''));
+      const res = await fetch('/api/sheets?name=feedback' + (force ? '&refresh=1' : ''));
       const p = await res.json();
       if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
       feedback = p;
       renderFeedback();
     } catch (err) {
       if (!feedback) $('feedbackWrap').innerHTML = `<div class="msg err">Could not load feedback: ${esc(err.message)}</div>`;
+    }
+  }
+
+  /* ================= trip revenue tab (revenue sheet) ================= */
+
+  let revData = null;
+  // Which sub-tab of Trip Revenue is open: 'overview' or 'trips'.
+  let rvSub = 'overview';
+  const rvFilter = { programme: 'all', manager: 'all', result: 'all' };
+  const RV_NONE = 'Not assigned';
+
+  const rvMoney = (n) => {
+    if (n == null) return '—';
+    const cur = revData && revData.currency && revData.currency !== 'USD' ? `${revData.currency} ` : '$';
+    return `${n < 0 ? '−' : ''}${cur}${int(Math.abs(n))}`;
+  };
+  // Same minus sign as the money figures beside it.
+  const rvPct = (n) => (n == null ? '—' : pct(n).replace('-', '−'));
+  const rvMonth = (key) => {
+    const [y, m] = String(key).split('-').map(Number);
+    return y && m ? new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'No month';
+  };
+  // "6 Sep" by hand: en-GB spells September "Sept".
+  const RV_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const rvDay = (iso) => `${Number(iso.slice(8, 10))} ${RV_MON[Number(iso.slice(5, 7)) - 1]}`;
+  const rvDates = (t) => (t.start && t.end ? `${rvDay(t.start)} – ${rvDay(t.end)}` : '');
+  const RV_RESULT = {
+    Gain: { c: 'var(--q-high)', g: '▲' },
+    Loss: { c: 'var(--q-low)', g: '▼' },
+    'Break-even': { c: 'var(--q-none)', g: '■' },
+  };
+  const rvResult = (r) => {
+    if (!r) return '<span class="rv-na">—</span>';
+    const st = RV_RESULT[r];
+    return st ? `<span class="rv-res"><i style="color:${st.c}">${st.g}</i>${esc(r)}</span>` : `<span class="rv-res rv-na">○ ${esc(r)}</span>`;
+  };
+
+  // The row's revenue as one bar, scaled to the largest revenue or expense
+  // in its table: expenses plus profit, or revenue plus the loss beyond it.
+  function rvBar(g, max, name, big) {
+    const rev = g.revenue || 0;
+    const exp = g.expenses || 0;
+    if (!rev && !exp) return big ? '' : '<span class="rv-na">no figures</span>';
+    const w = (v) => `${Math.max(0, (v / max) * 100).toFixed(2)}%`;
+    const tip = tipOf(name, [['Revenue', rvMoney(g.revenue)], ['Expenses', rvMoney(g.expenses)], ['Profit', rvMoney(g.profit)], ['Margin', g.margin == null ? '—' : rvPct(g.margin)]]);
+    const lab = (v, text) => (big && v / max >= 0.12 ? text : '');
+    const segs = rev >= exp
+      ? `<div class="rv-exp" style="width:${w(exp)}">${lab(exp, 'Expenses')}</div>${rev > exp ? `<div class="rv-pro" style="width:${w(rev - exp)}">${lab(rev - exp, 'Profit')}</div>` : ''}`
+      : `<div class="rv-exp" style="width:${w(rev)}">${lab(rev, 'Revenue')}</div><div class="rv-loss" style="width:${w(exp - rev)}">${lab(exp - rev, 'Loss')}</div>`;
+    return `<div class="rv-bar${big ? ' big' : ''}" ${tip}>${segs}</div>`;
+  }
+
+  function renderRevenue() {
+    const p = revData;
+    if (!p) return;
+    if (p.error && !p.trips) {
+      $('revenueWrap').innerHTML = `<div class="msg err">Could not load trip revenue: ${esc(p.error)}</div>`;
+      return;
+    }
+    const t = p.totals;
+    const today = String(p.asOf).slice(0, 10);
+    // Trips that have finished but whose figures aren't in yet: the ones to
+    // chase, and the reason recent months read low.
+    const overdue = p.trips.filter((x) => /not entered/i.test(x.result || '') && x.end && x.end < today);
+    const notEntered = p.trips.filter((x) => /not entered/i.test(x.result || '')).length;
+
+    const groupTable = (title, helpKey, head, rows, labelOf) => {
+      const max = Math.max(0, ...rows.map((g) => Math.max(g.revenue || 0, g.expenses || 0)));
+      const body = rows.map((g) => `
+        <tr>
+          <td class="cname">${esc(labelOf(g))}</td>
+          <td class="num"><b>${g.revenue || g.expenses ? rvMoney(g.revenue) : '<span class="rv-na">—</span>'}</b></td>
+          <td class="num">${g.revenue || g.expenses ? rvMoney(g.profit) : '—'}</td>
+          <td class="num">${g.margin == null ? '—' : rvPct(g.margin)}</td>
+          <td class="rv-l">${rvBar(g, max, labelOf(g))}</td>
+          <td class="num">${g.revenue || g.expenses ? rvMoney(g.expenses) : '—'}</td>
+          <td class="num">${int(g.trips)}</td>
+        </tr>`).join('');
+      return `
+      <div class="panel">
+        <div class="ptitle">${title}</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              ${hcol(helpKey, head)}${hcol('rvRevenue', 'Revenue')}${hcol('rvProfit', 'Profit')}${hcol('rvMargin', 'Margin')}
+              <th class="rv-l"><span ${hlp('rvSplit')}>Expenses and profit</span></th>${hcol('rvExpenses', 'Expenses')}${hcol('rvTrips', 'Trips')}
+            </tr></thead>
+            <tbody>${body}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL</td><td class="num">${rvMoney(t.revenue)}</td><td class="num">${rvMoney(t.profit)}</td>
+              <td class="num">${t.margin == null ? '—' : rvPct(t.margin)}</td><td></td><td class="num">${rvMoney(t.expenses)}</td><td class="num">${int(t.trips)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>`;
+    };
+    const byRevenue = (a, b) => (a.key == null) - (b.key == null) || (b.revenue || 0) - (a.revenue || 0);
+
+    const overviewHtml = `
+      <div class="panel">
+        <div class="ptitle">Trip revenue · ${esc(String((p.byMonth[0] && p.byMonth[0].key) || p.asOf).slice(0, 4))} · ${esc(p.currency || 'USD')}</div>
+        <div class="bvhero trp-tiles">
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvRevenue')}>Revenue</span></div><div class="bv-n bv-act">${rvMoney(t.revenue)}</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvExpenses')}>Expenses</span></div><div class="bv-n">${rvMoney(t.expenses)}</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvProfit')}>Net profit</span></div><div class="bv-n">${rvMoney(t.profit)}</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvMargin')}>Margin</span></div><div class="bv-n">${t.margin == null ? '—' : rvPct(t.margin)}</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvTrips')}>Trips</span></div><div class="bv-n">${int(t.trips)}</div><div class="bv-s">${int(notEntered)} not entered yet</div></div>
+        </div>
+        ${rvBar(t, Math.max(t.revenue || 0, t.expenses || 0), 'Year to date', true)}
+        <div class="rv-leg"><span><i class="rv-exp"></i>Expenses <b>${rvMoney(t.expenses)}</b></span><span><i class="${t.profit < 0 ? 'rv-loss' : 'rv-pro'}"></i>${t.profit < 0 ? 'Loss' : 'Profit'} <b>${rvMoney(t.profit)}</b></span></div>
+        ${overdue.length ? `<div class="rv-alert"><b>${int(overdue.length)} trip${overdue.length === 1 ? ' has' : 's have'} ended with no figures entered</b> · ${overdue.map((x) => esc(`${x.name} (${rvDates(x)})`)).join('; ')}</div>` : ''}
+      </div>
+      ${groupTable('By month', 'rvMonth', 'Month', p.byMonth, (g) => rvMonth(g.key))}
+      ${groupTable('By programme', 'rvProgramme', 'Programme', [...p.byProgramme].sort(byRevenue), (g) => g.key || 'No programme')}
+      ${groupTable('By project manager', 'rvManager', 'Project manager', [...p.byManager].sort(byRevenue), (g) => g.key || RV_NONE)}`;
+
+    // ---- all trips ----
+    const valOf = (x, key) => (key === 'manager' ? x.manager || RV_NONE : x[key] || '—');
+    const opts = (key) => {
+      const list = [...new Set(p.trips.map((x) => valOf(x, key)))];
+      if (key === 'result') {
+        const order = ['Gain', 'Loss', 'Break-even', 'Not entered'];
+        return list.sort((a, b) => ((order.indexOf(a) + 1) || 99) - ((order.indexOf(b) + 1) || 99));
+      }
+      return list.sort((a, b) => (a === RV_NONE) - (b === RV_NONE) || a.localeCompare(b));
+    };
+    const lists = { programme: opts('programme'), manager: opts('manager'), result: opts('result') };
+    for (const k of Object.keys(lists)) if (rvFilter[k] !== 'all' && !lists[k].includes(rvFilter[k])) rvFilter[k] = 'all';
+    const passes = (x, skip) => Object.keys(lists).every((k) => k === skip || rvFilter[k] === 'all' || valOf(x, k) === rvFilter[k]);
+    // Each button counts what it would show given the other two filters.
+    const pills = (key) => ['all', ...lists[key]].map((v) => {
+      const n = p.trips.filter((x) => passes(x, key) && (v === 'all' || valOf(x, key) === v)).length;
+      return `<button data-rv-f="${key}" data-rv-v="${attr(v)}" aria-pressed="${rvFilter[key] === v}">${v === 'all' ? 'All' : esc(v)} <span class="ecount">${n}</span></button>`;
+    }).join('');
+    const shown = p.trips.filter((x) => passes(x));
+    const max = Math.max(0, ...p.trips.map((x) => Math.max(x.revenue || 0, x.expenses || 0)));
+    const COLS = 8;
+    let month = null;
+    const tripRows = shown.map((x) => {
+      const head = x.month !== month ? `<tr class="rv-month"><td colspan="${COLS}">${esc(rvMonth(x.month))}</td></tr>` : '';
+      month = x.month;
+      const has = x.revenue != null || x.expenses != null;
+      return `${head}
+      <tr>
+        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc([x.destination, x.programme, rvDates(x)].filter(Boolean).join(' · '))}</span></td>
+        <td class="num"><b>${has ? rvMoney(x.revenue) : '<span class="rv-na">—</span>'}</b></td>
+        <td class="num">${has ? rvMoney(x.profit) : '—'}</td>
+        <td class="num">${x.margin == null ? '—' : rvPct(x.margin)}</td>
+        <td class="rv-l">${has ? rvBar(x, max, x.name) : ''}</td>
+        <td class="num">${x.expenses == null ? '—' : rvMoney(x.expenses)}</td>
+        <td class="rv-l">${rvResult(x.result)}</td>
+        <td class="rv-l">${esc(x.manager || RV_NONE)}</td>
+      </tr>`;
+    }).join('');
+    const sub = shown.reduce((a, x) => ({ revenue: a.revenue + (x.revenue || 0), expenses: a.expenses + (x.expenses || 0), profit: a.profit + (x.profit || 0) }), { revenue: 0, expenses: 0, profit: 0 });
+    const tripsHtml = `
+      <div class="panel">
+        <div class="ptitle">All trips · ${int(shown.length)} of ${int(p.trips.length)}</div>
+        <div class="efilters">
+          <div class="efilter"><span class="efl">Programme</span><div class="seg">${pills('programme')}</div></div>
+          <div class="efilter"><span class="efl">Manager</span><div class="seg">${pills('manager')}</div></div>
+          <div class="efilter"><span class="efl">Result</span><div class="seg">${pills('result')}</div></div>
+        </div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              ${hcol('rvTrip', 'Trip')}${hcol('rvRevenue', 'Revenue')}${hcol('rvProfit', 'Profit')}${hcol('rvMargin', 'Margin')}
+              <th class="rv-l"><span ${hlp('rvSplit')}>Expenses and profit</span></th>${hcol('rvExpenses', 'Expenses')}
+              <th class="rv-l"><span ${hlp('rvResult')}>Result</span></th><th class="rv-l"><span ${hlp('rvManager')}>Manager</span></th>
+            </tr></thead>
+            <tbody>${tripRows || `<tr><td class="cname" colspan="${COLS}">No trips match these filters.</td></tr>`}</tbody>
+            ${shown.length ? `<tfoot><tr>
+              <td class="cname">TOTAL</td><td class="num">${rvMoney(sub.revenue)}</td><td class="num">${rvMoney(sub.profit)}</td>
+              <td class="num">${sub.revenue ? rvPct(sub.profit / sub.revenue) : '—'}</td><td></td><td class="num">${rvMoney(sub.expenses)}</td><td></td><td></td>
+            </tr></tfoot>` : ''}
+          </table>
+        </div>
+      </div>`;
+
+    const subtabs = `
+      <div class="seg subtabs" role="tablist" aria-label="Trip revenue sections">
+        <button role="tab" data-rv-sub="overview" aria-pressed="${rvSub === 'overview'}" aria-selected="${rvSub === 'overview'}">Overview</button>
+        <button role="tab" data-rv-sub="trips" aria-pressed="${rvSub === 'trips'}" aria-selected="${rvSub === 'trips'}">All trips <span class="ecount">${int(p.trips.length)}</span></button>
+      </div>`;
+
+    $('revenueWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
+      ${subtabs}
+      ${rvSub === 'trips' ? tripsHtml : overviewHtml}`;
+
+    bindHelp($('revenueWrap'));
+    $('revenueWrap').querySelectorAll('[data-rv-sub]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (rvSub === b.dataset.rvSub) return;
+        rvSub = b.dataset.rvSub;
+        renderRevenue();
+        const bar = $('revenueWrap').querySelector('.subtabs');
+        if (bar && bar.getBoundingClientRect().top < 0 && typeof bar.scrollIntoView === 'function') bar.scrollIntoView({ block: 'start' });
+      });
+    });
+    $('revenueWrap').querySelectorAll('[data-rv-f]').forEach((b) => {
+      b.addEventListener('click', () => { rvFilter[b.dataset.rvF] = b.dataset.rvV; renderRevenue(); });
+    });
+  }
+
+  async function loadRevenue(force) {
+    try {
+      const res = await fetch('/api/sheets?name=revenue' + (force ? '&refresh=1' : ''));
+      const p = await res.json();
+      if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
+      revData = p;
+      renderRevenue();
+    } catch (err) {
+      if (!revData) $('revenueWrap').innerHTML = `<div class="msg err">Could not load trip revenue: ${esc(err.message)}</div>`;
     }
   }
 
@@ -3435,6 +3695,7 @@
     $('engagementsWrap').hidden = view !== 'engagements';
     $('tripsWrap').hidden = view !== 'trips';
     $('feedbackWrap').hidden = view !== 'feedback';
+    $('revenueWrap').hidden = view !== 'revenue';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -3471,6 +3732,10 @@
       if (!feedback) $('feedbackWrap').innerHTML = '<div class="msg">Loading feedback…</div>';
       loadFeedback(false);
     }
+    if (view === 'revenue') {
+      if (!revData) $('revenueWrap').innerHTML = '<div class="msg">Loading trip revenue…</div>';
+      loadRevenue(false);
+    }
     // Keep the address bar in step, so a reload or a copied link lands on the
     // same tab. replaceState rather than the hash property: no history entry
     // per tab click, so Back still leaves the dashboard.
@@ -3493,6 +3758,7 @@
     if (engagements) loadEngagements(true);
     if (tripsData) loadTrips(true);
     if (feedback) loadFeedback(true);
+    if (revData) loadRevenue(true);
   });
 
   /* ================= sidebar ================= */
@@ -3553,7 +3819,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'campaigns', 'history', 'leads', 'engagements'];
+  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;
@@ -3585,6 +3851,7 @@
   setInterval(() => { if (engagements) loadEngagements(false); }, 300000);
   setInterval(() => { if (tripsData) loadTrips(false); }, 300000);
   setInterval(() => { if (feedback) loadFeedback(false); }, 300000);
+  setInterval(() => { if (revData) loadRevenue(false); }, 300000);
   // Re-render between fetches so a highlight lapses at its own 24h mark and the
   // "3h ago" text stays honest, without waiting on the server cache.
   setInterval(() => { if (latest) render(latest); }, 20000);
