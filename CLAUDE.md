@@ -455,14 +455,10 @@ Story Engagement Question).
   is its wording: the quality guide's "What it means" / "What we do with
   the calendar", and the per-trip "Calendar decision" from its products
   table, with the sheet's own text as fallback.
-- **Three sub-tabs** (`tripsSub`: `'overview' | 'rd' | 'products'`), so
-  the page isn't one long scroll: **Overview** (tiles, weeks bar, quality
-  guide, quality by region, and a one-line R&D callout with an "Open R&D
-  pipeline →" button), **R&D pipeline** (its own full-size view, since
-  Muatasam wanted it "more seen and kind of big"), and **All products**
-  (filters + the product list). Filters and opened Details are kept across
-  switches. Any `[data-trip-sub]` element switches sub-tab, which is how
-  the callout's button works.
+- **Two sub-tabs** (`tripsSub`), so the page isn't one long scroll:
+  **Overview** (tiles, weeks bar, quality guide, quality by region, R&D
+  pipeline) and **All products** (filters + the product list). Filters and
+  opened Details are kept across switches.
 - UI in the summary's reading order: tiles + a weeks-by-quality bar +
   the quality guide; quality by region (with a weeks mini-bar); R&D
   pipeline; all products with Region / Quality / Status filters (each
@@ -478,10 +474,6 @@ Story Engagement Question).
   the quality colours, which already mean High/Medium/Low on this tab.
   "Not sure (unknown)" as a PIC shows as "No owner yet". A status the board
   doesn't know gets its own row rather than disappearing.
-  The R&D sub-tab scales it all up under `.trp-big` (26px heading, 40px
-  tile numbers, 34px strip, bigger cards). Its tiles (In R&D, each stage,
-  Launching per year) are one grid row down to 720px, then wrap into a
-  120px-min grid, so no tile is left alone on a line.
 - Quality colours `--q-high/med/low` are the dataviz skill's fixed status
   steps; the dashboard's own green/amber/red failed the normal-vision
   floor (amber vs red 14.6). R&D is neutral blue. Every use has a glyph
