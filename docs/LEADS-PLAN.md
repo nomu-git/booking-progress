@@ -83,18 +83,36 @@ explicit requirement).
 
 ## Instagram engagement / impression stats (Maryam's weekly report)
 
-Two very different things depending on what the report actually contains:
+Seen the report (30 Sep 2026, "Marketing Data: Social Media Nomuhub
+(Posts).csv") — **organic content**, one row per post: Content Name,
+Content Language, Caption Language, Content Type, Post Date, Views, Likes,
+Comments, Shares, Bookmarks, Engagement %, CTA Present?, Cta Word.
 
-- **Ad engagement** (likes, comments, shares, video views, link clicks on
-  paid posts): possible **now** with the Marketing API access this dashboard
-  already uses in `lib/meta-ads.js`. Just more fields on a request that
-  already works.
-- **Organic account engagement** (posts that aren't ads, stories, profile
-  visits, follower growth, organic reach and impressions): needs
-  `instagram_basic` / `instagram_manage_insights`, and the Instagram account
-  connected to Business Manager, which it currently isn't.
+This is the **organic account engagement** case, not ad engagement — needs
+`instagram_basic` / `instagram_manage_insights` on the app, and the
+Instagram account connected to Business Manager, which it currently isn't
+(see the access audit below). It is a different permission from the
+Marketing API access this dashboard already has for Campaigns/History.
 
-Need a screenshot of Maryam's report to know which.
+Column by column, once that access exists:
+
+- **Automatic from Instagram's API**: Post Date, Likes, Comments, Shares
+  (not tracked on every post type), Bookmarks/Saves. Engagement % is
+  arithmetic once those are in (likes+comments+shares+saves over
+  views/reach) — computed here, not a separate fetch.
+- **Automatic, needs a defined rule**: Views. Instagram gives reach and
+  impressions for every post and a play count for Reels specifically, but
+  there's no one field called "Views" that means the same thing across a
+  Reel, a Carousel and a Static post the way this column implies. Content
+  Type is similar: the API's own media type (Reel/Carousel/Image) covers
+  most rows, but a category like "Photo dump" is Maryam's own label, not
+  a platform value.
+- **Permanently manual, no API will ever supply these**: Content Name (her
+  own short label, not the caption), Content Language, Caption Language,
+  CTA Present?, Cta Word. All editorial judgment about the content, not
+  platform metrics. Same shape as the Leads tab's qualified-lead problem:
+  sync what the platform knows, keep a light manual tag for what only a
+  person can classify.
 
 ## Access audit (via Cowork, 28 Sep 2026)
 
@@ -140,7 +158,8 @@ Need a screenshot of Maryam's report to know which.
       interested, Paid, Ghost, ...) already exist in the sheet and could
       feed a qualified-leads count, if Muatasam wants it
 - [ ] ManyChat check: Cowork prompt sent, waiting on results
-- [ ] Screenshot of Maryam's engagement report, to decide ad vs organic
+- [x] Seen Maryam's engagement report (30 Sep) — organic content, confirmed
+      needs instagram_basic/instagram_manage_insights, see above
 - [ ] Start Meta Business verification (Business Settings > Security Center)
 - [ ] Connect the Instagram account (Professional) to the Facebook Page and
       Business Manager
