@@ -1,0 +1,308 @@
+// Feedback tab: the "2026 Feedback" workbook (trip survey results), read live
+// from its SharePoint share link (FEEDBACK_SHEET_URL). Same approach as Leads,
+// Engagements and Trips: whoever keeps the workbook carries on as they do,
+// and the tab mirrors it.
+//
+// Three tabs, found by what's in them rather than their names or positions:
+//   - Summary: year-to-date satisfaction and one row per surveyed trip,
+//     under month headings ("Aug 2026").
+//   - By Programme: a block per survey template (Building / Medical,
+//     Teaching, Wellness, Explorer), each a table of per-question scores,
+//     then "what people wrote" (every comment, verbatim), then an itinerary
+//     table scoring each named hotel and excursion.
+//   - Coverage Gaps: trips that ran with no survey on file.
+//
+// Written comments leave this API, the site is public, and one kind of
+// comment is held back: anything the sheet marks ESCALATE. The sheet itself
+// says to escalate those "outside this dashboard" (the one there today
+// describes harassment and a staff member's clinical qualifications on a
+// named B2B trip), so only the fact that it exists is sent, never its text.
+// Set FEEDBACK_SHOW_ESCALATIONS=1 to send it anyway. The sheet's "Notes"
+// bullets aren't sent at all: they're working notes on method, and one of
+// them restates the escalated complaint in full.
+
+const { fetchWorkbook } = require('../lib/sheet');
+
+const CACHE_TTL_MS = Number(process.env.FEEDBACK_CACHE_TTL_MS || 60000);
+const SHOW_ESCALATIONS = process.env.FEEDBACK_SHOW_ESCALATIONS === '1';
+
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const text = (v) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+const cells = (row) => (row || []).map(text);
+const filled = (row) => cells(row).filter(Boolean);
+
+// "Aug 2026" -> "2026-08"; anything else -> null.
+const MONTH_RE = /^([A-Za-z]{3})[a-z]* (\d{4})$/;
+function monthKey(label) {
+  const m = MONTH_RE.exec(text(label));
+  if (!m) return null;
+  const i = MONTHS.indexOf(m[1].toLowerCase());
+  return i < 0 ? null : `${m[2]}-${String(i + 1).padStart(2, '0')}`;
+}
+
+// A heading row is a single filled cell.
+const single = (row) => (filled(row).length === 1 ? text((row || []).find((v) => text(v))) : null);
+
+// "2 / 3" -> { responses: 2, travellers: 3 }; "5 / 1" or "0 / N/A" kept as
+// text too, since the sheet uses N/A where the traveller count is unknown.
+function responses(v) {
+  const m = /^(\d+)\s*\/\s*(\d+|n\/a)$/i.exec(text(v));
+  return {
+    responses: m ? Number(m[1]) : null,
+    travellers: m && /^\d+$/.test(m[2]) ? Number(m[2]) : null,
+    responsesText: text(v) || null,
+  };
+}
+
+// "Trip name, Aug 2026" plus whatever follows: the comment headings
+// ("..., Aug 2026      (7 comments · 1 suggestion)"), a no-feedback line
+// ("..., Feb 2026  —  No written feedback: ...") and the itinerary labels.
+// The trip name can itself contain " — ", so the month is the anchor.
+function tripHeading(s) {
+  const m = /^(.*?), ([A-Z][a-z]{2} \d{4})(?:\s+\((.*)\)|\s+—\s+(.*))?$/.exec(text(s));
+  if (!m) return null;
+  return { name: m[1].trim(), month: monthKey(m[2]), counts: m[3] || null, note: m[4] || null };
+}
+
+const tripId = (name, month) => `${text(name).toLowerCase()}|${month}`;
+
+// The next row with anything in it, as text cells.
+function nextRow(grid, r) {
+  for (let k = r + 1; k < grid.length; k++) if (filled(grid[k]).length) return cells(grid[k]);
+  return [];
+}
+
+function readSummary(grid) {
+  const out = { kpis: [], trips: [] };
+  for (let r = 0; r < grid.length; r++) {
+    const row = cells(grid[r]);
+    // KPI labels sit in capitals with their values on the row beneath.
+    if (row.some((v) => /satisfaction/i.test(v)) && row.filter(Boolean).every((v) => v === v.toUpperCase())) {
+      const vals = grid[r + 1] || [];
+      row.forEach((label, c) => { if (label) out.kpis.push({ label, value: vals[c] ?? null }); });
+    }
+    if (row[0] === 'Trip' && row.some((v) => /^responses/i.test(v))) {
+      const col = (re) => row.findIndex((v) => re.test(v));
+      const c = {
+        rs: col(/^responses/i), rate: col(/^response rate/i), overall: col(/^overall/i),
+        sat: col(/^satisfaction/i), programme: col(/^programme/i),
+      };
+      let month = null;
+      for (let k = r + 1; k < grid.length; k++) {
+        const g = grid[k] || [];
+        const head = single(g);
+        if (head && monthKey(head)) { month = monthKey(head); continue; }
+        if (head && /^notes$/i.test(head)) break;
+        if (!text(g[0]) || !month) continue;
+        out.trips.push({
+          name: text(g[0]),
+          month,
+          ...responses(g[c.rs]),
+          responseRate: num(g[c.rate]),
+          overall: num(g[c.overall]),
+          satisfaction: num(g[c.sat]),
+          programme: c.programme >= 0 ? text(g[c.programme]) || null : null,
+        });
+      }
+      break;
+    }
+  }
+  return out;
+}
+
+const FIXED = /^(trip|month|responses|response rate|overall|satisfaction)/i;
+
+function readProgrammes(grid) {
+  const programmes = [];
+  const scored = new Map(); // tripId -> { template, scores, facts }
+  const comments = [];
+  const quiet = new Map(); // tripId -> "No written feedback: ..."
+  const items = new Map(); // tripId -> [{ item, type, score }]
+  let current = null; // programme block
+  let mode = null; // 'scores' | 'comments' | 'items' | 'notes'
+  let header = null;
+  let trip = null; // tripId for comments/items
+
+  for (let r = 0; r < grid.length; r++) {
+    const g = grid[r] || [];
+    const row = cells(g);
+    const head = single(g);
+    if (!row.some(Boolean)) continue;
+
+    if (row[0] === 'Trip' && row[1] === 'Month') { header = row; mode = 'scores'; continue; }
+    // A programme block starts with its name on the line above a Trip/Month
+    // table header.
+    const after = nextRow(grid, r);
+    if (head && after[0] === 'Trip' && after[1] === 'Month') {
+      current = { name: head, summary: null };
+      programmes.push(current);
+      mode = null;
+      continue;
+    }
+    if (row[0] === 'Item' && row[1] === 'Type') { mode = 'items'; trip = null; continue; }
+    if (head && /^notes$/i.test(head)) { mode = 'notes'; continue; }
+
+    if (head && /—\s*what people wrote$/i.test(head)) {
+      const name = head.replace(/\s*—\s*what people wrote$/i, '').trim();
+      current = programmes.find((p) => p.name === name) || current;
+      mode = 'comments';
+      trip = null;
+      // The line under the heading is the sheet's own summary of the asks.
+      const next = single(grid[r + 1]);
+      if (current && next && !tripHeading(next)) { current.summary = next; r++; }
+      continue;
+    }
+
+    if (head && head.startsWith('•')) continue;
+
+    if (mode === 'items') {
+      const th = head && tripHeading(head);
+      if (th) { trip = tripId(th.name, th.month); items.set(trip, []); continue; }
+      if (trip && row[0]) items.get(trip).push({ item: row[0], type: row[1] || null, score: num(g[2]) });
+      continue;
+    }
+
+    if (mode === 'comments') {
+      const th = head && tripHeading(head);
+      if (th) {
+        trip = tripId(th.name, th.month);
+        if (th.note) quiet.set(trip, th.note);
+        continue;
+      }
+      if (trip && row[0] && row[1]) {
+        // "Concern — Other comments — ESCALATE", "Praise — Ops team (Salim)"
+        const parts = row[0].split(/\s+—\s+/);
+        const escalate = parts.some((x) => /^escalate$/i.test(x));
+        const kind = parts[0];
+        const source = parts.slice(1).filter((x) => !/^escalate$/i.test(x)).join(' — ') || null;
+        comments.push({ trip, kind, source, escalate, text: escalate && !SHOW_ESCALATIONS ? null : row[1] });
+      }
+      continue;
+    }
+
+    if (mode === 'scores' && header && row[0] && current) {
+      const scores = [];
+      const facts = [];
+      header.forEach((q, c) => {
+        if (!q || FIXED.test(q)) return;
+        const v = g[c];
+        if (num(v) != null) scores.push({ q, v: num(v) });
+        else if (text(v) && !/^not asked$/i.test(text(v)) && text(v) !== '—') facts.push({ q, text: text(v) });
+      });
+      scored.set(tripId(row[0], monthKey(row[1])), { template: current.name, scores, facts });
+    }
+  }
+  return { programmes, scored, comments, quiet, items };
+}
+
+function readGaps(grid) {
+  const sections = [];
+  let sec = null;
+  let month = null;
+  let inNotes = false;
+  for (let r = 0; r < grid.length; r++) {
+    const g = grid[r] || [];
+    const row = cells(g);
+    const head = single(g);
+    if (!row.some(Boolean)) continue;
+    if (head && /^notes$/i.test(head)) { inNotes = true; continue; }
+    if (head && head.startsWith('•')) continue;
+    if (inNotes) continue;
+    if (row[0] === 'Trip' && row[1] === 'Programme') continue;
+    if (head && monthKey(head)) { month = monthKey(head); continue; }
+    // A section title is the heading right above a Trip/Programme header.
+    if (head && nextRow(grid, r)[0] === 'Trip') {
+      sec = { title: head, trips: [], total: null };
+      sections.push(sec);
+      month = null;
+      continue;
+    }
+    if (!sec) continue;
+    // "6 trips, 52 travellers, no feedback collected" closes the section.
+    if (/^\d+ trips?,/i.test(row[0])) { sec.total = row[0]; continue; }
+    if (row[0] && month) {
+      sec.trips.push({ name: row[0], month, programme: row[1] || null, travellers: num(g[2]) });
+    }
+  }
+  return sections;
+}
+
+function build(sheets) {
+  const find = (test) => sheets.find((s) => s.grid.some((row) => test(cells(row))));
+  const summarySheet = find((row) => row.some((v) => /year-to-date satisfaction/i.test(v)));
+  const byProgSheet = find((row) => row.some((v) => /—\s*what people wrote$/i.test(v)));
+  const gapsSheet = find((row) => row[0] === 'Trip' && row[1] === 'Programme' && /^travellers$/i.test(row[2] || ''));
+  if (!summarySheet) throw new Error('No tab with a YEAR-TO-DATE SATISFACTION figure found in the feedback workbook');
+
+  const summary = readSummary(summarySheet.grid);
+  const prog = byProgSheet ? readProgrammes(byProgSheet.grid) : { programmes: [], scored: new Map(), comments: [], quiet: new Map(), items: new Map() };
+  const gaps = gapsSheet ? readGaps(gapsSheet.grid) : [];
+
+  const trips = summary.trips.map((t) => {
+    const id = tripId(t.name, t.month);
+    const s = prog.scored.get(id) || {};
+    const mine = prog.comments.filter((c) => c.trip === id);
+    return {
+      id,
+      ...t,
+      template: s.template || null,
+      scores: s.scores || [],
+      facts: s.facts || [],
+      items: prog.items.get(id) || [],
+      comments: mine.length,
+      escalations: mine.filter((c) => c.escalate).length,
+      noComments: prog.quiet.get(id) || null,
+    };
+  });
+  // A trip that's only in By Programme (added there first) still shows.
+  for (const [id, s] of prog.scored) {
+    if (trips.some((t) => t.id === id)) continue;
+    const [name, month] = id.split('|');
+    trips.push({ id, name, month, template: s.template, programme: s.template, scores: s.scores, facts: s.facts, items: prog.items.get(id) || [], comments: 0, escalations: 0, noComments: null });
+  }
+  trips.sort((a, b) => b.month.localeCompare(a.month));
+
+  const kpi = (re) => summary.kpis.find((k) => re.test(k.label)) || null;
+  const nameOf = new Map(trips.map((t) => [t.id, t.name]));
+
+  return {
+    asOf: new Date().toISOString(),
+    totals: {
+      satisfaction: num(kpi(/satisfaction/i)?.value),
+      tripsReported: kpi(/trips reported/i) ? text(kpi(/trips reported/i).value) : null,
+      responsesCounted: kpi(/responses/i) ? text(kpi(/responses/i).value) : null,
+      comments: prog.comments.length,
+      escalations: prog.comments.filter((c) => c.escalate).length,
+    },
+    trips,
+    programmes: prog.programmes,
+    comments: prog.comments.map((c) => ({ ...c, tripName: nameOf.get(c.trip) || c.trip.split('|')[0], month: c.trip.split('|')[1] })),
+    gaps,
+  };
+}
+
+let cache = { at: 0, payload: null };
+
+module.exports = async (req, res) => {
+  try {
+    const fresh = req.query && req.query.refresh === '1';
+    if (!fresh && cache.payload && Date.now() - cache.at < CACHE_TTL_MS) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cache.payload);
+    }
+    const payload = build(await fetchWorkbook('FEEDBACK_SHEET_URL'));
+    cache = { at: Date.now(), payload };
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(payload);
+  } catch (err) {
+    console.error(err);
+    if (cache.payload) {
+      res.setHeader('X-Cache', 'STALE');
+      return res.status(200).json({ ...cache.payload, stale: true, error: err.message });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports.build = build;

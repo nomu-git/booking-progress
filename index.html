@@ -302,7 +302,7 @@
      and those tabs' panels have touched since; Previous Projects and Leads
      never had it. */
   #previousWrap > .panel, #campaignsWrap > .panel,
-  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel { margin-bottom: 12px; }
+  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel { margin-bottom: 12px; }
   .ptitle {
     font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-3); margin-bottom: 10px;
@@ -947,6 +947,56 @@
   .mwhen { font-size: 11px; color: var(--text-3); margin-top: 3px; }
   .mempty { color: var(--text-3); font-size: 13px; padding: 12px 0; }
   .mcancel { color: var(--danger); font-size: 11px; margin-top: 2px; }
+  /* ---------- feedback (trip survey sheet) ----------
+     Scores are coloured by the sheet's own bands (4.0+, 3.0-3.9, under 3.0)
+     with the Trips tab's status steps, and the number always sits beside
+     the bar, so colour is never the only signal. */
+  #feedbackWrap .ctable th.fb-l, #feedbackWrap .ctable td.fb-l { text-align: left; }
+  #feedbackWrap .ctable td.cname { min-width: 190px; }
+  #feedbackWrap .ctable tr.fb-month td {
+    background: transparent; border-bottom: 0; text-align: left; padding: 14px 10px 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+  }
+  .fb-hbar { display: block; width: 140px; margin-top: 8px; }
+  .fb-na { color: var(--text-3); }
+  .fb-flag { margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--q-low); white-space: nowrap; }
+  .fb-alert {
+    margin-top: 16px; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--q-low);
+    background: color-mix(in srgb, var(--q-low) 12%, transparent); font-size: 12.5px; line-height: 1.55; color: var(--text-2);
+  }
+  .fb-alert b { color: #fff; }
+  /* The opened trip: sticky inside the scroll box, like the Trips details. */
+  .fb-detail { position: sticky; left: 16px; max-width: 900px; }
+  .fb-dh { margin: 4px 0 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .fb-dh:not(:first-child) { margin-top: 16px; }
+  .fb-scores { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 7px 28px; }
+  .fb-score { display: grid; grid-template-columns: minmax(0, 1fr) 90px 30px; align-items: center; gap: 10px; font-size: 12px; color: var(--text-2); }
+  .fb-score .abar { width: 90px; }
+  .fb-score b { color: #fff; text-align: right; font-variant-numeric: tabular-nums; }
+  .fb-score small { display: block; font-size: 10.5px; color: var(--text-3); }
+  .fb-detail .trp-dl { position: static; margin-top: 16px; }
+  .fb-detail .pnote { margin-top: 12px; }
+  .fb-low .fb-score { grid-template-columns: minmax(0, 1fr) 120px 30px; padding: 5px 0; border-bottom: 1px solid rgba(52,81,124,.35); }
+  .fb-low .fb-score .abar { width: 120px; }
+  /* What people wrote: one card per comment, grouped programme > trip. */
+  .fb-prog + .fb-prog { margin-top: 22px; }
+  .fb-prog h3 { margin: 0 0 4px; font-size: 15px; color: #fff; }
+  .fb-ask { margin-bottom: 8px; font-size: 12px; line-height: 1.55; color: var(--text-2); max-width: 900px; }
+  .fb-trip { margin: 14px 0 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+  .fb-c { margin-bottom: 6px; padding: 10px 13px; border-radius: 8px; background: var(--track); font-size: 12.5px; line-height: 1.55; color: var(--text-2); max-width: 900px; }
+  .fb-c.fb-c-esc { border-left: 3px solid var(--q-low); }
+  .fb-c-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 11px; color: var(--text-3); }
+  .fb-kind { padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: #fff; background: rgba(255,255,255,.08); }
+  .fb-kind.fb-k-concern { background: color-mix(in srgb, var(--q-low) 35%, transparent); }
+  .fb-kind.fb-k-suggestion { background: color-mix(in srgb, var(--yellow) 28%, transparent); }
+  .fb-c em { color: var(--text-3); }
+  @media (max-width: 600px) {
+    .fb-detail { max-width: calc(100vw - 110px); }
+    .fb-scores { grid-template-columns: 1fr; }
+    .fb-score, .fb-low .fb-score { grid-template-columns: minmax(0, 1fr) 70px 30px; }
+    .fb-score .abar, .fb-low .fb-score .abar { width: 70px; }
+    #feedbackWrap .ctable td.cname { min-width: 150px; }
+  }
 </style>
 </head>
 <body>
@@ -967,7 +1017,11 @@
         <button class="sb-item" data-view="board" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="sb-label">Booking</span></button>
         <button class="sb-item" data-view="report" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-8M12 20V5M18 20v-11M3 20h18"/></svg><span class="sb-label">Report</span></button>
         <button class="sb-item" data-view="previous" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span class="sb-label">Previous Projects</span></button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-cat">Operations</div>
         <button class="sb-item" data-view="trips" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg><span class="sb-label">Trips &amp; R&amp;D</span></button>
+        <button class="sb-item" data-view="feedback" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="sb-label">Feedback</span></button>
       </div>
       <div class="sb-group">
         <div class="sb-cat">Ad Campaign</div>
@@ -1023,6 +1077,7 @@
   <div id="leadsWrap" hidden></div>
   <div id="engagementsWrap" hidden></div>
   <div id="tripsWrap" hidden></div>
+  <div id="feedbackWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   </div>
@@ -1095,7 +1150,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'previous', 'trips', 'campaigns', 'history', 'leads', 'engagements'].includes(s.view)) view = s.view;
+      if (['board', 'report', 'previous', 'trips', 'feedback', 'campaigns', 'history', 'leads', 'engagements'].includes(s.view)) view = s.view;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -1839,6 +1894,17 @@
     stViews: ['Views', 'How many people viewed the story.'],
     stResponses: ['Responses', 'Poll votes, slider taps, replies or link clicks, depending on the story type.'],
     stRate: ['Response rate', 'Responses divided by views: the share of viewers who answered or tapped.'],
+    fbSat: ['Satisfaction', "Year-to-date satisfaction from the Feedback sheet: the overall 1 to 5 score across every survey response, as a percentage of 5."],
+    fbTrips: ['Trips reported', 'Trips with a survey on file that have scores, out of every trip surveyed. A trip whose form got no answers counts in the second number only.'],
+    fbResp: ['Responses', 'Survey responses counted in the scores, out of all responses received.'],
+    fbNoSurvey: ['No survey', 'Trips that ran with confirmed travellers but have no feedback survey on file, from the Coverage Gaps tab.'],
+    fbTrip: ['Trip', 'The trip as the Feedback sheet names it, with its programme underneath. Details opens every question score.'],
+    fbResponses: ['Responses', 'People who answered the survey / travellers on the trip. N/A means the traveller count is not known.'],
+    fbRate: ['Response rate', 'Responses divided by travellers: how much of the group answered.'],
+    fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
+    fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
+    fbTravellers: ['Travellers', 'Confirmed travellers on the trip in WeTravel.'],
+    fbLow: ['Lowest scores', 'Every question, hotel or activity that averaged under 4.0, lowest first.'],
     stResult: ['Result', 'What the audience said, as Maryam recorded it (poll percentages, or the replies received).'],
   };
 
@@ -3101,6 +3167,232 @@
     }
   }
 
+  /* ================= feedback tab (trip survey sheet) ================= */
+
+  let feedback = null;
+  // Which sub-tab of Feedback is open: 'overview', 'comments' or 'gaps'.
+  let fbSub = 'overview';
+  const fbFilter = { prog: 'all', kind: 'all' };
+  // Trips whose scores are open, by id, so they survive the 5-minute refresh.
+  const fbOpen = new Set();
+
+  // The sheet's own bands for a 1-5 score.
+  const fbBand = (v) => (v >= 4 ? 'var(--q-high)' : v >= 3 ? 'var(--q-med)' : 'var(--q-low)');
+  const fbNum = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(2).replace(/0$/, ''));
+  const fbMonth = (key) => {
+    const [y, m] = String(key).split('-').map(Number);
+    return y && m ? new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }) : String(key);
+  };
+  const fbBar = (v, color, max = 5) => `<div class="abar"><div class="abar-fill" style="width:${Math.max(0, Math.min(100, (v / max) * 100)).toFixed(1)}%;background:${color}"></div></div>`;
+  const fbScore = (label, sub, v) => `<div class="fb-score"><span>${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span>${fbBar(v, fbBand(v))}<b>${fbNum(v)}</b></div>`;
+  // Concerns and suggestions ahead of praise, as the sheet orders them.
+  const FB_KINDS = ['Concern', 'Suggestion', 'Praise', 'Testimonial'];
+
+  function renderFeedback() {
+    const p = feedback;
+    if (!p) return;
+    if (p.error && !p.trips) {
+      $('feedbackWrap').innerHTML = `<div class="msg err">Could not load feedback: ${esc(p.error)}</div>`;
+      return;
+    }
+    const t = p.totals;
+    const gapSec = p.gaps.find((g) => g.trips.some((x) => x.travellers > 0)) || null;
+    const gapTrips = gapSec ? gapSec.trips : [];
+    const gapTravellers = gapTrips.reduce((n, x) => n + (x.travellers || 0), 0);
+    const escTrips = p.trips.filter((x) => x.escalations > 0);
+    const ofMatch = (v) => /^(\d+) of (\d+)$/.exec(String(v || ''));
+
+    // ---- overview: tiles ----
+    const reported = ofMatch(t.tripsReported);
+    const counted = ofMatch(t.responsesCounted);
+    const tiles = `
+      <div class="bvhero trp-tiles">
+        <div class="bv-side"><div class="bv-lab"><span ${hlp('fbSat')}>Satisfaction</span></div><div class="bv-n bv-act">${t.satisfaction == null ? '—' : pct(t.satisfaction)}</div>
+          ${t.satisfaction == null ? '' : `<div class="abar fb-hbar"><div class="abar-fill" style="width:${(t.satisfaction * 100).toFixed(1)}%;background:${fbBand(t.satisfaction * 5)}"></div></div>`}<div class="bv-s">year to date</div></div>
+        <div class="bv-side"><div class="bv-lab"><span ${hlp('fbTrips')}>Trips reported</span></div><div class="bv-n">${reported ? int(reported[1]) : esc(t.tripsReported || '—')}</div><div class="bv-s">${reported ? `of ${int(reported[2])} surveyed` : ''}</div></div>
+        <div class="bv-side"><div class="bv-lab"><span ${hlp('fbResp')}>Responses</span></div><div class="bv-n">${counted ? int(counted[1]) : esc(t.responsesCounted || '—')}</div><div class="bv-s">${counted ? `of ${int(counted[2])} counted` : ''}</div></div>
+        <div class="bv-side"><div class="bv-lab"><span ${hlp('fbNoSurvey')}>No survey</span></div><div class="bv-n">${int(gapTrips.length)}</div><div class="bv-s">trips · ${int(gapTravellers)} travellers</div></div>
+      </div>
+      ${t.escalations ? `<div class="fb-alert"><b>⚑ ${int(t.escalations)} comment${t.escalations === 1 ? '' : 's'} flagged to escalate</b> · ${escTrips.map((x) => esc(`${x.name}, ${fbMonth(x.month)}`)).join('; ')}. The text stays off this page because the dashboard is public; read it in the feedback sheet.</div>` : ''}`;
+
+    // ---- overview: trips by month ----
+    // Overall comes straight after the name so it's on screen on a phone.
+    // Response rate is a neutral slate, not the brand fill: amber on this tab
+    // already means a 3.0-3.9 score.
+    const COLS = 5;
+    let lastMonth = null;
+    const tripRows = p.trips.map((x) => {
+      const hasDetail = x.scores.length || x.items.length || x.facts.length || x.noComments;
+      const open = hasDetail && fbOpen.has(x.id);
+      const monthRow = x.month !== lastMonth ? `<tr class="fb-month"><td colspan="${COLS}">${esc(fbMonth(x.month))}</td></tr>` : '';
+      lastMonth = x.month;
+      const detail = open ? `
+        <tr class="trp-detail"><td colspan="${COLS}"><div class="fb-detail">
+          ${x.scores.length ? `<div class="fb-dh">Scores · 1 to 5${x.template ? ` · ${esc(x.template)} survey` : ''}</div><div class="fb-scores">${x.scores.map((s) => fbScore(s.q, null, s.v)).join('')}</div>` : ''}
+          ${x.items.length ? `<div class="fb-dh">Hotels and activities</div><div class="fb-scores">${x.items.filter((s) => s.score != null).map((s) => fbScore(s.item, s.type, s.score)).join('')}</div>` : ''}
+          ${x.facts.length ? `<dl class="trp-dl">${x.facts.map((f) => `<dt>${esc(f.q)}</dt><dd>${esc(f.text)}</dd>`).join('')}</dl>` : ''}
+          ${x.noComments ? `<div class="pnote">${esc(x.noComments)}</div>` : ''}
+        </div></td></tr>` : '';
+      return `${monthRow}
+      <tr>
+        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc(x.programme || x.template || '')}</span>${hasDetail ? `<button class="trp-toggle" data-fb-open="${attr(x.id)}" aria-expanded="${!!open}">${open ? 'Hide scores' : 'Details'}</button>` : ''}</td>
+        <td class="abar-cell">${x.overall == null ? '<span class="fb-na">no answers</span>' : `${fbBar(x.overall, fbBand(x.overall))}<span class="abar-pct">${fbNum(x.overall)}</span>`}</td>
+        <td class="num">${esc(x.responsesText || '—')}</td>
+        <td class="abar-cell">${x.responseRate == null ? '<span class="fb-na">N/A</span>' : `${fbBar(x.responseRate, 'var(--text-3)', 1)}<span class="abar-pct">${pct(x.responseRate)}</span>`}</td>
+        <td class="num">${int(x.comments)}${x.escalations ? `<span class="fb-flag" title="Flagged to escalate">⚑ ${int(x.escalations)}</span>` : ''}</td>
+      </tr>${detail}`;
+    }).join('');
+
+    // ---- overview: lowest scores ----
+    const lows = [];
+    for (const x of p.trips) {
+      const where = `${x.name} · ${fbMonth(x.month)}`;
+      for (const s of x.scores) if (s.v < 4) lows.push({ label: s.q, where, v: s.v });
+      for (const s of x.items) if (s.score != null && s.score < 4) lows.push({ label: `${s.item}${s.type ? ` (${s.type.toLowerCase()})` : ''}`, where, v: s.score });
+    }
+    lows.sort((a, b) => a.v - b.v);
+
+    const overviewHtml = `
+      <div class="panel">
+        <div class="ptitle">Trip feedback · ${esc(String(p.trips[0]?.month || p.asOf).slice(0, 4))}</div>
+        ${tiles}
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">By trip · most recent first</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              ${hcol('fbTrip', 'Trip')}${hcol('fbOverall', 'Overall (1–5)')}${hcol('fbResponses', 'Responses')}${hcol('fbRate', 'Response rate')}${hcol('fbComments', 'Comments')}
+            </tr></thead>
+            <tbody>${tripRows || `<tr><td class="cname" colspan="${COLS}">No surveys in the sheet yet.</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>
+
+      ${lows.length ? `
+      <div class="panel">
+        <div class="ptitle"><span ${hlp('fbLow')}>Lowest scores</span> · under 4.0</div>
+        <div class="fb-low">${lows.map((l) => fbScore(l.label, l.where, l.v)).join('')}</div>
+      </div>` : ''}`;
+
+    // ---- what people wrote ----
+    const progOf = new Map(p.trips.map((x) => [x.id, x.template || x.programme || 'Other']));
+    const progs = p.programmes.map((g) => g.name);
+    const kinds = [...FB_KINDS.filter((k) => p.comments.some((c) => c.kind === k)), ...new Set(p.comments.map((c) => c.kind).filter((k) => !FB_KINDS.includes(k)))];
+    if (fbFilter.prog !== 'all' && !progs.includes(fbFilter.prog)) fbFilter.prog = 'all';
+    if (fbFilter.kind !== 'all' && !kinds.includes(fbFilter.kind)) fbFilter.kind = 'all';
+    const passes = (c, skip) => (skip === 'prog' || fbFilter.prog === 'all' || progOf.get(c.trip) === fbFilter.prog)
+      && (skip === 'kind' || fbFilter.kind === 'all' || c.kind === fbFilter.kind);
+    // Each button counts what it would show given the other filter.
+    const pills = (key, list) => ['all', ...list].map((v) => {
+      const n = p.comments.filter((c) => passes(c, key) && (v === 'all' || (key === 'prog' ? progOf.get(c.trip) === v : c.kind === v))).length;
+      return `<button data-fb-f="${key}" data-fb-v="${attr(v)}" aria-pressed="${fbFilter[key] === v}">${v === 'all' ? 'All' : esc(v)} <span class="ecount">${n}</span></button>`;
+    }).join('');
+    const shownComments = p.comments.filter((c) => passes(c));
+    const commentCard = (c) => `
+      <div class="fb-c${c.escalate ? ' fb-c-esc' : ''}">
+        <div class="fb-c-head"><span class="fb-kind fb-k-${attr(String(c.kind).toLowerCase())}">${esc(c.kind)}</span>${c.source ? `<span>${esc(c.source)}</span>` : ''}${c.escalate ? '<span class="fb-flag">⚑ Escalate</span>' : ''}</div>
+        ${c.text == null ? '<em>Flagged to escalate. The text stays off this page because the dashboard is public; read it in the feedback sheet.</em>' : `<div dir="auto">${esc(c.text)}</div>`}
+      </div>`;
+    const progBlocks = progs.map((name) => {
+      const list = shownComments.filter((c) => progOf.get(c.trip) === name);
+      if (!list.length) return '';
+      const g = p.programmes.find((x) => x.name === name);
+      const tripIds = [...new Set(list.map((c) => c.trip))];
+      return `
+        <div class="fb-prog">
+          <h3>${esc(name)} <span class="ecount">${list.length}</span></h3>
+          ${g && g.summary && fbFilter.kind === 'all' ? `<div class="fb-ask" dir="auto">${esc(g.summary)}</div>` : ''}
+          ${tripIds.map((id) => {
+            const mine = list.filter((c) => c.trip === id);
+            return `<div class="fb-trip">${esc(mine[0].tripName)} · ${esc(fbMonth(mine[0].month))}</div>${mine.map(commentCard).join('')}`;
+          }).join('')}
+        </div>`;
+    }).join('');
+    const commentsHtml = `
+      <div class="panel">
+        <div class="ptitle">What people wrote · ${int(shownComments.length)} of ${int(p.comments.length)}</div>
+        <div class="efilters">
+          <div class="efilter"><span class="efl">Programme</span><div class="seg">${pills('prog', progs)}</div></div>
+          <div class="efilter"><span class="efl">Type</span><div class="seg">${pills('kind', kinds)}</div></div>
+        </div>
+        ${progBlocks || '<div class="pnote">No comments match these filters.</div>'}
+      </div>`;
+
+    // ---- no survey ----
+    const gapsHtml = p.gaps.map((g) => {
+      const max = Math.max(0, ...g.trips.map((x) => x.travellers || 0));
+      let month = null;
+      const rows = g.trips.map((x) => {
+        const head = x.month !== month ? `<tr class="fb-month"><td colspan="3">${esc(fbMonth(x.month))}</td></tr>` : '';
+        month = x.month;
+        return `${head}
+        <tr>
+          <td class="cname">${esc(x.name)}</td>
+          <td class="fb-l">${esc(x.programme || '—')}</td>
+          <td class="abar-cell">${max ? `${fbBar(x.travellers || 0, 'var(--fill)', max)}<span class="abar-pct">${int(x.travellers || 0)}</span>` : int(x.travellers || 0)}</td>
+        </tr>`;
+      }).join('');
+      return `
+      <div class="panel">
+        <div class="ptitle">${esc(g.title)} · ${int(g.trips.length)} trip${g.trips.length === 1 ? '' : 's'}</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>${hcol('fbTrip', 'Trip')}<th class="fb-l">Programme</th>${hcol('fbTravellers', 'Travellers')}</tr></thead>
+            <tbody>${rows}</tbody>
+            ${g.total ? `<tfoot><tr><td class="cname" colspan="3">${esc(g.total)}</td></tr></tfoot>` : ''}
+          </table>
+        </div>
+      </div>`;
+    }).join('') || '<div class="msg">No coverage gaps listed in the sheet.</div>';
+
+    const subtabs = `
+      <div class="seg subtabs" role="tablist" aria-label="Feedback sections">
+        <button role="tab" data-fb-sub="overview" aria-pressed="${fbSub === 'overview'}" aria-selected="${fbSub === 'overview'}">Overview</button>
+        <button role="tab" data-fb-sub="comments" aria-pressed="${fbSub === 'comments'}" aria-selected="${fbSub === 'comments'}">What people wrote <span class="ecount">${int(p.comments.length)}</span></button>
+        <button role="tab" data-fb-sub="gaps" aria-pressed="${fbSub === 'gaps'}" aria-selected="${fbSub === 'gaps'}">No survey <span class="ecount">${int(gapTrips.length)}</span></button>
+      </div>`;
+
+    $('feedbackWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
+      ${subtabs}
+      ${fbSub === 'comments' ? commentsHtml : fbSub === 'gaps' ? gapsHtml : overviewHtml}`;
+
+    bindHelp($('feedbackWrap'));
+    $('feedbackWrap').querySelectorAll('[data-fb-sub]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (fbSub === b.dataset.fbSub) return;
+        fbSub = b.dataset.fbSub;
+        renderFeedback();
+        const bar = $('feedbackWrap').querySelector('.subtabs');
+        if (bar && bar.getBoundingClientRect().top < 0 && typeof bar.scrollIntoView === 'function') bar.scrollIntoView({ block: 'start' });
+      });
+    });
+    $('feedbackWrap').querySelectorAll('[data-fb-f]').forEach((b) => {
+      b.addEventListener('click', () => { fbFilter[b.dataset.fbF] = b.dataset.fbV; renderFeedback(); });
+    });
+    $('feedbackWrap').querySelectorAll('[data-fb-open]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const id = b.dataset.fbOpen;
+        if (fbOpen.has(id)) fbOpen.delete(id); else fbOpen.add(id);
+        renderFeedback();
+      });
+    });
+  }
+
+  async function loadFeedback(force) {
+    try {
+      const res = await fetch('/api/feedback' + (force ? '?refresh=1' : ''));
+      const p = await res.json();
+      if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
+      feedback = p;
+      renderFeedback();
+    } catch (err) {
+      if (!feedback) $('feedbackWrap').innerHTML = `<div class="msg err">Could not load feedback: ${esc(err.message)}</div>`;
+    }
+  }
+
   /* ================= view switching ================= */
 
   // Explicit target, not a toggle — Dashboard is always one click away from
@@ -3124,6 +3416,7 @@
     $('leadsWrap').hidden = view !== 'leads';
     $('engagementsWrap').hidden = view !== 'engagements';
     $('tripsWrap').hidden = view !== 'trips';
+    $('feedbackWrap').hidden = view !== 'feedback';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -3156,6 +3449,10 @@
       if (!tripsData) $('tripsWrap').innerHTML = '<div class="msg">Loading trips…</div>';
       loadTrips(false);
     }
+    if (view === 'feedback') {
+      if (!feedback) $('feedbackWrap').innerHTML = '<div class="msg">Loading feedback…</div>';
+      loadFeedback(false);
+    }
     // Keep the address bar in step, so a reload or a copied link lands on the
     // same tab. replaceState rather than the hash property: no history entry
     // per tab click, so Back still leaves the dashboard.
@@ -3177,6 +3474,7 @@
     if (leads) loadLeads(true);
     if (engagements) loadEngagements(true);
     if (tripsData) loadTrips(true);
+    if (feedback) loadFeedback(true);
   });
 
   /* ================= sidebar ================= */
@@ -3237,7 +3535,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'previous', 'trips', 'campaigns', 'history', 'leads', 'engagements'];
+  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'campaigns', 'history', 'leads', 'engagements'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;
@@ -3268,6 +3566,7 @@
   setInterval(() => { if (leads) loadLeads(false); }, 300000);
   setInterval(() => { if (engagements) loadEngagements(false); }, 300000);
   setInterval(() => { if (tripsData) loadTrips(false); }, 300000);
+  setInterval(() => { if (feedback) loadFeedback(false); }, 300000);
   // Re-render between fetches so a highlight lapses at its own 24h mark and the
   // "3h ago" text stays honest, without waiting on the server cache.
   setInterval(() => { if (latest) render(latest); }, 20000);

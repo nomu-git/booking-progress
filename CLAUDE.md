@@ -30,10 +30,12 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~135,000 characters. Eight tabs in two categories,
+  `<script>`, no bundler. ~190,000 characters. Nine tabs in three categories,
   in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
   holds the `data-view` buttons `setView()` drives):
-  - **BOOKING**: Booking, Report, Previous Projects, Trips & R&D
+  - **BOOKING**: Booking, Report, Previous Projects
+  - **OPERATIONS**: Trips & R&D, Feedback (group added 30 Sep 2026; Trips
+    & R&D moved here from Booking)
   - **AD CAMPAIGN**: Ads, History Campaign, Leads, Engagements
 
   (Sidebar labels only, both renamed by Muatasam, 30 Sep 2026:
@@ -354,7 +356,7 @@ webhooks.
   `Updated Budget.xlsx` value for value.
 - `lib/sheet.js` (`fetchWorkbook(envVar)`) fetches a workbook from the
   share link held in the named env var (`LEADS_SHEET_URL`,
-  `ENGAGEMENT_SHEET_URL`, `TRIPS_SHEET_URL`), a OneDrive/SharePoint link shared as **"Anyone
+  `ENGAGEMENT_SHEET_URL`, `TRIPS_SHEET_URL`, `FEEDBACK_SHEET_URL`), a OneDrive/SharePoint link shared as **"Anyone
   with the link can view"**. Links never go in the code: the repo is public.
   Any other sharing setting answers 200 with a Microsoft sign-in page
   rather than an error; the zip-signature check turns that into a clear
@@ -491,9 +493,69 @@ Story Engagement Question).
 - **This tab puts pricing, internal analysis and corrective actions on a
   public URL with no login.** Flagged to Anton when it was built.
 
-**Function budget: 11 of Vercel Hobby's 12.** The three sheet-mirror
-endpoints (leads, engagements, trips) could be merged into one
-`api/sheets.js?name=` if another endpoint is ever needed.
+## Feedback tab
+
+`api/feedback.js` mirrors the **"NomuHub — 2026 Feedback"** workbook (trip
+survey results) from `FEEDBACK_SHEET_URL`. Its three tabs are found by
+their content, not their names:
+
+- **Summary**: the YEAR-TO-DATE SATISFACTION / TRIPS REPORTED / RESPONSES
+  COUNTED labels with values on the row below, then one row per surveyed
+  trip under month headings ("Aug 2026").
+- **By Programme**: one block per survey template (Building / Medical,
+  Teaching, Wellness, Explorer). Each block is the programme name on the
+  line above a `Trip | Month | ...` table of per-question 1–5 scores, then
+  "<programme> — what people wrote" (its first line is the sheet's own
+  summary of the asks, then "Trip, Mon YYYY (N comments ...)" headings and
+  `Kind — Source[ — ESCALATE]` / text rows), then an `Item | Type | Score`
+  itinerary table of named hotels and excursions. Text cells in the score
+  table ("2/2 positive", "Penglipuran 3.00") are kept as facts; "Not asked"
+  and "—" are dropped. Trips join across tabs on name + month.
+- **Coverage Gaps**: sections headed above a `Trip | Programme |
+  Travellers` header, month headings, and a "6 trips, 52 travellers..."
+  total. The section with travellers is the "No survey" count.
+
+Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
+11 trips reported, 29 of 29 responses, 11 trips, 49 comments (1 escalated),
+6 trips / 52 travellers with no survey.
+
+- **Escalated comments are held back at the API, not in the UI.** The sheet
+  says to escalate them "outside this dashboard", and the one there today
+  describes harassment of female participants, a staff member's clinical
+  qualifications and inflated costs on a named B2B trip (KUMSA). Only its
+  existence, kind and trip are sent; the page says it's kept off the public
+  page and to read it in the sheet. `FEEDBACK_SHOW_ESCALATIONS=1` sends the
+  text anyway. **The sheet's "Notes" bullets are not sent at all**: they're
+  working notes on method, and one of them restates the escalated complaint.
+  If a new field is ever added to the payload, grep the output for the
+  complaint's wording (harass, qualification, medication) before shipping.
+- UI, three sub-tabs (`fbSub`: `'overview' | 'comments' | 'gaps'`):
+  - **Overview**: tiles (Satisfaction with a bar, Trips reported, Responses,
+    No survey), a red escalation callout, a By trip table grouped by month
+    (Trip | Overall 1–5 | Responses | Response rate | Comments with a red
+    ⚑ count), Details under each name opening every question score, the
+    hotel/activity scores and the text facts, and a Lowest scores list
+    (everything under 4.0, lowest first; matches the sheet's own "weakest
+    items" note).
+  - **What people wrote**: Programme and Type filters (each button counts
+    given the other), comments grouped programme > trip, verbatim.
+  - **No survey**: the Coverage Gaps sections, travellers as bars.
+- Score bars use the sheet's own bands (4.0+ / 3.0–3.9 / under 3.0) in the
+  Trips tab's status colours `--q-high/med/low`, number beside every bar.
+  Response rate is neutral slate (`--text-3`), not the brand amber, because
+  amber on this tab means a 3.0–3.9 score. Overall sits straight after the
+  trip name so it's on screen on a phone.
+- Classes are prefixed `fb-`; `.flag` already exists elsewhere, hence
+  `fb-flag`.
+- **This tab puts verbatim customer comments and staff names (Salim, Surti,
+  Maria, Roy) on a public URL with no login.** No traveller names are in
+  the sheet. Flagged to Anton when it was built.
+
+**Function budget: 12 of Vercel Hobby's 12, the cap.** The next endpoint
+won't deploy (and the failure is silent from the site, see Known pitfalls)
+unless something is merged first. The four sheet-mirror endpoints (leads,
+engagements, trips, feedback) all share `lib/sheet.js` and could become one
+`api/sheets.js?name=` to free three slots.
 
 ## Open items waiting on Muatasam
 
