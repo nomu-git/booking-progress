@@ -34,12 +34,17 @@ no framework.
   in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
   holds the `data-view` buttons `setView()` drives):
   - **BOOKING**: Booking, Report, Previous Projects, Trips & R&D
-  - **AD CAMPAIGN**: Campaigns, History, Leads, Engagements
+  - **AD CAMPAIGN**: Ads, History Campaign, Leads, Engagements
 
-  (Sidebar labels only — the tab formerly labelled "Dashboard" is now
-  "Booking" and "Trips" is now "Trips & R&D", per Muatasam, 30 Sep 2026.
-  `data-view="board"` / `data-view="trips"` and everything else about
-  these tabs is unchanged; this was a label-only rename.)
+  (Sidebar labels only, both renamed by Muatasam, 30 Sep 2026:
+  "Dashboard" -> "Booking", "Trips" -> "Trips & R&D", "Campaigns" -> "Ads",
+  "History" -> "History Campaign". Every `data-view` value
+  (`board`/`trips`/`campaigns`/`history`/…) and everything else about these
+  tabs — the code they read from, `api/campaigns.js`, `api/campaign-history.js`,
+  variable/function names throughout `index.html` and elsewhere — is
+  unchanged; only the visible label text moved. Don't rename the
+  underlying files/vars/routes to match; that wasn't asked for and would
+  just make future diffs to this doc and the code harder to follow.)
 - **Sidebar**: over 900px it's docked and collapses to a 64px icon rail
   (labels fly out on hover), remembered in `localStorage` as
   `nomuSidebarCollapsed`; a snippet at the top of `<body>` applies it before
@@ -105,8 +110,8 @@ since they're easy to forget mid-session:
 | File | Role |
 | --- | --- |
 | `lib/meta-ads.js` | Shared Meta Graph API client. `graphGet`/`graphGetAll` (follows Meta's cursor pagination), `getAccountMeta`, `toReportCurrency`/`budgetToReportCurrency` (USD→SAR conversion), `AD_ACCOUNTS` (env `META_AD_ACCOUNT_IDS`, default two accounts), `REPORT_CURRENCY` (env `META_CURRENCY`, default `SAR`), `USD_SAR` (env `META_USD_SAR`, default `3.75`). Token comes from whichever of `META_ACCESS_TOKEN` / `META_ACCESS_KEY` / `META_API_KEY` is set. |
-| `api/campaigns.js` | **Campaigns tab.** Current year only (env `META_YEAR`, defaults to current calendar year — so this auto-rolls into 2027 with no code change). Every campaign gets its own budget (see "Budget matching" below), live spend/results/purchases from Meta. |
-| `api/campaign-history.js` | **History tab.** One full calendar year at a time, picked via `?year=`. **Deliberately excludes the current year** — that's what Campaigns is for. Offers years back to Meta's retention floor (~37 months, env `META_RETENTION_MONTHS`). Every campaign uses a flat assumed budget (env `META_DEFAULT_BUDGET_USD`, default `$500`) since there's no budget sheet for past years. |
+| `api/campaigns.js` | **Ads tab** (sidebar label; was "Campaigns"). Current year only (env `META_YEAR`, defaults to current calendar year — so this auto-rolls into 2027 with no code change). Every campaign gets its own budget (see "Budget matching" below), live spend/results/purchases from Meta. |
+| `api/campaign-history.js` | **History Campaign tab** (sidebar label; was "History"). One full calendar year at a time, picked via `?year=`. **Deliberately excludes the current year** — that's what Ads is for. Offers years back to Meta's retention floor (~37 months, env `META_RETENTION_MONTHS`). Every campaign uses a flat assumed budget (env `META_DEFAULT_BUDGET_USD`, default `$500`) since there's no budget sheet for past years. |
 | `api/media-plan.js` | Reads `Updated Budget.xlsx` — hardcoded `ROWS` array transcribed **verbatim** from the spreadsheet's "Media Plan" sheet. This is the *plan*, not measured data. If the spreadsheet changes, this array has to be hand-updated to match — there's no live file parsing. |
 | `lib/trip-code.js` | The project-code generator — see below. |
 
@@ -184,7 +189,7 @@ these by default rather than waiting to be told again:
   number/comparison, one table. No extra charts, no explanatory paragraphs,
   no accordion-everything.
 - **Live data only, never fabricated or historical-masquerading-as-current.**
-  Campaigns tab must reflect what Meta says *right now*.
+  Ads tab must reflect what Meta says *right now*.
 - **Every number needs a bar or visual, not just digits.** *"There is no
   bar"* was a direct complaint.
 - **Names must be exactly what's in Meta, not edited/guessed.** He renames
