@@ -455,6 +455,10 @@ Story Engagement Question).
   is its wording: the quality guide's "What it means" / "What we do with
   the calendar", and the per-trip "Calendar decision" from its products
   table, with the sheet's own text as fallback.
+- **Two sub-tabs** (`tripsSub`), so the page isn't one long scroll:
+  **Overview** (tiles, weeks bar, quality guide, quality by region, R&D
+  pipeline) and **All products** (filters + the product list). Filters and
+  opened Details are kept across switches.
 - UI in the summary's reading order: tiles + a weeks-by-quality bar +
   the quality guide; quality by region (with a weeks mini-bar); R&D
   pipeline; all products with Region / Quality / Status filters (each

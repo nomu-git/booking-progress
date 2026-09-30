@@ -689,6 +689,10 @@
   .abar-fill.lead { background: var(--lead-all); }
 
   /* ---------- trips (decision dashboard) ---------- */
+  /* In-page sub-tabs: the same pill switch as the pickers, a size up, so it
+     reads as navigation for the tab rather than a filter. */
+  .seg.subtabs { margin-bottom: 12px; padding: 3px; }
+  .seg.subtabs button { font-size: 13px; font-weight: 600; padding: 7px 16px; }
   /* Top-aligned: the quality tiles carry a "trips" line the first two don't, and
      bottom alignment left their labels on different lines. */
   .trp-tiles { display: flex; flex-wrap: wrap; gap: 14px 30px; align-items: flex-start; }
@@ -2777,6 +2781,8 @@
   /* ================= trips tab (Trip Decision Dashboard sheet) ================= */
 
   let tripsData = null;
+  // Which sub-tab of Trips is open: 'overview' or 'products'.
+  let tripsSub = 'overview';
   const tripFilter = { region: 'all', quality: 'all', status: 'all' };
   // Trips whose analysis/actions row is open, by name, so it survives a
   // filter change and the 5-minute refresh.
@@ -2886,9 +2892,10 @@
       </tr>${detail}`;
     }).join('');
 
-    $('tripsWrap').innerHTML = `
-      ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
-
+    // Two sub-tabs, so the page isn't one long scroll: the decision overview
+    // (tiles, quality guide, regions, R&D), and the full product list with
+    // its filters. Filters and opened Details are kept across switches.
+    const overviewHtml = `
       <div class="panel">
         <div class="ptitle">Trip decisions · which products to grow, optimise, or stop</div>
         <div class="bvhero trp-tiles">
@@ -2937,7 +2944,8 @@
           <tbody>${rdRows}</tbody>
         </table></div>` : '<div class="pnote">Nothing in R&amp;D right now.</div>'}
       </div>
-
+`;
+    const productsHtml = `
       <div class="panel">
         <div class="ptitle">All products · ${int(shown.length)} of ${int(p.trips.length)}</div>
         <div class="efilters">
@@ -2956,8 +2964,30 @@
           </table>
         </div>
       </div>`;
+    const subtabs = `
+      <div class="seg subtabs" role="tablist" aria-label="Trips sections">
+        <button role="tab" data-trip-sub="overview" aria-pressed="${tripsSub === 'overview'}" aria-selected="${tripsSub === 'overview'}">Overview</button>
+        <button role="tab" data-trip-sub="products" aria-pressed="${tripsSub === 'products'}" aria-selected="${tripsSub === 'products'}">All products <span class="ecount">${int(p.trips.length)}</span></button>
+      </div>`;
+
+    $('tripsWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
+
+      ${subtabs}
+      ${tripsSub === 'products' ? productsHtml : overviewHtml}`;
 
     bindHelp($('tripsWrap'));
+    $('tripsWrap').querySelectorAll('[data-trip-sub]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (tripsSub === b.dataset.tripSub) return;
+        tripsSub = b.dataset.tripSub;
+        renderTrips();
+        // Switching from far down the page shouldn't leave you mid-way into
+        // the other section: bring the tab bar back into view.
+        const bar = $('tripsWrap').querySelector('.subtabs');
+        if (bar && bar.getBoundingClientRect().top < 0 && typeof bar.scrollIntoView === 'function') bar.scrollIntoView({ block: 'start' });
+      });
+    });
     $('tripsWrap').querySelectorAll('[data-trip-f]').forEach((b) => {
       b.addEventListener('click', () => { tripFilter[b.dataset.tripF] = b.dataset.tripV; renderTrips(); });
     });
