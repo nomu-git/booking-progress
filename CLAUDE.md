@@ -496,8 +496,8 @@ Story Engagement Question).
 ## Feedback tab
 
 `api/feedback.js` mirrors the **"NomuHub — 2026 Feedback"** workbook (trip
-survey results) from `FEEDBACK_SHEET_URL`. Its three tabs are found by
-their content, not their names:
+survey results) from `FEEDBACK_SHEET_URL`. Two of its tabs are read, found
+by their content, not their names:
 
 - **Summary**: the YEAR-TO-DATE SATISFACTION / TRIPS REPORTED / RESPONSES
   COUNTED labels with values on the row below, then one row per surveyed
@@ -511,27 +511,26 @@ their content, not their names:
   itinerary table of named hotels and excursions. Text cells in the score
   table ("2/2 positive", "Penglipuran 3.00") are kept as facts; "Not asked"
   and "—" are dropped. Trips join across tabs on name + month.
-- **Coverage Gaps**: sections headed above a `Trip | Programme |
-  Travellers` header, month headings, and a "6 trips, 52 travellers..."
-  total. The section with travellers is the "No survey" count.
+- **Coverage Gaps** (trips with no survey) is **not read**. It had its own
+  "No survey" sub-tab and an Overview tile at first; Anton had both removed
+  (30 Sep 2026).
 
 Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
-11 trips reported, 29 of 29 responses, 11 trips, 49 comments (1 escalated),
-6 trips / 52 travellers with no survey.
+11 trips reported, 29 of 29 responses, 11 trips, 49 comments (1 escalated).
 
-- **Escalated comments are held back at the API, not in the UI.** The sheet
-  says to escalate them "outside this dashboard", and the one there today
-  describes harassment of female participants, a staff member's clinical
-  qualifications and inflated costs on a named B2B trip (KUMSA). Only its
-  existence, kind and trip are sent; the page says it's kept off the public
-  page and to read it in the sheet. `FEEDBACK_SHOW_ESCALATIONS=1` sends the
-  text anyway. **The sheet's "Notes" bullets are not sent at all**: they're
-  working notes on method, and one of them restates the escalated complaint.
-  If a new field is ever added to the payload, grep the output for the
-  complaint's wording (harass, qualification, medication) before shipping.
-- UI, three sub-tabs (`fbSub`: `'overview' | 'comments' | 'gaps'`):
-  - **Overview**: tiles (Satisfaction with a bar, Trips reported, Responses,
-    No survey), a red escalation callout, a By trip table grouped by month
+- **Escalated comments are shown in full, by Anton's explicit decision (30
+  Sep 2026).** The one there today (KUMSA, Aug 2026) describes harassment of
+  female participants near the hotel, a staff member's clinical
+  qualifications and inflated costs, and the sheet says to escalate it
+  "outside this dashboard". It was first built held back at the API; Anton
+  was told the site is public, unauthenticated and indexable, was offered
+  hidden / collapsed options, and chose to show it verbatim. Don't re-hide
+  it without being asked. It's flagged ⚑ Escalate with a red edge, and the
+  Overview's red callout has a "Read it" button that opens What people
+  wrote. The sheet's "Notes" bullets are still not sent (nothing uses them).
+- UI, two sub-tabs (`fbSub`: `'overview' | 'comments'`):
+  - **Overview**: tiles (Satisfaction with a bar, Trips reported,
+    Responses), a red escalation callout, a By trip table grouped by month
     (Trip | Overall 1–5 | Responses | Response rate | Comments with a red
     ⚑ count), Details under each name opening every question score, the
     hotel/activity scores and the text facts, and a Lowest scores list
@@ -539,7 +538,6 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
     items" note).
   - **What people wrote**: Programme and Type filters (each button counts
     given the other), comments grouped programme > trip, verbatim.
-  - **No survey**: the Coverage Gaps sections, travellers as bars.
 - Score bars use the sheet's own bands (4.0+ / 3.0–3.9 / under 3.0) in the
   Trips tab's status colours `--q-high/med/low`, number beside every bar.
   Response rate is neutral slate (`--text-3`), not the brand amber, because
@@ -547,9 +545,10 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
   trip name so it's on screen on a phone.
 - Classes are prefixed `fb-`; `.flag` already exists elsewhere, hence
   `fb-flag`.
-- **This tab puts verbatim customer comments and staff names (Salim, Surti,
-  Maria, Roy) on a public URL with no login.** No traveller names are in
-  the sheet. Flagged to Anton when it was built.
+- **This tab puts verbatim customer comments, including the escalated
+  KUMSA complaint, and staff names (Salim, Surti, Maria, Roy) on a public
+  URL with no login.** No traveller names are in the sheet. Flagged to
+  Anton when it was built; he chose to proceed.
 
 **Function budget: 12 of Vercel Hobby's 12, the cap.** The next endpoint
 won't deploy (and the failure is silent from the site, see Known pitfalls)

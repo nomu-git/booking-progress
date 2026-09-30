@@ -3,28 +3,26 @@
 // Engagements and Trips: whoever keeps the workbook carries on as they do,
 // and the tab mirrors it.
 //
-// Three tabs, found by what's in them rather than their names or positions:
+// Two tabs are read, found by what's in them rather than their names or
+// positions:
 //   - Summary: year-to-date satisfaction and one row per surveyed trip,
 //     under month headings ("Aug 2026").
 //   - By Programme: a block per survey template (Building / Medical,
 //     Teaching, Wellness, Explorer), each a table of per-question scores,
 //     then "what people wrote" (every comment, verbatim), then an itinerary
 //     table scoring each named hotel and excursion.
-//   - Coverage Gaps: trips that ran with no survey on file.
+// Its Coverage Gaps tab (trips with no survey) isn't read: the dashboard
+// dropped that view.
 //
-// Written comments leave this API, the site is public, and one kind of
-// comment is held back: anything the sheet marks ESCALATE. The sheet itself
-// says to escalate those "outside this dashboard" (the one there today
-// describes harassment and a staff member's clinical qualifications on a
-// named B2B trip), so only the fact that it exists is sent, never its text.
-// Set FEEDBACK_SHOW_ESCALATIONS=1 to send it anyway. The sheet's "Notes"
-// bullets aren't sent at all: they're working notes on method, and one of
-// them restates the escalated complaint in full.
+// Every comment is sent verbatim, including the ones the sheet marks
+// ESCALATE (flagged as such). Those were held back at first, since the sheet
+// says to escalate them outside the dashboard and the site is public; Anton
+// chose to show them (30 Sep 2026). The sheet's "Notes" bullets aren't sent:
+// they're working notes on method, and nothing on the page uses them.
 
 const { fetchWorkbook } = require('../lib/sheet');
 
 const CACHE_TTL_MS = Number(process.env.FEEDBACK_CACHE_TTL_MS || 60000);
-const SHOW_ESCALATIONS = process.env.FEEDBACK_SHOW_ESCALATIONS === '1';
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 const text = (v) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
@@ -176,7 +174,7 @@ function readProgrammes(grid) {
         const escalate = parts.some((x) => /^escalate$/i.test(x));
         const kind = parts[0];
         const source = parts.slice(1).filter((x) => !/^escalate$/i.test(x)).join(' — ') || null;
-        comments.push({ trip, kind, source, escalate, text: escalate && !SHOW_ESCALATIONS ? null : row[1] });
+        comments.push({ trip, kind, source, escalate, text: row[1] });
       }
       continue;
     }
@@ -196,48 +194,14 @@ function readProgrammes(grid) {
   return { programmes, scored, comments, quiet, items };
 }
 
-function readGaps(grid) {
-  const sections = [];
-  let sec = null;
-  let month = null;
-  let inNotes = false;
-  for (let r = 0; r < grid.length; r++) {
-    const g = grid[r] || [];
-    const row = cells(g);
-    const head = single(g);
-    if (!row.some(Boolean)) continue;
-    if (head && /^notes$/i.test(head)) { inNotes = true; continue; }
-    if (head && head.startsWith('•')) continue;
-    if (inNotes) continue;
-    if (row[0] === 'Trip' && row[1] === 'Programme') continue;
-    if (head && monthKey(head)) { month = monthKey(head); continue; }
-    // A section title is the heading right above a Trip/Programme header.
-    if (head && nextRow(grid, r)[0] === 'Trip') {
-      sec = { title: head, trips: [], total: null };
-      sections.push(sec);
-      month = null;
-      continue;
-    }
-    if (!sec) continue;
-    // "6 trips, 52 travellers, no feedback collected" closes the section.
-    if (/^\d+ trips?,/i.test(row[0])) { sec.total = row[0]; continue; }
-    if (row[0] && month) {
-      sec.trips.push({ name: row[0], month, programme: row[1] || null, travellers: num(g[2]) });
-    }
-  }
-  return sections;
-}
-
 function build(sheets) {
   const find = (test) => sheets.find((s) => s.grid.some((row) => test(cells(row))));
   const summarySheet = find((row) => row.some((v) => /year-to-date satisfaction/i.test(v)));
   const byProgSheet = find((row) => row.some((v) => /—\s*what people wrote$/i.test(v)));
-  const gapsSheet = find((row) => row[0] === 'Trip' && row[1] === 'Programme' && /^travellers$/i.test(row[2] || ''));
   if (!summarySheet) throw new Error('No tab with a YEAR-TO-DATE SATISFACTION figure found in the feedback workbook');
 
   const summary = readSummary(summarySheet.grid);
   const prog = byProgSheet ? readProgrammes(byProgSheet.grid) : { programmes: [], scored: new Map(), comments: [], quiet: new Map(), items: new Map() };
-  const gaps = gapsSheet ? readGaps(gapsSheet.grid) : [];
 
   const trips = summary.trips.map((t) => {
     const id = tripId(t.name, t.month);
@@ -278,7 +242,6 @@ function build(sheets) {
     trips,
     programmes: prog.programmes,
     comments: prog.comments.map((c) => ({ ...c, tripName: nameOf.get(c.trip) || c.trip.split('|')[0], month: c.trip.split('|')[1] })),
-    gaps,
   };
 }
 

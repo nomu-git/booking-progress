@@ -989,7 +989,6 @@
   .fb-kind { padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; color: #fff; background: rgba(255,255,255,.08); }
   .fb-kind.fb-k-concern { background: color-mix(in srgb, var(--q-low) 35%, transparent); }
   .fb-kind.fb-k-suggestion { background: color-mix(in srgb, var(--yellow) 28%, transparent); }
-  .fb-c em { color: var(--text-3); }
   @media (max-width: 600px) {
     .fb-detail { max-width: calc(100vw - 110px); }
     .fb-scores { grid-template-columns: 1fr; }
@@ -1897,13 +1896,11 @@
     fbSat: ['Satisfaction', "Year-to-date satisfaction from the Feedback sheet: the overall 1 to 5 score across every survey response, as a percentage of 5."],
     fbTrips: ['Trips reported', 'Trips with a survey on file that have scores, out of every trip surveyed. A trip whose form got no answers counts in the second number only.'],
     fbResp: ['Responses', 'Survey responses counted in the scores, out of all responses received.'],
-    fbNoSurvey: ['No survey', 'Trips that ran with confirmed travellers but have no feedback survey on file, from the Coverage Gaps tab.'],
     fbTrip: ['Trip', 'The trip as the Feedback sheet names it, with its programme underneath. Details opens every question score.'],
     fbResponses: ['Responses', 'People who answered the survey / travellers on the trip. N/A means the traveller count is not known.'],
     fbRate: ['Response rate', 'Responses divided by travellers: how much of the group answered.'],
     fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
     fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
-    fbTravellers: ['Travellers', 'Confirmed travellers on the trip in WeTravel.'],
     fbLow: ['Lowest scores', 'Every question, hotel or activity that averaged under 4.0, lowest first.'],
     stResult: ['Result', 'What the audience said, as Maryam recorded it (poll percentages, or the replies received).'],
   };
@@ -3170,7 +3167,7 @@
   /* ================= feedback tab (trip survey sheet) ================= */
 
   let feedback = null;
-  // Which sub-tab of Feedback is open: 'overview', 'comments' or 'gaps'.
+  // Which sub-tab of Feedback is open: 'overview' or 'comments'.
   let fbSub = 'overview';
   const fbFilter = { prog: 'all', kind: 'all' };
   // Trips whose scores are open, by id, so they survive the 5-minute refresh.
@@ -3196,9 +3193,6 @@
       return;
     }
     const t = p.totals;
-    const gapSec = p.gaps.find((g) => g.trips.some((x) => x.travellers > 0)) || null;
-    const gapTrips = gapSec ? gapSec.trips : [];
-    const gapTravellers = gapTrips.reduce((n, x) => n + (x.travellers || 0), 0);
     const escTrips = p.trips.filter((x) => x.escalations > 0);
     const ofMatch = (v) => /^(\d+) of (\d+)$/.exec(String(v || ''));
 
@@ -3211,9 +3205,8 @@
           ${t.satisfaction == null ? '' : `<div class="abar fb-hbar"><div class="abar-fill" style="width:${(t.satisfaction * 100).toFixed(1)}%;background:${fbBand(t.satisfaction * 5)}"></div></div>`}<div class="bv-s">year to date</div></div>
         <div class="bv-side"><div class="bv-lab"><span ${hlp('fbTrips')}>Trips reported</span></div><div class="bv-n">${reported ? int(reported[1]) : esc(t.tripsReported || '—')}</div><div class="bv-s">${reported ? `of ${int(reported[2])} surveyed` : ''}</div></div>
         <div class="bv-side"><div class="bv-lab"><span ${hlp('fbResp')}>Responses</span></div><div class="bv-n">${counted ? int(counted[1]) : esc(t.responsesCounted || '—')}</div><div class="bv-s">${counted ? `of ${int(counted[2])} counted` : ''}</div></div>
-        <div class="bv-side"><div class="bv-lab"><span ${hlp('fbNoSurvey')}>No survey</span></div><div class="bv-n">${int(gapTrips.length)}</div><div class="bv-s">trips · ${int(gapTravellers)} travellers</div></div>
       </div>
-      ${t.escalations ? `<div class="fb-alert"><b>⚑ ${int(t.escalations)} comment${t.escalations === 1 ? '' : 's'} flagged to escalate</b> · ${escTrips.map((x) => esc(`${x.name}, ${fbMonth(x.month)}`)).join('; ')}. The text stays off this page because the dashboard is public; read it in the feedback sheet.</div>` : ''}`;
+      ${t.escalations ? `<div class="fb-alert"><b>⚑ ${int(t.escalations)} comment${t.escalations === 1 ? '' : 's'} flagged to escalate</b> · ${escTrips.map((x) => esc(`${x.name}, ${fbMonth(x.month)}`)).join('; ')} <button class="trp-toggle" data-fb-sub="comments">Read ${t.escalations === 1 ? 'it' : 'them'}</button></div>` : ''}`;
 
     // ---- overview: trips by month ----
     // Overall comes straight after the name so it's on screen on a phone.
@@ -3293,7 +3286,7 @@
     const commentCard = (c) => `
       <div class="fb-c${c.escalate ? ' fb-c-esc' : ''}">
         <div class="fb-c-head"><span class="fb-kind fb-k-${attr(String(c.kind).toLowerCase())}">${esc(c.kind)}</span>${c.source ? `<span>${esc(c.source)}</span>` : ''}${c.escalate ? '<span class="fb-flag">⚑ Escalate</span>' : ''}</div>
-        ${c.text == null ? '<em>Flagged to escalate. The text stays off this page because the dashboard is public; read it in the feedback sheet.</em>' : `<div dir="auto">${esc(c.text)}</div>`}
+        <div dir="auto">${esc(c.text || '')}</div>
       </div>`;
     const progBlocks = progs.map((name) => {
       const list = shownComments.filter((c) => progOf.get(c.trip) === name);
@@ -3320,44 +3313,16 @@
         ${progBlocks || '<div class="pnote">No comments match these filters.</div>'}
       </div>`;
 
-    // ---- no survey ----
-    const gapsHtml = p.gaps.map((g) => {
-      const max = Math.max(0, ...g.trips.map((x) => x.travellers || 0));
-      let month = null;
-      const rows = g.trips.map((x) => {
-        const head = x.month !== month ? `<tr class="fb-month"><td colspan="3">${esc(fbMonth(x.month))}</td></tr>` : '';
-        month = x.month;
-        return `${head}
-        <tr>
-          <td class="cname">${esc(x.name)}</td>
-          <td class="fb-l">${esc(x.programme || '—')}</td>
-          <td class="abar-cell">${max ? `${fbBar(x.travellers || 0, 'var(--fill)', max)}<span class="abar-pct">${int(x.travellers || 0)}</span>` : int(x.travellers || 0)}</td>
-        </tr>`;
-      }).join('');
-      return `
-      <div class="panel">
-        <div class="ptitle">${esc(g.title)} · ${int(g.trips.length)} trip${g.trips.length === 1 ? '' : 's'}</div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>${hcol('fbTrip', 'Trip')}<th class="fb-l">Programme</th>${hcol('fbTravellers', 'Travellers')}</tr></thead>
-            <tbody>${rows}</tbody>
-            ${g.total ? `<tfoot><tr><td class="cname" colspan="3">${esc(g.total)}</td></tr></tfoot>` : ''}
-          </table>
-        </div>
-      </div>`;
-    }).join('') || '<div class="msg">No coverage gaps listed in the sheet.</div>';
-
     const subtabs = `
       <div class="seg subtabs" role="tablist" aria-label="Feedback sections">
         <button role="tab" data-fb-sub="overview" aria-pressed="${fbSub === 'overview'}" aria-selected="${fbSub === 'overview'}">Overview</button>
         <button role="tab" data-fb-sub="comments" aria-pressed="${fbSub === 'comments'}" aria-selected="${fbSub === 'comments'}">What people wrote <span class="ecount">${int(p.comments.length)}</span></button>
-        <button role="tab" data-fb-sub="gaps" aria-pressed="${fbSub === 'gaps'}" aria-selected="${fbSub === 'gaps'}">No survey <span class="ecount">${int(gapTrips.length)}</span></button>
       </div>`;
 
     $('feedbackWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
       ${subtabs}
-      ${fbSub === 'comments' ? commentsHtml : fbSub === 'gaps' ? gapsHtml : overviewHtml}`;
+      ${fbSub === 'comments' ? commentsHtml : overviewHtml}`;
 
     bindHelp($('feedbackWrap'));
     $('feedbackWrap').querySelectorAll('[data-fb-sub]').forEach((b) => {
