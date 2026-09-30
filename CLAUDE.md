@@ -33,8 +33,13 @@ no framework.
   `<script>`, no bundler. ~135,000 characters. Eight tabs in two categories,
   in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
   holds the `data-view` buttons `setView()` drives):
-  - **BOOKING**: Dashboard, Report, Previous Projects, Trips
+  - **BOOKING**: Booking, Report, Previous Projects, Trips & R&D
   - **AD CAMPAIGN**: Campaigns, History, Leads, Engagements
+
+  (Sidebar labels only — the tab formerly labelled "Dashboard" is now
+  "Booking" and "Trips" is now "Trips & R&D", per Muatasam, 30 Sep 2026.
+  `data-view="board"` / `data-view="trips"` and everything else about
+  these tabs is unchanged; this was a label-only rename.)
 - **Sidebar**: over 900px it's docked and collapses to a 64px icon rail
   (labels fly out on hover), remembered in `localStorage` as
   `nomuSidebarCollapsed`; a snippet at the top of `<body>` applies it before
@@ -62,7 +67,7 @@ no framework.
 | File | Role |
 | --- | --- |
 | `lib/wetravel.js` | Shared WeTravel client. `WETRAVEL_API_KEY` is a **refresh token**, exchanged here for a 1-hour access token (cached, retried on 429/401). Also exports `mapWithConcurrency`. |
-| `api/trips-progress.js` | Dashboard tab — live/upcoming departures, per-week booking bars. Keeps a departure for its whole month, drops it once the month passes. |
+| `api/trips-progress.js` | Booking tab (sidebar label; was "Dashboard") — live/upcoming departures, per-week booking bars. Keeps a departure for its whole month, drops it once the month passes. |
 | `api/previous-trips.js` | Previous Projects tab — the complement of trips-progress: everything whose month has already passed. `end < monthStart` is the exact filter, so a trip is never in both views or neither. |
 | `api/booking-report.js` | Report tab — flat list of booking events, last 300 days by default. Exports `build()`, reused by `slack-notify.js`. |
 | `api/slack-notify.js` | Cron target — posts the day's new bookings to Slack. `?preview=1` renders without posting. Gated by `CRON_SECRET` if set. |
@@ -513,3 +518,14 @@ endpoints (leads, engagements, trips) could be merged into one
   update message to Muatasam — see "Muatasam's standing preferences" above
   for tone (short, direct, no em dashes, explain briefly why when something
   might look surprising).
+- **Anton also edits and commits directly outside a Claude session**
+  (his own VS Code, not this harness) — e.g. commit `9916706` ("up", 30 Sep
+  2026) reverted the R&D pipeline's big full-size sub-tab straight back to
+  the two-sub-tab version, in both `index.html` and this file, between one
+  Claude session ending and the next starting. **Don't assume the repo only
+  changes through a Claude session's own commits** — if something built in
+  an earlier session looks reduced or missing, check `git log`/`git show`
+  for a commit that isn't attributed to that session's work before treating
+  it as a bug or re-adding it. This file is kept in sync with whatever
+  `index.html` actually does, even when the change that got it there wasn't
+  Claude's.
