@@ -723,9 +723,49 @@
     border-radius: 6px; padding: 2px 9px; font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
   }
   .trp-toggle:hover, .trp-toggle[aria-expanded="true"] { color: #fff; border-color: var(--info-line); }
+  /* Overview's pointer to the R&D sub-tab. */
+  .trp-callout { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; border-left: 3px solid var(--yellow); }
+  .trp-callout .ptitle { margin-bottom: 4px; }
+  .trp-callout-line { font-size: 13px; color: var(--text-2); }
+  .trp-callout-line b { color: #fff; font-size: 16px; }
+  .trp-open {
+    background: var(--yellow); color: var(--navy); border: 0; border-radius: 8px; padding: 9px 16px;
+    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .trp-open:hover { filter: brightness(1.08); }
+
+  /* The R&D sub-tab: the same board, a size up throughout. */
+  .trp-big { padding: 22px 24px 24px; }
+  .trp-big-head h2 { margin: 0; font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -.01em; }
+  .trp-big-sub { margin-top: 4px; font-size: 13px; color: var(--text-3); }
+  /* One row of tiles on a desktop; on narrower screens they wrap into a
+     grid rather than leaving one tile stranded on a line of its own. */
+  .trp-big-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 18px 0 16px; gap: 14px 20px; }
+  @media (max-width: 720px) { .trp-big-tiles { grid-auto-flow: row; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } }
+  .trp-big-tiles > * { min-width: 0; }
+  .trp-big-tiles .bv-n { font-size: 40px; }
+  .trp-big .trp-strip { height: 34px; margin-bottom: 20px; border-radius: 8px; }
+  .trp-big .trp-strip-seg { font-size: 13px; }
+  .trp-big .trp-board { gap: 16px; }
+  .trp-big .trp-col { gap: 12px; }
+  .trp-big .trp-col-head { font-size: 12.5px; padding-bottom: 8px; border-bottom-width: 3px; }
+  .trp-big .trp-card { padding: 16px 17px; gap: 9px; border-radius: 12px; }
+  .trp-big .trp-card-name { font-size: 17px; }
+  .trp-big .trp-sub { font-size: 12px; }
+  .trp-big .trp-year { font-size: 12px; padding: 3px 9px; }
+  .trp-big .trp-stepper { font-size: 12.5px; }
+  .trp-big .trp-stepper i { width: 26px; height: 7px; border-radius: 4px; }
+  .trp-big .trp-owner { font-size: 13.5px; }
+  .trp-big .trp-owner b { width: 24px; height: 24px; font-size: 12px; }
+  .trp-big .trp-next { font-size: 13px; }
+  @media (max-width: 600px) {
+    .trp-big { padding: 16px; }
+    .trp-big-head h2 { font-size: 21px; }
+    .trp-big-tiles .bv-n { font-size: 30px; }
+  }
+
   /* R&D board. Cards on the track surface; the single accent is the brand
      fill, so a stage never borrows a quality colour. */
-  .trp-strip-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
   .trp-strip { flex: 1; min-width: 200px; display: flex; gap: 2px; height: 22px; border-radius: 6px; overflow: hidden; background: var(--track); }
   .trp-strip-seg {
     display: flex; align-items: center; justify-content: center; min-width: 22px;
@@ -2833,7 +2873,7 @@
   /* ================= trips tab (Trip Decision Dashboard sheet) ================= */
 
   let tripsData = null;
-  // Which sub-tab of Trips is open: 'overview' or 'products'.
+  // Which sub-tab of Trips is open: 'overview', 'rd' or 'products'.
   let tripsSub = 'overview';
   const tripFilter = { region: 'all', quality: 'all', status: 'all' };
   // Trips whose analysis/actions row is open, by name, so it survives a
@@ -2929,7 +2969,11 @@
     // Anything with a status the board doesn't know still shows, in a row
     // of its own, rather than silently dropping off.
     const rdOther = p.rd.filter((x) => !stageOf(x));
-    const byYear = [...new Set(p.rd.map((x) => x.year).filter(Boolean))].sort().map((y) => `${y}: <b>${p.rd.filter((x) => x.year === y).length}</b>`).join(' · ');
+    const years = [...new Set(p.rd.map((x) => x.year).filter(Boolean))].sort();
+    const thisYear = Number(String(p.asOf).slice(0, 4));
+    const rdSummary = STAGES.map((st) => [st.label.toLowerCase(), p.rd.filter((x) => stageOf(x) === st).length])
+      .filter(([, n]) => n).map(([l, n]) => `${n} ${l}`).join(', ')
+      + (years.length ? ` · launching ${years.map((y) => `${y}: ${p.rd.filter((x) => x.year === y).length}`).join(', ')}` : '');
     const stageStrip = STAGES.map((st) => {
       const n = p.rd.filter((x) => stageOf(x) === st).length;
       const cls = st.key === 'Complete' ? ' done' : st.hold ? ' paused' : st.steps === 0 ? ' idle' : '';
@@ -3022,13 +3066,30 @@
         </div>
       </div>
 
-      <div class="panel">
-        <div class="ptitle">R&amp;D pipeline · ${int(p.rd.length)} trip${p.rd.length === 1 ? '' : 's'}</div>
-        ${p.rd.length ? `
-        <div class="trp-strip-wrap">
-          <div class="trp-strip">${stageStrip}</div>
-          <div class="trp-leg"><span>Launching ${byYear}</span></div>
+      <div class="panel trp-callout">
+        <div>
+          <div class="ptitle">R&amp;D pipeline</div>
+          <div class="trp-callout-line"><b>${int(p.rd.length)}</b> trip${p.rd.length === 1 ? '' : 's'} in R&amp;D · ${rdSummary}</div>
         </div>
+        <button class="trp-open" data-trip-sub="rd">Open R&amp;D pipeline →</button>
+      </div>
+`;
+    // Its own sub-tab, big: the pipeline is what's coming next, so it gets a
+    // headline and large figures rather than sitting at the foot of the
+    // overview.
+    const rdHtml = `
+      <div class="panel trp-big">
+        <div class="trp-big-head">
+          <h2>R&amp;D pipeline</h2>
+          <div class="trp-big-sub">New trip products in development, from research to launch</div>
+        </div>
+        ${p.rd.length ? `
+        <div class="bvhero trp-tiles trp-big-tiles">
+          <div class="bv-side"><div class="bv-lab">In R&amp;D</div><div class="bv-n bv-act">${int(p.rd.length)}</div><div class="bv-s">trips</div></div>
+          ${STAGES.map((st) => `<div class="bv-side"><div class="bv-lab">${esc(st.label)}</div><div class="bv-n">${int(p.rd.filter((x) => stageOf(x) === st).length)}</div><div class="bv-s">trips</div></div>`).join('')}
+          ${years.map((y) => `<div class="bv-side"><div class="bv-lab">Launching ${y}</div><div class="bv-n${y === thisYear ? ' bv-act' : ''}">${int(p.rd.filter((x) => x.year === y).length)}</div><div class="bv-s">trips</div></div>`).join('')}
+        </div>
+        <div class="trp-strip">${stageStrip}</div>
         <div class="trp-board">${rdCols}</div>
         ${rdOther.length ? `<div class="trp-board">${rdOther.map((x) => rdCard(x, { key: x.rdStatus || '', label: x.rdStatus || 'No status', steps: 0 })).join('')}</div>` : ''}`
           : '<div class="pnote">Nothing in R&amp;D right now.</div>'}
@@ -3056,6 +3117,7 @@
     const subtabs = `
       <div class="seg subtabs" role="tablist" aria-label="Trips sections">
         <button role="tab" data-trip-sub="overview" aria-pressed="${tripsSub === 'overview'}" aria-selected="${tripsSub === 'overview'}">Overview</button>
+        <button role="tab" data-trip-sub="rd" aria-pressed="${tripsSub === 'rd'}" aria-selected="${tripsSub === 'rd'}">R&amp;D pipeline <span class="ecount">${int(p.rd.length)}</span></button>
         <button role="tab" data-trip-sub="products" aria-pressed="${tripsSub === 'products'}" aria-selected="${tripsSub === 'products'}">All products <span class="ecount">${int(p.trips.length)}</span></button>
       </div>`;
 
@@ -3063,7 +3125,7 @@
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
 
       ${subtabs}
-      ${tripsSub === 'products' ? productsHtml : overviewHtml}`;
+      ${tripsSub === 'products' ? productsHtml : tripsSub === 'rd' ? rdHtml : overviewHtml}`;
 
     bindHelp($('tripsWrap'));
     $('tripsWrap').querySelectorAll('[data-trip-sub]').forEach((b) => {
