@@ -10,7 +10,7 @@ register. A once-daily Vercel cron posts a summary to Slack.
 | --- | --- |
 | `index.html` | The dashboard. Polls `/api/trips-progress` every 30s, plus a Report tab backed by `/api/booking-report`. |
 | `lib/wetravel.js` | Shared WeTravel client. Exchanges the Partner API key (a *refresh* token) for a 1-hour access token, caches it, retries on 429/401. |
-| `api/trips-progress.js` | Per-departure / per-week booking bars for the Dashboard tab. |
+| `api/trips-progress.js` | Per-departure / per-week booking bars for the Booking tab (sidebar label; was "Dashboard"). |
 | `api/booking-report.js` | Flat list of booking events (last 300 days) for the Report tab. Also exports `build()` for the Slack job. |
 | `api/slack-notify.js` | Cron target. Posts the day's new bookings to Slack. `?preview=1` renders the message without posting. |
 | `api/announcement.js` | Serves the banner text from env vars, so it can be changed without a code edit. |
