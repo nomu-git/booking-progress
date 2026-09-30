@@ -30,11 +30,11 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~100,000 characters. Six tabs in two categories,
+  `<script>`, no bundler. ~115,000 characters. Seven tabs in two categories,
   in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
   holds the `data-view` buttons `setView()` drives):
   - **BOOKING**: Dashboard, Report, Previous Projects
-  - **AD CAMPAIGN**: Campaigns, History, Leads
+  - **AD CAMPAIGN**: Campaigns, History, Leads, Engagements
 - **Sidebar**: over 900px it's docked and collapses to a 64px icon rail
   (labels fly out on hover), remembered in `localStorage` as
   `nomuSidebarCollapsed`; a snippet at the top of `<body>` applies it before
@@ -46,7 +46,7 @@ no framework.
   level because they're fixed-position overlays.
 - `api/*.js`: **endpoints only.** CommonJS Vercel functions (`module.exports = async (req, res) => {...}`).
 - `lib/*.js`: shared helpers (`wetravel`, `meta-ads`, `trip-code`, `xlsx`,
-  `leads-sheet`), required as `require('../lib/…')`. They live outside
+  `sheet`), required as `require('../lib/…')`. They live outside
   `api/` on purpose: Vercel turns **every** file in `api/` into a function,
   and the Hobby plan allows **12 per deployment**. See the pitfall below.
   Each also exports `build()` separately where another function needs its
@@ -342,8 +342,10 @@ webhooks.
 - `lib/xlsx.js` is a zero-dependency .xlsx reader (zip + XML, cached formula
   values, date-formatted cells returned as ISO dates). Verified against
   `Updated Budget.xlsx` value for value.
-- `lib/leads-sheet.js` fetches the workbook from `LEADS_SHEET_URL`, a
-  OneDrive/SharePoint link shared as **"Anyone with the link can view"**.
+- `lib/sheet.js` (`fetchWorkbook(envVar)`) fetches a workbook from the
+  share link held in the named env var (`LEADS_SHEET_URL`,
+  `ENGAGEMENT_SHEET_URL`), a OneDrive/SharePoint link shared as **"Anyone
+  with the link can view"**. Links never go in the code: the repo is public.
   Any other sharing setting answers 200 with a Microsoft sign-in page
   rather than an error; the zip-signature check turns that into a clear
   message. **SharePoint grants anonymous access through a guest cookie set
@@ -400,6 +402,33 @@ webhooks.
 - **The leads sheet may contain customer names or phone numbers. The site
   is public with no auth, so only aggregate counts may ever leave the API.
   Never add a raw-dump or debug endpoint that returns sheet rows.**
+
+## Engagements tab
+
+`api/engagements.js`, same idea as Leads: mirrors **Maryam's** social media
+workbook ("Marketing Data: Social Media Nomuhub", nomuhub1 SharePoint) live
+from `ENGAGEMENT_SHEET_URL`. Two tabs, detected by headers: **Posts** (Content
+Name, languages, Content Type, Post Date, Views, Likes, Comments, Shares,
+Book marks, Engagement, CTA Present?, Cta Word) and **Story** (Content Name,
+Language, Poll Type, Post Date, Views, Responses, Comments = poll result,
+Story Engagement Question).
+
+- Maryam's Engagement is exactly (likes + comments + shares + saves) / views
+  on every post (checked 30 Sep); shown as she wrote it. The overall figure
+  is total interactions over total views.
+- Post Date is typed both as text ("3rd July", no year) and as real dates;
+  the year comes from the real ones. A blank Book marks cell is "not
+  recorded", shown as a dash, not 0.
+- Story Responses can be text ("8 Link Clicks"): the number is kept and the
+  unit shown under it. Response rate (responses / views) is computed here.
+- UI: month pills, hero (posts, views, engagement, best post), a
+  views-per-post bar chart (single series, `--fill`), a posts table with an
+  engagement bar per row, and a stories table. Chart width scales with the
+  number of posts, not the Leads chart's fixed 620px.
+- The long-term route is Instagram's own API (`instagram_basic` /
+  `instagram_manage_insights`), blocked on connecting Instagram to Business
+  Manager; about half the columns could come from it, the editorial ones
+  (name, language, CTA) never will. See `docs/LEADS-PLAN.md`.
 
 ## Open items waiting on Muatasam
 

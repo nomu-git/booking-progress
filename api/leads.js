@@ -21,7 +21,7 @@
 // The logs hold phone numbers and Instagram profiles. The site is public,
 // so nothing leaves this file except counts.
 
-const { fetchLeadsWorkbook } = require('../lib/leads-sheet');
+const { fetchWorkbook } = require('../lib/sheet');
 
 const CACHE_TTL_MS = Number(process.env.LEADS_CACHE_TTL_MS || 60000);
 
@@ -398,7 +398,7 @@ module.exports = async (req, res) => {
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(cache.payload);
     }
-    const payload = build(await fetchLeadsWorkbook());
+    const payload = build(await fetchWorkbook('LEADS_SHEET_URL'));
     cache = { at: Date.now(), payload };
     res.setHeader('X-Cache', 'MISS');
     res.status(200).json(payload);

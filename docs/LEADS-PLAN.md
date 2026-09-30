@@ -160,6 +160,8 @@ Column by column, once that access exists:
 - [ ] ManyChat check: Cowork prompt sent, waiting on results
 - [x] Seen Maryam's engagement report (30 Sep) — organic content, confirmed
       needs instagram_basic/instagram_manage_insights, see above
+- [x] Engagements tab built (30 Sep), mirroring Maryam's workbook the same
+      way Leads mirrors Marina's. Needs `ENGAGEMENT_SHEET_URL` in Vercel.
 - [ ] Start Meta Business verification (Business Settings > Security Center)
 - [ ] Connect the Instagram account (Professional) to the Facebook Page and
       Business Manager
