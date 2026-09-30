@@ -723,6 +723,58 @@
     border-radius: 6px; padding: 2px 9px; font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
   }
   .trp-toggle:hover, .trp-toggle[aria-expanded="true"] { color: #fff; border-color: var(--info-line); }
+  /* R&D board. Cards on the track surface; the single accent is the brand
+     fill, so a stage never borrows a quality colour. */
+  .trp-strip-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .trp-strip { flex: 1; min-width: 200px; display: flex; gap: 2px; height: 22px; border-radius: 6px; overflow: hidden; background: var(--track); }
+  .trp-strip-seg {
+    display: flex; align-items: center; justify-content: center; min-width: 22px;
+    font-size: 11px; font-weight: 700; color: #fff; background: rgba(245,185,53,.35);
+  }
+  .trp-strip-seg.idle { background: rgba(134,152,180,.28); }
+  .trp-strip-seg.done { background: var(--fill); color: #0b1a2e; }
+  .trp-strip-seg span { font-weight: 600; white-space: nowrap; }
+  @media (max-width: 600px) { .trp-strip-seg span { display: none; } }
+  .trp-strip-seg.paused { background: repeating-linear-gradient(45deg, rgba(134,152,180,.35) 0 6px, rgba(134,152,180,.18) 6px 12px); }
+  .trp-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, .85fr); gap: 12px; align-items: start; }
+  .trp-board + .trp-board { margin-top: 12px; }
+  .trp-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .trp-col-head {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2);
+    padding: 0 2px 6px; border-bottom: 2px solid rgba(245,185,53,.45);
+  }
+  .trp-col.hold .trp-col-head { border-bottom-style: dashed; border-bottom-color: var(--line); color: var(--text-3); }
+  .trp-col-empty { font-size: 11.5px; color: var(--text-3); padding: 10px 4px; }
+  .trp-card {
+    background: var(--track); border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px;
+    display: flex; flex-direction: column; gap: 7px; transition: border-color .15s, transform .15s;
+  }
+  .trp-card:hover { border-color: rgba(245,185,53,.55); transform: translateY(-1px); }
+  .trp-card.hold { border-style: dashed; }
+  .trp-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .trp-card-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.25; }
+  .trp-year {
+    flex: none; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+    color: var(--text-2); border: 1px solid var(--line); font-variant-numeric: tabular-nums;
+  }
+  .trp-year.now { color: var(--yellow); border-color: rgba(245,185,53,.6); }
+  .trp-stepper { display: flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+  .trp-stepper i { display: block; width: 18px; height: 5px; border-radius: 3px; background: rgba(134,152,180,.25); }
+  .trp-stepper i.on { background: rgba(245,185,53,.7); }
+  .trp-stepper.done i.on { background: var(--fill); }
+  .trp-stepper.paused i.on { background: rgba(134,152,180,.7); }
+  .trp-stepper span { margin-left: 6px; }
+  .trp-stepper.done span { color: var(--yellow); }
+  .trp-owner { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-2); }
+  .trp-owner b {
+    width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(77,157,224,.22); color: #fff; font-size: 10.5px;
+  }
+  .trp-owner em { color: var(--text-3); font-style: italic; }
+  .trp-next { font-size: 11.5px; line-height: 1.45; color: var(--text-2); border-top: 1px solid rgba(52,81,124,.45); padding-top: 7px; }
+  .trp-next span { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 2px; }
+  @media (max-width: 1100px) { .trp-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 600px) { .trp-board { grid-template-columns: 1fr; } }
   .ctable tr.trp-detail td { background: rgba(22,41,74,.55); text-align: left; white-space: normal; padding: 12px 16px 14px; }
   .trp-dl {
     display: grid; grid-template-columns: 150px 1fr; gap: 8px 16px; font-size: 12px; line-height: 1.55; color: var(--text-2);
@@ -2837,16 +2889,52 @@
       </tr>`;
     }).join('');
 
-    // ---- R&D pipeline ----
-    const rdRows = p.rd.map((x) => `
-      <tr>
-        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc([x.category, x.destination].filter(Boolean).join(' · '))}</span></td>
-        <td class="trp-l">${esc(x.region || '—')}</td>
-        <td class="trp-l">${esc(x.pic || '—')}</td>
-        <td class="trp-l">${esc(x.rdStatus || '—')}</td>
-        <td class="num">${x.year || '—'}</td>
-        <td class="trp-txt">${esc(x.rdNext || '—')}</td>
-      </tr>`).join('');
+    // ---- R&D pipeline, as a board ----
+    // One column per stage, left to right the way a product moves through
+    // R&D, with On hold set apart since it's off the main path. Stages get a
+    // stepper and one accent rather than colours of their own: green, yellow
+    // and red already mean High/Medium/Low quality on this tab.
+    const STAGES = [
+      { key: 'Not Started', label: 'Not started', steps: 0 },
+      { key: 'In Progress', label: 'In progress', steps: 2 },
+      { key: 'Complete', label: 'Complete', steps: 3 },
+      { key: 'On Hold', label: 'On hold', steps: 1, hold: true },
+    ];
+    const stageOf = (x) => STAGES.find((st) => st.key.toLowerCase() === String(x.rdStatus || '').toLowerCase()) || null;
+    // "Not sure (unknown)" is the sheet's placeholder for no PIC yet.
+    const ownerOf = (x) => (x.pic && !/not sure|unknown/i.test(x.pic) ? x.pic : null);
+    const rdCard = (x, st) => {
+      const owner = ownerOf(x);
+      const steps = [0, 1, 2].map((i) => `<i class="${i < st.steps ? 'on' : ''}"></i>`).join('');
+      return `
+        <div class="trp-card${st.hold ? ' hold' : ''}">
+          <div class="trp-card-top">
+            <div class="trp-card-name">${esc(x.name)}</div>
+            ${x.year ? `<span class="trp-year${x.year === Number(String(p.asOf).slice(0, 4)) ? ' now' : ''}">${x.year}</span>` : ''}
+          </div>
+          <div class="trp-sub">${esc([x.category, x.region, x.destination].filter(Boolean).join(' · '))}</div>
+          <div class="trp-stepper${st.key === 'Complete' ? ' done' : ''}${st.hold ? ' paused' : ''}" ${tipOf(x.name, [['R&D status', st.label]])}>${steps}<span>${st.key === 'Complete' ? '✓ ' : st.hold ? '⏸ ' : ''}${esc(st.label)}</span></div>
+          <div class="trp-owner">${owner ? `<b>${esc(owner.charAt(0).toUpperCase())}</b>${esc(owner)}` : '<em>No owner yet</em>'}</div>
+          ${x.rdNext ? `<div class="trp-next"><span>Next step</span>${esc(x.rdNext)}</div>` : ''}
+        </div>`;
+    };
+    const rdCols = STAGES.map((st) => {
+      const list = p.rd.filter((x) => stageOf(x) === st).sort((a, b) => (a.year || 9999) - (b.year || 9999) || a.name.localeCompare(b.name));
+      return `
+        <div class="trp-col${st.hold ? ' hold' : ''}">
+          <div class="trp-col-head">${esc(st.label)} <span class="ecount">${list.length}</span></div>
+          ${list.map((x) => rdCard(x, st)).join('') || '<div class="trp-col-empty">None</div>'}
+        </div>`;
+    }).join('');
+    // Anything with a status the board doesn't know still shows, in a row
+    // of its own, rather than silently dropping off.
+    const rdOther = p.rd.filter((x) => !stageOf(x));
+    const byYear = [...new Set(p.rd.map((x) => x.year).filter(Boolean))].sort().map((y) => `${y}: <b>${p.rd.filter((x) => x.year === y).length}</b>`).join(' · ');
+    const stageStrip = STAGES.map((st) => {
+      const n = p.rd.filter((x) => stageOf(x) === st).length;
+      const cls = st.key === 'Complete' ? ' done' : st.hold ? ' paused' : st.steps === 0 ? ' idle' : '';
+      return n ? `<div class="trp-strip-seg${cls}" style="flex:${n}" ${tipOf(st.label, [['Trips', int(n)]])}>${n}<span>&nbsp;${esc(st.label.toLowerCase())}</span></div>` : '';
+    }).join('');
 
     // ---- all products, filtered ----
     const opts = (key) => [...new Set(p.trips.map((x) => x[key]).filter(Boolean))];
@@ -2936,13 +3024,14 @@
 
       <div class="panel">
         <div class="ptitle">R&amp;D pipeline · ${int(p.rd.length)} trip${p.rd.length === 1 ? '' : 's'}</div>
-        ${p.rd.length ? `<div class="tscroll"><table class="ctable">
-          <thead><tr>
-            ${hcol('trTrip', 'Trip')}<th class="trp-l"><span ${hlp('trRegion')}>Region</span></th><th class="trp-l"><span ${hlp('trPic')}>Owner</span></th>
-            <th class="trp-l"><span ${hlp('trRdStatus')}>R&amp;D status</span></th>${hcol('trYear', 'Year')}<th class="trp-l"><span ${hlp('trNext')}>Next step</span></th>
-          </tr></thead>
-          <tbody>${rdRows}</tbody>
-        </table></div>` : '<div class="pnote">Nothing in R&amp;D right now.</div>'}
+        ${p.rd.length ? `
+        <div class="trp-strip-wrap">
+          <div class="trp-strip">${stageStrip}</div>
+          <div class="trp-leg"><span>Launching ${byYear}</span></div>
+        </div>
+        <div class="trp-board">${rdCols}</div>
+        ${rdOther.length ? `<div class="trp-board">${rdOther.map((x) => rdCard(x, { key: x.rdStatus || '', label: x.rdStatus || 'No status', steps: 0 })).join('')}</div>` : ''}`
+          : '<div class="pnote">Nothing in R&amp;D right now.</div>'}
       </div>
 `;
     const productsHtml = `

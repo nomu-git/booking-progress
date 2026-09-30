@@ -466,6 +466,14 @@ Story Engagement Question).
   toggle under each trip name opening analysis, corrective actions, notes
   and R&D next step. On a phone the opened text is sticky-pinned to the
   visible part of the scroll box.
+- **R&D pipeline is a board**, not a table: columns Not started → In
+  progress → Complete, with On hold set apart (dashed). Each trip is a card
+  with a 3-step stepper, owner initial, target-year badge (the current year
+  in yellow) and its next step, above a labelled stage strip and a
+  "launching 2026 / 2027" count. Stages use the brand accent only, never
+  the quality colours, which already mean High/Medium/Low on this tab.
+  "Not sure (unknown)" as a PIC shows as "No owner yet". A status the board
+  doesn't know gets its own row rather than disappearing.
 - Quality colours `--q-high/med/low` are the dataviz skill's fixed status
   steps; the dashboard's own green/amber/red failed the normal-vision
   floor (amber vs red 14.6). R&D is neutral blue. Every use has a glyph
