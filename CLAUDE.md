@@ -30,10 +30,10 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~115,000 characters. Seven tabs in two categories,
+  `<script>`, no bundler. ~135,000 characters. Eight tabs in two categories,
   in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
   holds the `data-view` buttons `setView()` drives):
-  - **BOOKING**: Dashboard, Report, Previous Projects
+  - **BOOKING**: Dashboard, Report, Previous Projects, Trips
   - **AD CAMPAIGN**: Campaigns, History, Leads, Engagements
 - **Sidebar**: over 900px it's docked and collapses to a 64px icon rail
   (labels fly out on hover), remembered in `localStorage` as
@@ -344,7 +344,7 @@ webhooks.
   `Updated Budget.xlsx` value for value.
 - `lib/sheet.js` (`fetchWorkbook(envVar)`) fetches a workbook from the
   share link held in the named env var (`LEADS_SHEET_URL`,
-  `ENGAGEMENT_SHEET_URL`), a OneDrive/SharePoint link shared as **"Anyone
+  `ENGAGEMENT_SHEET_URL`, `TRIPS_SHEET_URL`), a OneDrive/SharePoint link shared as **"Anyone
   with the link can view"**. Links never go in the code: the repo is public.
   Any other sharing setting answers 200 with a Microsoft sign-in page
   rather than an error; the zip-signature check turns that into a clear
@@ -435,6 +435,43 @@ Story Engagement Question).
   `instagram_manage_insights`), blocked on connecting Instagram to Business
   Manager; about half the columns could come from it, the editorial ones
   (name, language, CTA) never will. See `docs/LEADS-PLAN.md`.
+
+## Trips tab
+
+`api/trips.js` mirrors the **"NomuHub Trip Decision Dashboard"** workbook
+("which products to grow, optimise, or stop") from `TRIPS_SHEET_URL`.
+
+- The master tab is found by a header row with TRIP NAME and QUALITY (it
+  sits under a title block, row 4 today); columns are matched by the name
+  before each header's explanation ("REGION\r\n(ASIA or AFRICA...)" ->
+  "region"). One row per trip product: category, region, destination,
+  PIC, weeks, days, year, existing/new price, price change, quality,
+  product status, R&D status and next step, requires update, detailed
+  analysis, corrective actions, notes, profit/loss (empty today).
+- **Counts are recomputed from the master rows, not scraped from the
+  Executive Summary tab** (whose layout moves). They matched it exactly on
+  30 Sep: 23 products, 53 departure weeks, High 4/22 wk, Medium 8/25, Low
+  5/4, R&D 6/2, and every region row. The one thing read from the summary
+  is its wording: the quality guide's "What it means" / "What we do with
+  the calendar", and the per-trip "Calendar decision" from its products
+  table, with the sheet's own text as fallback.
+- UI in the summary's reading order: tiles + a weeks-by-quality bar +
+  the quality guide; quality by region (with a weeks mini-bar); R&D
+  pipeline; all products with Region / Quality / Status filters (each
+  button counts what it would show given the other two) and a Details
+  toggle under each trip name opening analysis, corrective actions, notes
+  and R&D next step. On a phone the opened text is sticky-pinned to the
+  visible part of the scroll box.
+- Quality colours `--q-high/med/low` are the dataviz skill's fixed status
+  steps; the dashboard's own green/amber/red failed the normal-vision
+  floor (amber vs red 14.6). R&D is neutral blue. Every use has a glyph
+  (▲ ■ ▼ ◆) and the label.
+- **This tab puts pricing, internal analysis and corrective actions on a
+  public URL with no login.** Flagged to Anton when it was built.
+
+**Function budget: 11 of Vercel Hobby's 12.** The three sheet-mirror
+endpoints (leads, engagements, trips) could be merged into one
+`api/sheets.js?name=` if another endpoint is ever needed.
 
 ## Open items waiting on Muatasam
 

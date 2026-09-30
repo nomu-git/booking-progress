@@ -42,6 +42,20 @@
     --lead-ig: #d95926;
     --lead-all: #3987e5;
 
+    /* Trips quality ratings. High/Medium/Low are the dataviz skill's fixed
+       status steps (good / warning / critical), validated against --track
+       in rating order: CVD dE 11.3, normal-vision 27.6, all >= 3:1. The
+       dashboard's own --fresh/--target/--danger were tried first and
+       failed: amber and red sat 14.6 apart, under the 15 floor, and they
+       touch in the weeks bar. R&D isn't a performance state, so it's the
+       neutral categorical blue, not a status colour. Each always ships with
+       a glyph and its label, never colour alone. */
+    --q-high: #0ca30c;
+    --q-med: #fab219;
+    --q-low: #d03b3b;
+    --q-rd: #3987e5;
+    --q-none: #6f86a8;
+
     /* Reference bands behind the weekly chart. Kept faint on purpose: they
        have to tint the plot without competing with the line drawn over them. */
     --zone-good: rgba(61,220,132,.09);
@@ -288,7 +302,7 @@
      and those tabs' panels have touched since; Previous Projects and Leads
      never had it. */
   #previousWrap > .panel, #campaignsWrap > .panel,
-  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel { margin-bottom: 12px; }
+  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel { margin-bottom: 12px; }
   .ptitle {
     font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-3); margin-bottom: 10px;
@@ -674,6 +688,52 @@
   .pnote.warn { color: #ffb3ab; }
   .abar-fill.lead { background: var(--lead-all); }
 
+  /* ---------- trips (decision dashboard) ---------- */
+  /* Top-aligned: the quality tiles carry a "trips" line the first two don't, and
+     bottom alignment left their labels on different lines. */
+  .trp-tiles { display: flex; flex-wrap: wrap; gap: 14px 30px; align-items: flex-start; }
+  .trp-q { display: inline-flex; align-items: center; gap: 5px; }
+  .trp-q i { font-style: normal; font-size: 10px; }
+  /* Where the weeks go: one bar, a segment per rating, 2px of surface
+     between segments, rounded only at the two outer ends. */
+  .trp-bar { display: flex; gap: 2px; height: 26px; border-radius: 6px; overflow: hidden; background: var(--track); margin: 16px 0 8px; }
+  .trp-seg { min-width: 3px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #0b1a2e; }
+  .trp-leg { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11.5px; color: var(--text-2); }
+  .trp-leg b { color: #fff; font-variant-numeric: tabular-nums; }
+  .trp-mini { display: flex; gap: 2px; height: 10px; width: 140px; border-radius: 5px; overflow: hidden; background: var(--track); }
+  .trp-pill {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap;
+  }
+  .trp-pill i { font-style: normal; font-size: 9px; }
+  .trp-sub { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 500; color: var(--text-3); white-space: normal; }
+  #tripsWrap .ctable td.cname { min-width: 170px; }
+  #tripsWrap .ctable td.trp-txt { white-space: normal; text-align: left; min-width: 220px; max-width: 420px; font-size: 11.5px; line-height: 1.45; }
+  #tripsWrap .ctable th.trp-l, #tripsWrap .ctable td.trp-l { text-align: left; }
+  .trp-sub.nw { white-space: nowrap; }
+  #tripsWrap .ctable td.trp-dec { min-width: 150px; max-width: 220px; }
+  /* Under the trip name, so it's on screen however far the table scrolls. */
+  .trp-toggle {
+    display: inline-block; margin-top: 6px;
+    background: var(--track); border: 1px solid var(--line); color: var(--text-2);
+    border-radius: 6px; padding: 2px 9px; font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .trp-toggle:hover, .trp-toggle[aria-expanded="true"] { color: #fff; border-color: var(--info-line); }
+  .ctable tr.trp-detail td { background: rgba(22,41,74,.55); text-align: left; white-space: normal; padding: 12px 16px 14px; }
+  .trp-dl {
+    display: grid; grid-template-columns: 150px 1fr; gap: 8px 16px; font-size: 12px; line-height: 1.55; color: var(--text-2);
+    position: sticky; left: 16px; max-width: 900px;
+  }
+  .trp-dl dt { color: var(--text-3); font-weight: 700; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+  .trp-dl dd { margin: 0; }
+  @media (max-width: 600px) {
+    /* 100vw less the page gutter (40), panel (34), cell padding (16) and the
+       sticky inset (16): the width actually visible inside the scroll box. */
+    .trp-dl { grid-template-columns: 1fr; gap: 2px; max-width: calc(100vw - 110px); }
+    .trp-dl dd { margin-bottom: 8px; }
+    #tripsWrap .ctable td.cname { min-width: 130px; }
+  }
+
   /* ---------- engagements ----------
      One series per chart (views per post), so one hue: the brand fill, as
      on the other single-series bars on the board. The Leads chart classes
@@ -851,6 +911,7 @@
         <button class="sb-item" data-view="board" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="sb-label">Dashboard</span></button>
         <button class="sb-item" data-view="report" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-8M12 20V5M18 20v-11M3 20h18"/></svg><span class="sb-label">Report</span></button>
         <button class="sb-item" data-view="previous" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span class="sb-label">Previous Projects</span></button>
+        <button class="sb-item" data-view="trips" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg><span class="sb-label">Trips</span></button>
       </div>
       <div class="sb-group">
         <div class="sb-cat">Ad Campaign</div>
@@ -905,6 +966,7 @@
   <div id="historyWrap" hidden></div>
   <div id="leadsWrap" hidden></div>
   <div id="engagementsWrap" hidden></div>
+  <div id="tripsWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   </div>
@@ -977,7 +1039,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'previous', 'campaigns', 'history', 'leads', 'engagements'].includes(s.view)) view = s.view;
+      if (['board', 'report', 'previous', 'trips', 'campaigns', 'history', 'leads', 'engagements'].includes(s.view)) view = s.view;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -1698,6 +1760,24 @@
     engComments: ['Comments', 'Comments on the post.'],
     engShares: ['Shares', 'Times the post was shared or sent on.'],
     engSaves: ['Saves', "Times the post was saved (bookmarked). A dash means it wasn't recorded for that post, not zero."],
+    trProducts: ['Trip products', "Every trip product in the Trip Decision Dashboard sheet, live, R&D ones included."],
+    trWeeks: ['Departure weeks', 'Weeks each product is scheduled to run, added up across all products. Each one is a week the team has to fill.'],
+    trQuality: ['Quality', "How well the product sells, as the team rated it in the sheet: High, Medium, Low, or R&D if it hasn't launched."],
+    trMeaning: ['What it means', "The sheet's own description of each rating."],
+    trShare: ['% of weeks', "This rating's share of all departure weeks."],
+    trTodo: ['What we do', "What the sheet says to do with the calendar for this rating."],
+    trRegion: ['Region', 'Asia, Africa, Europe or GCC.'],
+    trTrip: ['Trip', "The trip product's name, with its category and destination underneath."],
+    trTrips: ['Trips', 'Trip products in this group.'],
+    trDays: ['Days', 'How many days one departure lasts.'],
+    trPrice: ['Price', "The new price in USD, with the existing price and the change underneath."],
+    trStatus: ['Status', 'Active, Stopped, R&D or Existing, as the sheet has it.'],
+    trDecision: ['Decision', "What to do with this product's weeks, from its quality rating, in the sheet's own words."],
+    trPic: ['PIC', 'The operations manager in charge of the trip.'],
+    trRdStatus: ['R&D status', 'Complete, In Progress, Not Started or On Hold.'],
+    trYear: ['Year', 'The calendar year the product is for.'],
+    trNext: ['Next step', 'What happens next in R&D, and by when, from the sheet.'],
+    trMix: ['Weeks by quality', "How the region's departure weeks split across the quality ratings."],
     engType: ['Content type', 'Reel, Carousel, Static or Photo dump, as Maryam recorded it. Pick one above to see only those posts.'],
     engCta: ['CTA', "The post's call to action, as Maryam tagged it: the specific word used (Trip, Grow...), or Open when there's no specific one."],
     stViews: ['Views', 'How many people viewed the story.'],
@@ -2694,6 +2774,214 @@
     }
   }
 
+  /* ================= trips tab (Trip Decision Dashboard sheet) ================= */
+
+  let tripsData = null;
+  const tripFilter = { region: 'all', quality: 'all', status: 'all' };
+  // Trips whose analysis/actions row is open, by name, so it survives a
+  // filter change and the 5-minute refresh.
+  const tripsOpen = new Set();
+
+  const Q_ORDER = ['High', 'Medium', 'Low', 'R&D'];
+  const Q_STYLE = {
+    High: { c: 'var(--q-high)', g: '▲' },
+    Medium: { c: 'var(--q-med)', g: '■' },
+    Low: { c: 'var(--q-low)', g: '▼' },
+    'R&D': { c: 'var(--q-rd)', g: '◆' },
+  };
+  const qStyle = (q) => Q_STYLE[q] || { c: 'var(--q-none)', g: '○' };
+  const qGlyph = (q) => `<i style="color:${qStyle(q).c}">${qStyle(q).g}</i>`;
+  const qPill = (q) => (q ? `<span class="trp-pill" style="background:color-mix(in srgb, ${qStyle(q).c} 22%, transparent)">${qGlyph(q)}${esc(q)}</span>` : '—');
+  const usd = (n) => (n == null ? '—' : `$${int(n)}`);
+
+  function renderTrips() {
+    const p = tripsData;
+    if (!p) return;
+    if (p.error && !p.trips) {
+      $('tripsWrap').innerHTML = `<div class="msg err">Could not load trips: ${esc(p.error)}</div>`;
+      return;
+    }
+    const t = p.totals;
+
+    // ---- where the weeks go ----
+    const rated = p.byQuality.filter((q) => q.trips > 0 || Q_ORDER.includes(q.quality));
+    const segs = rated.filter((q) => q.weeks > 0).map((q) => `
+      <div class="trp-seg" style="flex:${q.weeks};background:${qStyle(q.quality).c}" ${tipOf(q.quality, [['Trips', int(q.trips)], ['Weeks', int(q.weeks)], ['Share of weeks', pct(q.share)]], q.whatToDo)}>${q.share >= 0.08 ? int(q.weeks) : ''}</div>`).join('');
+    const legend = rated.map((q) => `<span class="trp-q">${qGlyph(q.quality)}${esc(q.quality)} <b>${int(q.weeks)}</b> wk · ${pct(q.share)}</span>`).join('');
+    const guideRows = rated.map((q) => `
+      <tr>
+        <td class="trp-l">${qPill(q.quality)}</td>
+        <td class="trp-txt">${esc(q.meaning || '')}</td>
+        <td class="num">${int(q.trips)}</td>
+        <td class="num">${int(q.weeks)}</td>
+        <td class="abar-cell"><div class="abar"><div class="abar-fill" style="width:${(q.share * 100).toFixed(1)}%;background:${qStyle(q.quality).c}"></div></div><span class="abar-pct">${pct(q.share)}</span></td>
+        <td class="trp-txt">${esc(q.whatToDo || '')}</td>
+      </tr>`).join('');
+
+    // ---- quality by region ----
+    const regionRows = p.byRegion.map((r) => {
+      const mini = Q_ORDER.filter((q) => r[`${q}Weeks`] > 0).map((q) => `<div style="flex:${r[`${q}Weeks`]};background:${qStyle(q).c}"></div>`).join('');
+      return `
+      <tr>
+        <td class="cname">${esc(r.region)}</td>
+        ${Q_ORDER.map((q) => `<td class="num">${r[q] ? int(r[q]) : '<span style="color:var(--text-3)">0</span>'}</td>`).join('')}
+        <td class="num"><b>${int(r.trips)}</b></td>
+        <td class="num">${int(r.weeks)}</td>
+        <td ${tipOf(r.region, Q_ORDER.map((q) => [q, `${int(r[`${q}Weeks`])} wk`]))}>${r.weeks ? `<div class="trp-mini">${mini}</div>` : '<span style="color:var(--text-3)">no weeks yet</span>'}</td>
+      </tr>`;
+    }).join('');
+
+    // ---- R&D pipeline ----
+    const rdRows = p.rd.map((x) => `
+      <tr>
+        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc([x.category, x.destination].filter(Boolean).join(' · '))}</span></td>
+        <td class="trp-l">${esc(x.region || '—')}</td>
+        <td class="trp-l">${esc(x.pic || '—')}</td>
+        <td class="trp-l">${esc(x.rdStatus || '—')}</td>
+        <td class="num">${x.year || '—'}</td>
+        <td class="trp-txt">${esc(x.rdNext || '—')}</td>
+      </tr>`).join('');
+
+    // ---- all products, filtered ----
+    const opts = (key) => [...new Set(p.trips.map((x) => x[key]).filter(Boolean))];
+    const regions = p.byRegion.map((r) => r.region);
+    const qualities = Q_ORDER.filter((q) => p.trips.some((x) => x.quality === q));
+    const statuses = opts('status');
+    for (const [key, list] of [['region', regions], ['quality', qualities], ['status', statuses]]) {
+      if (tripFilter[key] !== 'all' && !list.includes(tripFilter[key])) tripFilter[key] = 'all';
+    }
+    const passes = (x, skip) => ['region', 'quality', 'status'].every((k) => k === skip || tripFilter[k] === 'all' || x[k] === tripFilter[k]);
+    const shown = p.trips.filter((x) => passes(x));
+    // Each button counts what it would show given the other two filters.
+    const pills = (key, list) => ['all', ...list].map((v) => {
+      const n = p.trips.filter((x) => passes(x, key) && (v === 'all' || x[key] === v)).length;
+      return `<button data-trip-f="${key}" data-trip-v="${attr(v)}" aria-pressed="${tripFilter[key] === v}">${v === 'all' ? 'All' : (key === 'quality' ? qGlyph(v) + ' ' : '') + esc(v)} <span class="ecount">${n}</span></button>`;
+    }).join('');
+
+    const COLS = 9;
+    const productRows = shown.map((x) => {
+      const hasDetail = x.analysis || x.actions || x.notes || x.rdNext;
+      const open = hasDetail && tripsOpen.has(x.name);
+      const priceSub = x.oldPrice != null && x.newPrice != null && x.oldPrice !== x.newPrice
+        ? `was ${usd(x.oldPrice)} · ${x.priceChange != null ? `${x.priceChange > 0 ? '+' : ''}${(x.priceChange * 100).toFixed(1)}%` : ''}`
+        : (x.oldPrice != null && x.newPrice == null ? 'existing price' : (x.newPrice != null ? 'no change' : ''));
+      const detail = open ? `
+        <tr class="trp-detail"><td colspan="${COLS}"><dl class="trp-dl" dir="auto">
+          ${x.analysis ? `<dt>Detailed analysis</dt><dd>${esc(x.analysis)}</dd>` : ''}
+          ${x.actions ? `<dt>Corrective actions</dt><dd>${esc(x.actions)}</dd>` : ''}
+          ${x.notes ? `<dt>Additional notes</dt><dd>${esc(x.notes)}</dd>` : ''}
+          ${x.rdNext ? `<dt>R&amp;D next step</dt><dd>${esc(x.rdNext)}</dd>` : ''}
+        </dl></td></tr>` : '';
+      return `
+      <tr>
+        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc([x.category, x.destination].filter(Boolean).join(' · '))}</span>${hasDetail ? `<button class="trp-toggle" data-trip-open="${attr(x.name)}" aria-expanded="${!!open}">${open ? 'Hide details' : 'Details'}</button>` : ''}</td>
+        <td class="trp-l">${esc(x.region || '—')}</td>
+        <td class="num">${x.weeks == null ? '—' : int(x.weeks)}</td>
+        <td class="num">${x.days == null ? '—' : int(x.days)}</td>
+        <td class="num"><b>${usd(x.newPrice ?? x.oldPrice)}</b>${priceSub ? `<span class="trp-sub nw">${esc(priceSub)}</span>` : ''}</td>
+        <td class="trp-l">${qPill(x.quality)}</td>
+        <td class="trp-l">${esc(x.status || '—')}</td>
+        <td class="trp-txt trp-dec">${esc(x.decision || '—')}</td>
+        <td class="trp-l">${esc(x.pic || '—')}</td>
+      </tr>${detail}`;
+    }).join('');
+
+    $('tripsWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
+
+      <div class="panel">
+        <div class="ptitle">Trip decisions · which products to grow, optimise, or stop</div>
+        <div class="bvhero trp-tiles">
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('trProducts')}>Trip products</span></div><div class="bv-n">${int(t.trips)}</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('trWeeks')}>Departure weeks</span></div><div class="bv-n bv-act">${int(t.weeks)}</div></div>
+          ${Q_ORDER.map((q) => `<div class="bv-side"><div class="bv-lab"><span class="trp-q">${qGlyph(q)}${esc(q)}</span></div><div class="bv-n">${int(t[q] || 0)}</div><div class="bv-s">trips</div></div>`).join('')}
+        </div>
+        <div class="trp-bar" role="img" aria-label="Departure weeks by quality">${segs}</div>
+        <div class="trp-leg">${legend}</div>
+        <div class="tscroll" style="margin-top:14px">
+          <table class="ctable">
+            <thead><tr>
+              <th class="trp-l"><span ${hlp('trQuality')}>Rating</span></th><th class="trp-l"><span ${hlp('trMeaning')}>What it means</span></th>
+              ${hcol('trTrips', 'Trips')}${hcol('trWeeks', 'Weeks')}${hcol('trShare', '% of weeks')}<th class="trp-l"><span ${hlp('trTodo')}>What we do</span></th>
+            </tr></thead>
+            <tbody>${guideRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">Quality by region</div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              ${hcol('trRegion', 'Region')}${Q_ORDER.map((q) => `<th><span class="trp-q">${qGlyph(q)}${esc(q)}</span></th>`).join('')}
+              ${hcol('trTrips', 'Trips')}${hcol('trWeeks', 'Weeks')}<th class="trp-l"><span ${hlp('trMix')}>Weeks by quality</span></th>
+            </tr></thead>
+            <tbody>${regionRows}</tbody>
+            <tfoot><tr>
+              <td class="cname">TOTAL</td>
+              ${Q_ORDER.map((q) => `<td class="num">${int(t[q] || 0)}</td>`).join('')}
+              <td class="num">${int(t.trips)}</td><td class="num">${int(t.weeks)}</td><td></td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">R&amp;D pipeline · ${int(p.rd.length)} trip${p.rd.length === 1 ? '' : 's'}</div>
+        ${p.rd.length ? `<div class="tscroll"><table class="ctable">
+          <thead><tr>
+            ${hcol('trTrip', 'Trip')}<th class="trp-l"><span ${hlp('trRegion')}>Region</span></th><th class="trp-l"><span ${hlp('trPic')}>Owner</span></th>
+            <th class="trp-l"><span ${hlp('trRdStatus')}>R&amp;D status</span></th>${hcol('trYear', 'Year')}<th class="trp-l"><span ${hlp('trNext')}>Next step</span></th>
+          </tr></thead>
+          <tbody>${rdRows}</tbody>
+        </table></div>` : '<div class="pnote">Nothing in R&amp;D right now.</div>'}
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">All products · ${int(shown.length)} of ${int(p.trips.length)}</div>
+        <div class="efilters">
+          <div class="efilter"><span class="efl">Region</span><div class="seg">${pills('region', regions)}</div></div>
+          <div class="efilter"><span class="efl">Quality</span><div class="seg">${pills('quality', qualities)}</div></div>
+          <div class="efilter"><span class="efl">Status</span><div class="seg">${pills('status', statuses)}</div></div>
+        </div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              ${hcol('trTrip', 'Trip')}<th class="trp-l"><span ${hlp('trRegion')}>Region</span></th>${hcol('trWeeks', 'Weeks')}${hcol('trDays', 'Days')}
+              ${hcol('trPrice', 'Price')}<th class="trp-l"><span ${hlp('trQuality')}>Quality</span></th><th class="trp-l"><span ${hlp('trStatus')}>Status</span></th>
+              <th class="trp-l"><span ${hlp('trDecision')}>Decision</span></th><th class="trp-l"><span ${hlp('trPic')}>PIC</span></th>
+            </tr></thead>
+            <tbody>${productRows || `<tr><td class="cname" colspan="${COLS}">No trips match these filters.</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    bindHelp($('tripsWrap'));
+    $('tripsWrap').querySelectorAll('[data-trip-f]').forEach((b) => {
+      b.addEventListener('click', () => { tripFilter[b.dataset.tripF] = b.dataset.tripV; renderTrips(); });
+    });
+    $('tripsWrap').querySelectorAll('[data-trip-open]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const n = b.dataset.tripOpen;
+        if (tripsOpen.has(n)) tripsOpen.delete(n); else tripsOpen.add(n);
+        renderTrips();
+      });
+    });
+  }
+
+  async function loadTrips(force) {
+    try {
+      const res = await fetch('/api/trips' + (force ? '?refresh=1' : ''));
+      const p = await res.json();
+      if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
+      tripsData = p;
+      renderTrips();
+    } catch (err) {
+      if (!tripsData) $('tripsWrap').innerHTML = `<div class="msg err">Could not load trips: ${esc(err.message)}</div>`;
+    }
+  }
+
   /* ================= view switching ================= */
 
   // Explicit target, not a toggle — Dashboard is always one click away from
@@ -2716,6 +3004,7 @@
     $('historyWrap').hidden = view !== 'history';
     $('leadsWrap').hidden = view !== 'leads';
     $('engagementsWrap').hidden = view !== 'engagements';
+    $('tripsWrap').hidden = view !== 'trips';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -2744,6 +3033,10 @@
       if (!engagements) $('engagementsWrap').innerHTML = '<div class="msg">Loading engagements…</div>';
       loadEngagements(false);
     }
+    if (view === 'trips') {
+      if (!tripsData) $('tripsWrap').innerHTML = '<div class="msg">Loading trips…</div>';
+      loadTrips(false);
+    }
     // Keep the address bar in step, so a reload or a copied link lands on the
     // same tab. replaceState rather than the hash property: no history entry
     // per tab click, so Back still leaves the dashboard.
@@ -2764,6 +3057,7 @@
     if (adHistory) loadHistory(true);
     if (leads) loadLeads(true);
     if (engagements) loadEngagements(true);
+    if (tripsData) loadTrips(true);
   });
 
   /* ================= sidebar ================= */
@@ -2824,7 +3118,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'previous', 'campaigns', 'history', 'leads', 'engagements'];
+  const VIEWS = ['board', 'report', 'previous', 'trips', 'campaigns', 'history', 'leads', 'engagements'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;
@@ -2854,6 +3148,7 @@
   // close behind her without hammering OneDrive (the API caches a minute).
   setInterval(() => { if (leads) loadLeads(false); }, 300000);
   setInterval(() => { if (engagements) loadEngagements(false); }, 300000);
+  setInterval(() => { if (tripsData) loadTrips(false); }, 300000);
   // Re-render between fetches so a highlight lapses at its own 24h mark and the
   // "3h ago" text stays honest, without waiting on the server cache.
   setInterval(() => { if (latest) render(latest); }, 20000);
