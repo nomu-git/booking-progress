@@ -77,7 +77,9 @@ no framework.
   `node_modules/` in git is leftover cruft from an old Google Sheets version;
   ignore it.
 - `vercel.json` — one cron: `/api/slack-notify` daily at 04:00 UTC (08:00
-  Muscat).
+  Muscat). Anything more frequent runs from **GitHub Actions** instead
+  (`.github/workflows/`), since Hobby only allows daily crons; see "Campaign
+  on/off alerts" below.
 
 ### Booking side
 
@@ -619,8 +621,52 @@ from `REVENUE_SHEET_URL` (Operations group, `data-view="revenue"`).
 - **This tab puts company revenue, costs and profit per trip and per
   manager on a public URL with no login.** Flagged to Anton when built.
 
-**Function budget: 9 of Vercel Hobby's 12** after the sheets merge (see
-Architecture). New sheet tabs don't add to it.
+## Campaign on/off alerts (Slack)
+
+Asked for by Anton/Muatasam, 4 Oct 2026: a Slack message whenever a
+campaign is switched on or off, worded exactly as agreed:
+"Campaign: <name> has been switched off at 8:20 AM on Sun 4 Oct (Muscat),
+by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
+
+- **Meta can't push this.** Its ad-account webhook fields are
+  ads_async_creation_request, creative_fatigue, ad_recommendations,
+  in_process_ad_objects, product_set_issue and with_issues_ad_objects; none
+  is a campaign's on/off status (checked against Meta's docs; some blogs
+  claim otherwise). Anton wanted it "not scheduled"; told him real push
+  isn't possible and he approved polling.
+- **What runs:** `.github/workflows/campaign-alerts.yml` every 5 minutes
+  (GitHub's minimum; free because the repo is public; GitHub may start a
+  run a few minutes late) POSTs to `api/campaign-alerts.js`, which reads
+  each ad account's activity log (`/act_…/activities`, the Ads Manager
+  History page) for the last 3 hours (`CAMPAIGN_ALERT_LOOKBACK_MIN`, default
+  180) and posts one Slack message per new switch to the same
+  `SLACK_WEBHOOK_URL` as the daily bookings message. The time shown is the
+  switch's own `event_time`, in **Muscat** time; Ads Manager shows the ad
+  account's time zone, an hour earlier (7:20 vs 8:20).
+- **Which rows count:** `event_type === 'update_campaign_run_status'` (or
+  translated "Campaign status updated"), with `extra_data` old/new values:
+  on = became "Active", off = stopped being "Active" (paused or deleted
+  while running). Campaigns only, never ad sets or ads (Meta moves ads
+  through review states constantly). Includes who did it (`actor_name`).
+- **No database, so "already posted" lives in the Actions cache:** the
+  workflow restores `seen.json` (newest `campaign-alerts-*` entry), POSTs
+  `{seen}`, saves the returned `seen` only on HTTP 200. Keys are
+  `account:objectId:eventTimeMs:on|off`, pruned to the lookback window. No
+  `seen` (first run, or cache evicted after 7 days idle) = record without
+  posting, so old switches are never replayed. A failed Slack post stays out
+  of `seen` and retries next run; a Meta error on one account keeps its
+  old keys, returns 200, and the workflow's last step goes red.
+- **Auth:** posting needs `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`
+  (Vercel env var **and** GitHub repo secret, same value), or anyone could
+  replay switches by sending an empty `seen`. `?preview=1` (plus
+  `&hours=N`, up to 72) only reads; it's open while the secret is unset and
+  needs the secret once it's set.
+- Verified live 4 Oct 2026: the production Meta token can read
+  `/activities` on both accounts, and a 48-hour preview returned Maryem's
+  four 8:19–8:20 AM switches-off with the right names.
+
+**Function budget: 10 of Vercel Hobby's 12** (sheets merged into one;
+`campaign-alerts` added). New sheet tabs don't add to it.
 
 ## Open items waiting on Muatasam
 
