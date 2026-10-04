@@ -92,8 +92,8 @@ function plan(switches, seen, nowMs) {
   return { kept, fresh, bootstrap: !Array.isArray(seen) };
 }
 
-async function fetchSwitches(nowMs) {
-  const since = Math.floor((nowMs - LOOKBACK_MIN * 60 * 1000) / 1000);
+async function fetchSwitches(nowMs, lookbackMin = LOOKBACK_MIN) {
+  const since = Math.floor((nowMs - lookbackMin * 60 * 1000) / 1000);
   const switches = [];
   const errors = [];
   for (const account of AD_ACCOUNTS) {
@@ -131,12 +131,16 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { switches, errors } = await fetchSwitches(nowMs);
+    // Preview can look further back (?hours=, up to 3 days) to check the
+    // reading against real switches when there's been none lately.
+    const hours = Math.min(72, Number(req.query && req.query.hours) || 0);
+    const lookback = preview && hours > 0 ? hours * 60 : LOOKBACK_MIN;
+    const { switches, errors } = await fetchSwitches(nowMs, lookback);
 
     if (preview) {
       return res.status(200).json({
         preview: true,
-        lookbackMinutes: LOOKBACK_MIN,
+        lookbackMinutes: lookback,
         errors,
         switches: switches.sort((a, b) => a.at - b.at).map((s) => ({ ...s, wouldPost: message(s).text })),
       });
