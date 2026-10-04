@@ -96,7 +96,8 @@ async function currentState(id) {
 
 const muscat = (ms) => {
   const time = new Date(ms).toLocaleTimeString('en-US', { timeZone: 'Asia/Muscat', hour: 'numeric', minute: '2-digit', hour12: true });
-  const day = new Date(ms).toLocaleDateString('en-GB', { timeZone: 'Asia/Muscat', weekday: 'short', day: 'numeric', month: 'short' });
+  // en-GB spells September "Sept"; "Sep" like every other month.
+  const day = new Date(ms).toLocaleDateString('en-GB', { timeZone: 'Asia/Muscat', weekday: 'short', day: 'numeric', month: 'short' }).replace('Sept', 'Sep');
   return `${time} on ${day}`;
 };
 

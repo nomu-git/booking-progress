@@ -648,6 +648,15 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
   on = became "Active", off = stopped being "Active" (paused or deleted
   while running). Campaigns only, never ad sets or ads (Meta moves ads
   through review states constantly). Includes who did it (`actor_name`).
+- **New campaigns alert too** (added 4 Oct 2026 at Anton's request):
+  "Campaign: X has been created at <time> (Muscat), by <who>, and is
+  currently on". Meta logs a creation as raw `create_campaign_group`
+  (translated "Campaign created", confirmed live) with no status in it, and
+  a campaign created live never gets a status-change row, so the on/off
+  alert alone missed it. The current status is fetched (`effective_status`
+  on the campaign) only for creations about to be posted; if that lookup
+  fails the message goes out without the status. Renames
+  (`update_campaign_name`) don't alert. Key suffix `:created`.
 - **No database, so "already posted" lives in the Actions cache:** the
   workflow restores `seen.json` (newest `campaign-alerts-*` entry), POSTs
   `{seen}`, saves the returned `seen` only on HTTP 200. Keys are
@@ -659,8 +668,10 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
 - **Auth:** posting needs `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`
   (Vercel env var **and** GitHub repo secret, same value), or anyone could
   replay switches by sending an empty `seen`. `?preview=1` (plus
-  `&hours=N`, up to 72) only reads; it's open while the secret is unset and
-  needs the secret once it's set.
+  `&hours=N`, up to 240) only reads, and also lists the raw Meta event names
+  it saw (`eventTypes`); it's open while the secret is unset and needs the
+  secret once it's set (it is set, as of 4 Oct 2026, in Vercel and as a
+  GitHub repo secret).
 - Verified live 4 Oct 2026: the production Meta token can read
   `/activities` on both accounts, and a 48-hour preview returned Maryem's
   four 8:19–8:20 AM switches-off with the right names.
