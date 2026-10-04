@@ -34,7 +34,8 @@ env-var changes on a new deployment.
 | Variable | Why |
 | --- | --- |
 | `CRON_SECRET` | Any long random string. Vercel sends it as `Authorization: Bearer <value>` on cron calls, and `slack-notify` rejects anything else. **If it is unset the check is skipped entirely** and anyone who knows the URL can post to the channel. |
-| `CAMPAIGN_ALERT_SECRET` | Any long random string, set **both** here and as a GitHub repository secret of the same name (Settings → Secrets and variables → Actions). The campaign on/off alerts (`api/campaign-alerts.js`, called every 5 minutes by `.github/workflows/campaign-alerts.yml`) only post when the call carries it. Unset, the endpoint refuses to post and every scheduled run fails. |
+| `CAMPAIGN_ALERT_SECRET` | Any long random string. The campaign on/off / created alerts (`api/campaign-alerts.js`) only run when the call carries `Authorization: Bearer <value>`; cron-job.org sends it every 2 minutes. |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Set automatically by connecting a free **Upstash for Redis** store to the project (Vercel → Storage). The alerts use it to remember what they already posted. `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` work too. |
 | `DASHBOARD_URL` | The deployment URL used in the Slack message's "Open dashboard" link. Defaults to `https://bookingprogress.vercel.app`; change it if the project's domain changed. |
 
 ### Optional — all have working defaults baked into the code

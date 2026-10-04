@@ -6,19 +6,19 @@
 // creative fatigue, ads with issues, ads in review and a few others, but not
 // a campaign's on/off status. What it does have is the account's activity log
 // (the Ads Manager "History" page), which records every switch with its exact
-// time and who made it. So this reads that log, and a GitHub Actions workflow
-// (.github/workflows/campaign-alerts.yml) calls it every 5 minutes. The time
-// in the message is the switch's own time from the log, not when it was
-// noticed.
+// time and who made it. So this reads that log, and cron-job.org calls it
+// every 2 minutes (Vercel's Hobby plan only allows daily crons, and GitHub
+// Actions' schedule never started at all for this repo, 4 Oct 2026). The
+// time in the message is the switch's own time from the log, not when it
+// was noticed.
 //
-// No database here, so "already posted" travels with the caller: the
-// workflow POSTs { seen: [...] } (the keys this endpoint returned last time,
-// kept in the Actions cache) and stores the `seen` that comes back. Every
-// run looks back LOOKBACK_MIN minutes, so a late or skipped run still
-// catches up, and a key that's already in `seen` is never posted twice. With
-// no `seen` at all (first run, or the cache expired after a week of nothing
-// running), it records what's there without posting, rather than replaying
-// hours of old switches into the channel.
+// "Already posted" lives in Upstash Redis (lib/kv.js): each alert is
+// claimed with SET NX before it's posted, so two overlapping calls can't
+// both post it, and a claim whose Slack post fails is released to retry on
+// the next call. Every call looks back LOOKBACK_MIN minutes, so a missed
+// call catches up. Until the store has been initialised (its first call, or
+// after it's wiped), a call claims everything in the window without
+// posting, rather than replaying old switches into the channel.
 //
 // Only campaigns, not ad sets or ads: those change far more often (Meta
 // itself moves ads through review states) and would bury the channel.
@@ -29,11 +29,16 @@
 // current status is looked up when the message is posted.
 
 const { graphGet, graphGetAll, AD_ACCOUNTS } = require('../lib/meta-ads');
+const kv = require('../lib/kv');
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://bookingprogress.vercel.app';
 const ALERT_SECRET = (process.env.CAMPAIGN_ALERT_SECRET || '').trim();
-const LOOKBACK_MIN = Number(process.env.CAMPAIGN_ALERT_LOOKBACK_MIN || 180);
+const LOOKBACK_MIN = Number(process.env.CAMPAIGN_ALERT_LOOKBACK_MIN || 60);
+// A claim outlives the lookback window comfortably, then expires.
+const CLAIM_TTL_S = 2 * 24 * 3600;
+const READY_KEY = 'campaign-alerts:ready';
+const claimKey = (s) => `campaign-alerts:${s.key}`;
 
 const parseExtra = (v) => {
   if (v && typeof v === 'object') return v;
@@ -118,18 +123,6 @@ async function withStatus(list) {
   return list;
 }
 
-// Which switches to post, given what's in the log and what was posted before.
-// A key's time is its third part, so `seen` can be pruned to the window
-// without storing anything else.
-function plan(switches, seen, nowMs) {
-  const floor = nowMs - LOOKBACK_MIN * 60 * 1000;
-  const keyTime = (k) => Number(String(k).split(':')[2]);
-  const kept = new Set((seen || []).filter((k) => keyTime(k) >= floor));
-  const fresh = switches
-    .filter((s) => s.at >= floor && !kept.has(s.key))
-    .sort((a, b) => a.at - b.at);
-  return { kept, fresh, bootstrap: !Array.isArray(seen) };
-}
 
 async function fetchSwitches(nowMs, lookbackMin = LOOKBACK_MIN) {
   const since = Math.floor((nowMs - lookbackMin * 60 * 1000) / 1000);
@@ -163,9 +156,8 @@ module.exports = async (req, res) => {
   const nowMs = Date.now();
   const preview = req.query && req.query.preview === '1';
 
-  // Posting needs the secret, or anyone could make the channel replay old
-  // switches by sending an empty `seen`. Preview only reads, and is open
-  // until a secret is set so the Meta access can be checked first.
+  // Posting needs the secret, so only the scheduler can trigger it. Preview
+  // only reads, and is open until a secret is set.
   if (!preview || ALERT_SECRET) {
     const auth = req.headers.authorization || '';
     if (!ALERT_SECRET) return res.status(500).json({ error: 'CAMPAIGN_ALERT_SECRET is not set' });
@@ -191,37 +183,50 @@ module.exports = async (req, res) => {
       });
     }
 
-    let body = req.body;
-    if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
-    const { kept, fresh, bootstrap } = plan(switches, body && body.seen, nowMs);
-
+    const floor = nowMs - LOOKBACK_MIN * 60 * 1000;
+    const inWindow = switches.filter((s) => s.at >= floor).sort((a, b) => a.at - b.at);
     const posted = [];
     const failed = [];
-    if (bootstrap) {
-      for (const s of fresh) kept.add(s.key);
-    } else {
-      if (fresh.length && !SLACK_WEBHOOK_URL) return res.status(500).json({ error: 'SLACK_WEBHOOK_URL is not set' });
-      await withStatus(fresh);
-      for (const s of fresh) {
-        // Slack's webhooks allow about one message a second.
-        if (posted.length || failed.length) await sleep(1100);
+
+    // First call against an empty store: claim what's there, post nothing.
+    const ready = await kv.command('GET', READY_KEY);
+    if (!ready) {
+      await kv.pipeline([
+        ...inWindow.map((s) => ['SET', claimKey(s), '1', 'NX', 'EX', CLAIM_TTL_S]),
+        ['SET', READY_KEY, String(nowMs)],
+      ]);
+      return res.status(200).json({ bootstrap: true, recorded: inWindow.length, posted, errors });
+    }
+
+    // Claim every alert in the window in one round trip; "OK" means this call
+    // got it first and should post it, null means it was already handled.
+    const claims = await kv.pipeline(inWindow.map((s) => ['SET', claimKey(s), '1', 'NX', 'EX', CLAIM_TTL_S]));
+    const fresh = inWindow.filter((s, k) => claims[k] === 'OK');
+    if (fresh.length && !SLACK_WEBHOOK_URL) {
+      await kv.pipeline(fresh.map((s) => ['DEL', claimKey(s)]));
+      return res.status(500).json({ error: 'SLACK_WEBHOOK_URL is not set' });
+    }
+    await withStatus(fresh);
+    for (const s of fresh) {
+      // Slack's webhooks allow about one message a second.
+      if (posted.length || failed.length) await sleep(1100);
+      let ok = false;
+      try {
         const r = await fetch(SLACK_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(message(s)),
         });
-        // Only what Slack accepted counts as posted; the rest is retried on
-        // the next run, since it stays out of `seen`.
-        if (r.ok) { kept.add(s.key); posted.push(s.name); } else { failed.push(`${s.name}: Slack ${r.status}`); }
+        ok = r.ok;
+        if (!ok) failed.push(`${s.name}: Slack ${r.status}`);
+      } catch (err) {
+        failed.push(`${s.name}: ${err.message}`);
       }
+      // Not posted: give the claim back so the next call tries again.
+      if (ok) posted.push(s.name); else await kv.command('DEL', claimKey(s));
     }
 
-    res.status(200).json({
-      bootstrap,
-      posted,
-      errors: [...errors, ...failed],
-      seen: [...kept],
-    });
+    res.status(200).json({ bootstrap: false, posted, errors: [...errors, ...failed] });
   } catch (err) {
     console.error('campaign-alerts failed:', err);
     res.status(500).json({ error: err.message });
@@ -229,5 +234,4 @@ module.exports = async (req, res) => {
 };
 
 module.exports.toSwitch = toSwitch;
-module.exports.plan = plan;
 module.exports.message = message;

@@ -77,9 +77,10 @@ no framework.
   `node_modules/` in git is leftover cruft from an old Google Sheets version;
   ignore it.
 - `vercel.json` — one cron: `/api/slack-notify` daily at 04:00 UTC (08:00
-  Muscat). Anything more frequent runs from **GitHub Actions** instead
-  (`.github/workflows/`), since Hobby only allows daily crons; see "Campaign
-  on/off alerts" below.
+  Muscat). Hobby only allows daily crons, so anything more frequent is
+  triggered from outside: **cron-job.org** calls the campaign alerts every 2
+  minutes (see "Campaign on/off alerts" below). GitHub Actions was tried
+  first and its schedule never fired once in 5 hours, so it was removed.
 
 ### Booking side
 
@@ -634,15 +635,19 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
   is a campaign's on/off status (checked against Meta's docs; some blogs
   claim otherwise). Anton wanted it "not scheduled"; told him real push
   isn't possible and he approved polling.
-- **What runs:** `.github/workflows/campaign-alerts.yml` every 5 minutes
-  (GitHub's minimum; free because the repo is public; GitHub may start a
-  run a few minutes late) POSTs to `api/campaign-alerts.js`, which reads
-  each ad account's activity log (`/act_…/activities`, the Ads Manager
-  History page) for the last 3 hours (`CAMPAIGN_ALERT_LOOKBACK_MIN`, default
-  180) and posts one Slack message per new switch to the same
-  `SLACK_WEBHOOK_URL` as the daily bookings message. The time shown is the
-  switch's own `event_time`, in **Muscat** time; Ads Manager shows the ad
-  account's time zone, an hour earlier (7:20 vs 8:20).
+- **What runs:** **cron-job.org** calls `GET /api/campaign-alerts` every 2
+  minutes with `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`. It reads each
+  ad account's activity log (`/act_…/activities`, the Ads Manager History
+  page) for the last 60 minutes (`CAMPAIGN_ALERT_LOOKBACK_MIN`) and posts
+  one Slack message per new event to the same `SLACK_WEBHOOK_URL` as the
+  daily bookings message (living-room). Alerts land about 1–3 minutes after
+  the change. The time shown is the event's own `event_time`, in **Muscat**
+  time; Ads Manager shows the ad account's time zone, an hour earlier.
+- **History of the trigger:** first built on a GitHub Actions workflow
+  (`*/5` schedule, "seen" list in the Actions cache). On 4 Oct 2026 GitHub
+  had not started a single scheduled run 5 hours after it was added (only
+  the manual run), so it was replaced with cron-job.org + Upstash and the
+  workflow deleted.
 - **Which rows count:** `event_type === 'update_campaign_run_status'` (or
   translated "Campaign status updated"), with `extra_data` old/new values:
   on = became "Active", off = stopped being "Active" (paused or deleted
@@ -657,24 +662,31 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
   on the campaign) only for creations about to be posted; if that lookup
   fails the message goes out without the status. Renames
   (`update_campaign_name`) don't alert. Key suffix `:created`.
-- **No database, so "already posted" lives in the Actions cache:** the
-  workflow restores `seen.json` (newest `campaign-alerts-*` entry), POSTs
-  `{seen}`, saves the returned `seen` only on HTTP 200. Keys are
-  `account:objectId:eventTimeMs:on|off`, pruned to the lookback window. No
-  `seen` (first run, or cache evicted after 7 days idle) = record without
-  posting, so old switches are never replayed. A failed Slack post stays out
-  of `seen` and retries next run; a Meta error on one account keeps its
-  old keys, returns 200, and the workflow's last step goes red.
-- **Auth:** posting needs `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`
-  (Vercel env var **and** GitHub repo secret, same value), or anyone could
-  replay switches by sending an empty `seen`. `?preview=1` (plus
+- **"Already posted" lives in Upstash Redis** (`lib/kv.js`, REST over
+  `fetch`, no package; env `KV_REST_API_URL` / `KV_REST_API_TOKEN` from
+  Vercel's Upstash integration, or the `UPSTASH_REDIS_REST_*` pair). Each
+  event in the window is **claimed** with `SET campaign-alerts:<key> 1 NX EX
+  172800` in one pipeline; only claims that return `OK` are posted, so two
+  overlapping calls can't double-post (tested). A failed Slack post `DEL`s
+  its claim so the next call retries. Until `campaign-alerts:ready` exists
+  (first call, or a wiped store), a call claims everything in the window
+  and posts nothing (`bootstrap: true`), so old events are never replayed.
+  Keys are `account:objectId:eventTimeMs:on|off|created`. Store missing =
+  HTTP 500, nothing posted.
+- **Auth:** running a check needs `Authorization: Bearer
+  $CAMPAIGN_ALERT_SECRET` (Vercel env var; the same value is set as a header
+  on the cron-job.org job). A GitHub repo secret of the same name was also
+  set for the old workflow and is now unused. `?preview=1` (plus
   `&hours=N`, up to 240) only reads, and also lists the raw Meta event names
   it saw (`eventTypes`); it's open while the secret is unset and needs the
-  secret once it's set (it is set, as of 4 Oct 2026, in Vercel and as a
-  GitHub repo secret).
+  secret once it's set (it is, in Vercel, since 4 Oct 2026).
 - Verified live 4 Oct 2026: the production Meta token can read
   `/activities` on both accounts, and a 48-hour preview returned Maryem's
   four 8:19–8:20 AM switches-off with the right names.
+
+- Meta load: every 2 minutes x 2 accounts = ~60 activity-log calls an hour
+  per account, well inside the Marketing API limits; don't go to every
+  minute without a reason.
 
 **Function budget: 10 of Vercel Hobby's 12** (sheets merged into one;
 `campaign-alerts` added). New sheet tabs don't add to it.
