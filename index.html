@@ -1950,14 +1950,13 @@
     fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
     fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
     fbQuestion: ['Question', "Each question on this programme's survey, in the sheet's order. Scores are the average of the people who answered, 1 to 5; text answers are the sheet's own summary. Not asked means the question isn't on that trip's form."],
-    rvRevenue: ['Revenue', "What the trip brought in, from the Trip Revenue sheet. Trips not filled in yet count as nothing."],
-    rvExpenses: ['Expenses', 'What the trip actually cost to run, from the sheet.'],
-    rvProfit: ['Profit', 'Revenue minus expenses. Negative is a loss.'],
-    rvMargin: ['Margin', 'Profit as a share of revenue. Blank when there is no revenue to divide by.'],
+    rvRevenue: ['Revenue', 'Hidden on this dashboard: amounts are not shown, only percentages.'],
+    rvExpenses: ['Expenses', 'Hidden on this dashboard: amounts are not shown, only percentages.'],
+    rvProfit: ['Profit', 'Hidden on this dashboard: amounts are not shown, only percentages. The margin says how much of revenue was profit.'],
+    rvMargin: ['Margin', 'Profit as a share of revenue. Negative is a loss. Blank when there is no revenue to divide by.'],
     rvTrips: ['Trips', 'Departures in this group, including ones not filled in yet.'],
-    rvSplit: ['Expenses and profit', 'The bar is revenue: expenses in grey plus profit in green. On a loss the expenses run past revenue and the overrun is red. Bars share one scale within each table.'],
+    rvSplit: ['Expenses and profit', "The row's revenue as 100%: expenses in grey plus profit in green. On a loss the expenses run past revenue and the overrun is red. Every bar is its own 100%, so bars don't compare amounts."],
     rvResult: ['Result', "Gain, Loss or Break-even as the sheet works it out, or Not entered when the trip's figures aren't in yet. A trip with no revenue and no expenses reads Break-even in the sheet."],
-    rvManager: ['Project manager', 'Who ran the trip, as picked in the sheet. Not assigned means none was picked.'],
     rvMonth: ['Month', 'The month the sheet files the trip under (its start month).'],
     rvProgramme: ['Programme', 'Building, Explore, Medical, Teaching or Wellness, as the sheet has it.'],
     rvTrip: ['Trip', 'The trip as the sheet names it, with destination, programme and dates underneath.'],
@@ -3462,15 +3461,12 @@
   let revData = null;
   // Which sub-tab of Trip Revenue is open: 'overview' or 'trips'.
   let rvSub = 'overview';
-  const rvFilter = { programme: 'all', manager: 'all', result: 'all' };
-  const RV_NONE = 'Not assigned';
+  const rvFilter = { programme: 'all', result: 'all' };
 
-  const rvMoney = (n) => {
-    if (n == null) return '—';
-    const cur = revData && revData.currency && revData.currency !== 'USD' ? `${revData.currency} ` : '$';
-    return `${n < 0 ? '−' : ''}${cur}${int(Math.abs(n))}`;
-  };
-  // Same minus sign as the money figures beside it.
+  // Muatasam, 4 Oct 2026: percentages only, no amounts, nothing per person.
+  // The API no longer sends any amount, so every money cell just says so.
+  const RV_HIDDEN = '<span class="rv-na">Hidden</span>';
+  // A true minus, matching the rest of the dashboard.
   const rvPct = (n) => (n == null ? '—' : pct(n).replace('-', '−'));
   const rvMonth = (key) => {
     const [y, m] = String(key).split('-').map(Number);
@@ -3491,18 +3487,22 @@
     return st ? `<span class="rv-res"><i style="color:${st.c}">${st.g}</i>${esc(r)}</span>` : `<span class="rv-res rv-na">○ ${esc(r)}</span>`;
   };
 
-  // The row's revenue as one bar, scaled to the largest revenue or expense
-  // in its table: expenses plus profit, or revenue plus the loss beyond it.
-  function rvBar(g, max, name, big) {
-    const rev = g.revenue || 0;
-    const exp = g.expenses || 0;
-    if (!rev && !exp) return big ? '' : '<span class="rv-na">no figures</span>';
-    const w = (v) => `${Math.max(0, (v / max) * 100).toFixed(2)}%`;
-    const tip = tipOf(name, [['Revenue', rvMoney(g.revenue)], ['Expenses', rvMoney(g.expenses)], ['Profit', rvMoney(g.profit)], ['Margin', g.margin == null ? '—' : rvPct(g.margin)]]);
-    const lab = (v, text) => (big && v / max >= 0.12 ? text : '');
-    const segs = rev >= exp
-      ? `<div class="rv-exp" style="width:${w(exp)}">${lab(exp, 'Expenses')}</div>${rev > exp ? `<div class="rv-pro" style="width:${w(rev - exp)}">${lab(rev - exp, 'Profit')}</div>` : ''}`
-      : `<div class="rv-exp" style="width:${w(rev)}">${lab(rev, 'Revenue')}</div><div class="rv-loss" style="width:${w(exp - rev)}">${lab(exp - rev, 'Loss')}</div>`;
+  // The row's own revenue as a full bar, split by its margin: expenses
+  // (1 - margin) plus profit (margin). On a loss the expenses run past
+  // revenue, so the bar is the expenses and the red part is the overrun.
+  // Every row is its own 100%, so the bar shows no amounts and no row's
+  // size against another's.
+  function rvBar(g, name, big) {
+    const m = g.margin;
+    if (!g.figures || m == null) return big ? '' : '<span class="rv-na">no figures</span>';
+    const w = (v) => `${Math.max(0, v * 100).toFixed(2)}%`;
+    const lab = (v, text) => (big && v >= 0.12 ? `${text} ${rvPct(v)}` : '');
+    const tip = m >= 0
+      ? tipOf(name, [['Expenses', `${rvPct(1 - m)} of revenue`], ['Profit', `${rvPct(m)} of revenue`]])
+      : tipOf(name, [['Expenses', `${rvPct(1 - m)} of revenue`], ['Loss', `${rvPct(-m)} of revenue`]]);
+    const segs = m >= 0
+      ? `<div class="rv-exp" style="width:${w(1 - m)}">${lab(1 - m, 'Expenses')}</div>${m > 0 ? `<div class="rv-pro" style="width:${w(m)}">${lab(m, 'Profit')}</div>` : ''}`
+      : `<div class="rv-exp" style="width:${w(1 / (1 - m))}">${lab(1 / (1 - m), 'Revenue')}</div><div class="rv-loss" style="width:${w(-m / (1 - m))}">${lab(-m / (1 - m), 'Loss')}</div>`;
     return `<div class="rv-bar${big ? ' big' : ''}" ${tip}>${segs}</div>`;
   }
 
@@ -3521,15 +3521,14 @@
     const notEntered = p.trips.filter((x) => /not entered/i.test(x.result || '')).length;
 
     const groupTable = (title, helpKey, head, rows, labelOf) => {
-      const max = Math.max(0, ...rows.map((g) => Math.max(g.revenue || 0, g.expenses || 0)));
       const body = rows.map((g) => `
         <tr>
           <td class="cname">${esc(labelOf(g))}</td>
-          <td class="num"><b>${g.revenue || g.expenses ? rvMoney(g.revenue) : '<span class="rv-na">—</span>'}</b></td>
-          <td class="num">${g.revenue || g.expenses ? rvMoney(g.profit) : '—'}</td>
-          <td class="num">${g.margin == null ? '—' : rvPct(g.margin)}</td>
-          <td class="rv-l">${rvBar(g, max, labelOf(g))}</td>
-          <td class="num">${g.revenue || g.expenses ? rvMoney(g.expenses) : '—'}</td>
+          <td class="num">${g.figures ? RV_HIDDEN : '—'}</td>
+          <td class="num">${g.figures ? RV_HIDDEN : '—'}</td>
+          <td class="num"><b>${g.margin == null ? '—' : rvPct(g.margin)}</b></td>
+          <td class="rv-l">${rvBar(g, labelOf(g))}</td>
+          <td class="num">${g.figures ? RV_HIDDEN : '—'}</td>
           <td class="num">${int(g.trips)}</td>
         </tr>`).join('');
       return `
@@ -3543,78 +3542,73 @@
             </tr></thead>
             <tbody>${body}</tbody>
             <tfoot><tr>
-              <td class="cname">TOTAL</td><td class="num">${rvMoney(t.revenue)}</td><td class="num">${rvMoney(t.profit)}</td>
-              <td class="num">${t.margin == null ? '—' : rvPct(t.margin)}</td><td></td><td class="num">${rvMoney(t.expenses)}</td><td class="num">${int(t.trips)}</td>
+              <td class="cname">TOTAL</td><td class="num">${RV_HIDDEN}</td><td class="num">${RV_HIDDEN}</td>
+              <td class="num">${t.margin == null ? '—' : rvPct(t.margin)}</td><td></td><td class="num">${RV_HIDDEN}</td><td class="num">${int(t.trips)}</td>
             </tr></tfoot>
           </table>
         </div>
       </div>`;
     };
-    const byRevenue = (a, b) => (a.key == null) - (b.key == null) || (b.revenue || 0) - (a.revenue || 0);
+    // Highest margin first; groups with no figures last.
+    const byMargin = (a, b) => (a.key == null) - (b.key == null) || (b.margin ?? -Infinity) - (a.margin ?? -Infinity);
 
     const overviewHtml = `
       <div class="panel">
-        <div class="ptitle">Trip revenue · ${esc(String((p.byMonth[0] && p.byMonth[0].key) || p.asOf).slice(0, 4))} · ${esc(p.currency || 'USD')}</div>
+        <div class="ptitle">Trip revenue · ${esc(String((p.byMonth[0] && p.byMonth[0].key) || p.asOf).slice(0, 4))}</div>
         <div class="bvhero trp-tiles">
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvRevenue')}>Revenue</span></div><div class="bv-n bv-act">${rvMoney(t.revenue)}</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvExpenses')}>Expenses</span></div><div class="bv-n">${rvMoney(t.expenses)}</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvProfit')}>Net profit</span></div><div class="bv-n">${rvMoney(t.profit)}</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvMargin')}>Margin</span></div><div class="bv-n">${t.margin == null ? '—' : rvPct(t.margin)}</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvRevenue')}>Revenue</span></div><div class="bv-n">Hidden</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvExpenses')}>Expenses</span></div><div class="bv-n">Hidden</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvProfit')}>Net profit</span></div><div class="bv-n">Hidden</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvMargin')}>Margin</span></div><div class="bv-n bv-act">${t.margin == null ? '—' : rvPct(t.margin)}</div></div>
           <div class="bv-side"><div class="bv-lab"><span ${hlp('rvTrips')}>Trips</span></div><div class="bv-n">${int(t.trips)}</div><div class="bv-s">${int(notEntered)} not entered yet</div></div>
         </div>
-        ${rvBar(t, Math.max(t.revenue || 0, t.expenses || 0), 'Year to date', true)}
-        <div class="rv-leg"><span><i class="rv-exp"></i>Expenses <b>${rvMoney(t.expenses)}</b></span><span><i class="${t.profit < 0 ? 'rv-loss' : 'rv-pro'}"></i>${t.profit < 0 ? 'Loss' : 'Profit'} <b>${rvMoney(t.profit)}</b></span></div>
+        ${rvBar(t, 'Year to date', true)}
+        ${t.margin == null ? '' : `<div class="rv-leg"><span><i class="rv-exp"></i>Expenses <b>${rvPct(1 - t.margin)}</b> of revenue</span><span><i class="${t.margin < 0 ? 'rv-loss' : 'rv-pro'}"></i>${t.margin < 0 ? 'Loss' : 'Profit'} <b>${rvPct(Math.abs(t.margin))}</b> of revenue</span></div>`}
         ${overdue.length ? `<div class="rv-alert"><b>${int(overdue.length)} trip${overdue.length === 1 ? ' has' : 's have'} ended with no figures entered</b> · ${overdue.map((x) => esc(`${x.name} (${rvDates(x)})`)).join('; ')}</div>` : ''}
       </div>
       ${groupTable('By month', 'rvMonth', 'Month', p.byMonth, (g) => rvMonth(g.key))}
-      ${groupTable('By programme', 'rvProgramme', 'Programme', [...p.byProgramme].sort(byRevenue), (g) => g.key || 'No programme')}
-      ${groupTable('By project manager', 'rvManager', 'Project manager', [...p.byManager].sort(byRevenue), (g) => g.key || RV_NONE)}`;
+      ${groupTable('By programme', 'rvProgramme', 'Programme', [...p.byProgramme].sort(byMargin), (g) => g.key || 'No programme')}`;
 
     // ---- all trips ----
-    const valOf = (x, key) => (key === 'manager' ? x.manager || RV_NONE : x[key] || '—');
+    const valOf = (x, key) => x[key] || '—';
     const opts = (key) => {
       const list = [...new Set(p.trips.map((x) => valOf(x, key)))];
       if (key === 'result') {
         const order = ['Gain', 'Loss', 'Break-even', 'Not entered'];
         return list.sort((a, b) => ((order.indexOf(a) + 1) || 99) - ((order.indexOf(b) + 1) || 99));
       }
-      return list.sort((a, b) => (a === RV_NONE) - (b === RV_NONE) || a.localeCompare(b));
+      return list.sort((a, b) => a.localeCompare(b));
     };
-    const lists = { programme: opts('programme'), manager: opts('manager'), result: opts('result') };
+    const lists = { programme: opts('programme'), result: opts('result') };
     for (const k of Object.keys(lists)) if (rvFilter[k] !== 'all' && !lists[k].includes(rvFilter[k])) rvFilter[k] = 'all';
     const passes = (x, skip) => Object.keys(lists).every((k) => k === skip || rvFilter[k] === 'all' || valOf(x, k) === rvFilter[k]);
-    // Each button counts what it would show given the other two filters.
+    // Each button counts what it would show given the other filter.
     const pills = (key) => ['all', ...lists[key]].map((v) => {
       const n = p.trips.filter((x) => passes(x, key) && (v === 'all' || valOf(x, key) === v)).length;
       return `<button data-rv-f="${key}" data-rv-v="${attr(v)}" aria-pressed="${rvFilter[key] === v}">${v === 'all' ? 'All' : esc(v)} <span class="ecount">${n}</span></button>`;
     }).join('');
     const shown = p.trips.filter((x) => passes(x));
-    const max = Math.max(0, ...p.trips.map((x) => Math.max(x.revenue || 0, x.expenses || 0)));
-    const COLS = 8;
+    const COLS = 7;
     let month = null;
     const tripRows = shown.map((x) => {
       const head = x.month !== month ? `<tr class="rv-month"><td colspan="${COLS}">${esc(rvMonth(x.month))}</td></tr>` : '';
       month = x.month;
-      const has = x.revenue != null || x.expenses != null;
       return `${head}
       <tr>
         <td class="cname">${esc(x.name)}<span class="trp-sub">${esc([x.destination, x.programme, rvDates(x)].filter(Boolean).join(' · '))}</span></td>
-        <td class="num"><b>${has ? rvMoney(x.revenue) : '<span class="rv-na">—</span>'}</b></td>
-        <td class="num">${has ? rvMoney(x.profit) : '—'}</td>
-        <td class="num">${x.margin == null ? '—' : rvPct(x.margin)}</td>
-        <td class="rv-l">${has ? rvBar(x, max, x.name) : ''}</td>
-        <td class="num">${x.expenses == null ? '—' : rvMoney(x.expenses)}</td>
+        <td class="num">${x.figures ? RV_HIDDEN : '—'}</td>
+        <td class="num">${x.figures ? RV_HIDDEN : '—'}</td>
+        <td class="num"><b>${x.margin == null ? '—' : rvPct(x.margin)}</b></td>
+        <td class="rv-l">${x.figures ? rvBar(x, x.name) : ''}</td>
+        <td class="num">${x.figures ? RV_HIDDEN : '—'}</td>
         <td class="rv-l">${rvResult(x.result)}</td>
-        <td class="rv-l">${esc(x.manager || RV_NONE)}</td>
       </tr>`;
     }).join('');
-    const sub = shown.reduce((a, x) => ({ revenue: a.revenue + (x.revenue || 0), expenses: a.expenses + (x.expenses || 0), profit: a.profit + (x.profit || 0) }), { revenue: 0, expenses: 0, profit: 0 });
     const tripsHtml = `
       <div class="panel">
         <div class="ptitle">All trips · ${int(shown.length)} of ${int(p.trips.length)}</div>
         <div class="efilters">
           <div class="efilter"><span class="efl">Programme</span><div class="seg">${pills('programme')}</div></div>
-          <div class="efilter"><span class="efl">Manager</span><div class="seg">${pills('manager')}</div></div>
           <div class="efilter"><span class="efl">Result</span><div class="seg">${pills('result')}</div></div>
         </div>
         <div class="tscroll">
@@ -3622,13 +3616,9 @@
             <thead><tr>
               ${hcol('rvTrip', 'Trip')}${hcol('rvRevenue', 'Revenue')}${hcol('rvProfit', 'Profit')}${hcol('rvMargin', 'Margin')}
               <th class="rv-l"><span ${hlp('rvSplit')}>Expenses and profit</span></th>${hcol('rvExpenses', 'Expenses')}
-              <th class="rv-l"><span ${hlp('rvResult')}>Result</span></th><th class="rv-l"><span ${hlp('rvManager')}>Manager</span></th>
+              <th class="rv-l"><span ${hlp('rvResult')}>Result</span></th>
             </tr></thead>
             <tbody>${tripRows || `<tr><td class="cname" colspan="${COLS}">No trips match these filters.</td></tr>`}</tbody>
-            ${shown.length ? `<tfoot><tr>
-              <td class="cname">TOTAL</td><td class="num">${rvMoney(sub.revenue)}</td><td class="num">${rvMoney(sub.profit)}</td>
-              <td class="num">${sub.revenue ? rvPct(sub.profit / sub.revenue) : '—'}</td><td></td><td class="num">${rvMoney(sub.expenses)}</td><td></td><td></td>
-            </tr></tfoot>` : ''}
           </table>
         </div>
       </div>`;
