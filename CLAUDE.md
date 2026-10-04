@@ -30,23 +30,25 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~215,000 characters. Ten tabs in three categories,
-  in a **left sidebar** (`<aside class="sidebar">`, its `<nav id="viewSeg">`
-  holds the `data-view` buttons `setView()` drives):
-  - **BOOKING**: Booking, Report, Previous Projects
-  - **OPERATIONS**: Trips & R&D, Feedback, Trip Revenue (group added 30 Sep
-    2026; Trips & R&D moved here from Booking)
-  - **AD CAMPAIGN**: Ads, History Campaign, Leads, Engagements
+  `<script>`, no bundler. ~215,000 characters. Ten views in three sidebar
+  categories (`<aside class="sidebar">`, its `<nav id="viewSeg">` holds the
+  `data-view` buttons `setView()` drives). Regrouped by Anton, 4 Oct 2026:
+  - **SALES**: Booking, Report, Leads
+  - **OPERATIONS**: Previous Projects, Trips & R&D, Feedback, Trip Revenue
+  - **MARKETING**: Ads, Engagements. **History Campaign is a sub-tab of
+    Ads**, not a sidebar item: `#adsSub` (a `.seg.subtabs` bar above
+    `#campaignsWrap`/`#historyWrap`, shown for either view) switches between
+    `setView('campaigns')` and `setView('history')`; the Ads sidebar button
+    stays lit for both. Both views keep their own hash (`#campaigns`,
+    `#history`), so old links still work.
 
-  (Sidebar labels only, both renamed by Muatasam, 30 Sep 2026:
+  Labels only, renamed by Muatasam/Anton, 30 Sep–4 Oct 2026: tab
   "Dashboard" -> "Booking", "Trips" -> "Trips & R&D", "Campaigns" -> "Ads",
-  "History" -> "History Campaign". Every `data-view` value
-  (`board`/`trips`/`campaigns`/`history`/…) and everything else about these
-  tabs — the code they read from, `api/campaigns.js`, `api/campaign-history.js`,
-  variable/function names throughout `index.html` and elsewhere — is
-  unchanged; only the visible label text moved. Don't rename the
-  underlying files/vars/routes to match; that wasn't asked for and would
-  just make future diffs to this doc and the code harder to follow.)
+  "History" -> "History Campaign" (now the Ads sub-tab "History"); category
+  "Booking" -> "Sales", "Ad Campaign" -> "Marketing". Every `data-view`
+  value (`board`/`trips`/`campaigns`/`history`/…), file, variable and
+  route is unchanged; only visible text and grouping moved. Don't rename the
+  underlying names to match; that wasn't asked for.
 - **Sidebar**: over 900px it's docked and collapses to a 64px icon rail
   (labels fly out on hover), remembered in `localStorage` as
   `nomuSidebarCollapsed`; a snippet at the top of `<body>` applies it before
