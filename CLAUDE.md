@@ -35,15 +35,15 @@ no framework.
   `data-view` buttons `setView()` drives). Regrouped by Anton, 4 Oct 2026:
   - **SALES**: Booking, Report, Leads
   - **OPERATIONS**: Previous Projects, Trips & R&D, Feedback, Trip Revenue
-  - **MARKETING**: Ads, Engagements. **History Campaign is a sub-tab of
-    Ads**, not a sidebar item: `#adsSub` (a `.seg.subtabs` bar above
+  - **MARKETING**: Campaign Ads, Engagements. **History Campaign is a
+    sub-tab of Campaign Ads**, not a sidebar item: `#adsSub` (a `.seg.subtabs` bar above
     `#campaignsWrap`/`#historyWrap`, shown for either view) switches between
     `setView('campaigns')` and `setView('history')`; the Ads sidebar button
     stays lit for both. Both views keep their own hash (`#campaigns`,
     `#history`), so old links still work.
 
   Labels only, renamed by Muatasam/Anton, 30 Sep–4 Oct 2026: tab
-  "Dashboard" -> "Booking", "Trips" -> "Trips & R&D", "Campaigns" -> "Ads",
+  "Dashboard" -> "Booking", "Trips" -> "Trips & R&D", "Campaigns" -> "Ads" -> "Campaign Ads" (4 Oct 2026),
   "History" -> "History Campaign" (now the Ads sub-tab "History"); category
   "Booking" -> "Sales", "Ad Campaign" -> "Marketing". Every `data-view`
   value (`board`/`trips`/`campaigns`/`history`/…), file, variable and
@@ -127,7 +127,7 @@ since they're easy to forget mid-session:
 | File | Role |
 | --- | --- |
 | `lib/meta-ads.js` | Shared Meta Graph API client. `graphGet`/`graphGetAll` (follows Meta's cursor pagination), `getAccountMeta`, `toReportCurrency`/`budgetToReportCurrency` (USD→SAR conversion), `AD_ACCOUNTS` (env `META_AD_ACCOUNT_IDS`, default two accounts), `REPORT_CURRENCY` (env `META_CURRENCY`, default `SAR`), `USD_SAR` (env `META_USD_SAR`, default `3.75`). Token comes from whichever of `META_ACCESS_TOKEN` / `META_ACCESS_KEY` / `META_API_KEY` is set. |
-| `api/campaigns.js` | **Ads tab** (sidebar label; was "Campaigns"). Current year only (env `META_YEAR`, defaults to current calendar year — so this auto-rolls into 2027 with no code change). Every campaign gets its own budget (see "Budget matching" below), live spend/results/purchases from Meta. |
+| `api/campaigns.js` | **Campaign Ads tab** (sidebar label; was "Campaigns", then "Ads"). Current year only (env `META_YEAR`, defaults to current calendar year — so this auto-rolls into 2027 with no code change). Every campaign gets its own budget (see "Budget matching" below), live spend/results/purchases from Meta. |
 | `api/campaign-history.js` | **History Campaign tab** (sidebar label; was "History"). One full calendar year at a time, picked via `?year=`. **Deliberately excludes the current year** — that's what Ads is for. Offers years back to Meta's retention floor (~37 months, env `META_RETENTION_MONTHS`). Every campaign uses a flat assumed budget (env `META_DEFAULT_BUDGET_USD`, default `$500`) since there's no budget sheet for past years. |
 | `api/media-plan.js` | Reads `Updated Budget.xlsx` — hardcoded `ROWS` array transcribed **verbatim** from the spreadsheet's "Media Plan" sheet. This is the *plan*, not measured data. If the spreadsheet changes, this array has to be hand-updated to match — there's no live file parsing. |
 | `lib/trip-code.js` | The project-code generator — see below. |
