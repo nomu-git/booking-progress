@@ -584,42 +584,42 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
 `lib/tabs/revenue.js` mirrors the **"NomuHub Trips 2026"** revenue workbook
 from `REVENUE_SHEET_URL` (Operations group, `data-view="revenue"`).
 
+- **PERCENTAGES ONLY, NO AMOUNTS, NO PEOPLE (Muatasam, 4 Oct 2026):** "Pls
+  hide this page for now immediately. Just show percentage not values at
+  all. Remove the ones against ppl too. Like salim and roy." Enforced in the
+  **API**, not the page, because the site is public: the payload carries no
+  revenue / expense / profit figure, no currency and no project manager,
+  only `margin`, `figures` (has any numbers), `result` (Gain / Loss /
+  Break-even / Not entered) and trip counts. **Never add an amount or a
+  manager back to the payload** without Muatasam saying so; grep the live
+  `/api/sheets?name=revenue` output for `revenue"`, `profit"`, `manager`
+  and staff names before shipping any change here.
 - The **Trips** sheet is the source: found by a header row with Trip,
-  Revenue and Expenses; columns matched by name (#, Month, Trip,
-  Destination, Program, Start, End, Weeks, Project Manager, Trip Revenue,
-  Actual Expenses, Profit, Profit %, Gain / Loss). The TOTAL row is skipped
-  and recomputed. The **Dashboard** sheet is formulas over those rows, so
-  totals and the month / programme / manager breakdowns are recomputed from
-  the rows, not scraped. **Settings** gives the currency label (USD today;
-  anything else is shown as a code prefix).
-- Verified against the sheet's own Dashboard on 30 Sep 2026: all five KPIs
-  (39 trips, $195,037.11 revenue, $131,917.86 expenses, $63,119.25 profit,
-  32.4% margin) and all 23 month / programme / manager rows match.
-- Blank revenue/expenses count as 0 in sums, as the sheet does. Trips with
-  no project manager get a "Not assigned" row (10 today) so the manager
-  table adds up to the same total; the sheet's own manager table leaves
-  them out.
-- UI, two sub-tabs (`rvSub`: `'overview' | 'trips'`):
-  - **Overview**: tiles (Revenue, Expenses, Net profit, Margin, Trips with
-    "N not entered yet"), a year bar split Expenses / Profit, an amber
-    callout listing trips that have **ended** (end < today) with the
-    result still "Not entered", then By month, By programme and By project
-    manager tables (Revenue | Profit | Margin | bar | Expenses | Trips,
-    programme and manager sorted by revenue).
-  - **All trips**: Programme / Manager / Result filters (counts given the
-    other two), rows grouped by month, a TOTAL of what's shown.
-- The bar is the row's revenue: expenses (`--q-none` slate) plus profit
-  (`--q-high` green), or on a loss revenue in slate and the expense overrun
-  in `--q-low` red. One scale per table. Result shows a glyph + label
-  (▲ Gain, ▼ Loss, ■ Break-even, ○ Not entered). Negative money and
-  margins use a true minus (−). Dates are "6 Sep" built by hand (en-GB
-  gives "Sept"). Classes are prefixed `rv-`.
-- Sheet quirks, shown as the sheet has them and flagged to Anton, not
-  corrected: ~10 trips that didn't run (or whose figures are missing) sit
-  at $0 revenue and read **"Break-even"** in the sheet; "Bali| Building,
-  B2B Trip MKS" has Destination ZNZ; two rows are both numbered 6.
-- **This tab puts company revenue, costs and profit per trip and per
-  manager on a public URL with no login.** Flagged to Anton when built.
+  Revenue and Expenses; columns matched by name. The TOTAL row is skipped;
+  totals and the month / programme breakdowns are recomputed from the rows
+  (amounts are summed internally to get each group's margin, then dropped).
+  Verified against the sheet's own Dashboard on 30 Sep 2026 (32.4% margin
+  overall, all month / programme rows match).
+- UI, two sub-tabs (`rvSub`: `'overview' | 'trips'`), layout kept as built
+  at Anton's request: Revenue / Expenses / Net profit tiles and columns read
+  **"Hidden"**; Margin is the headline; Trips count with "N not entered
+  yet"; a year bar split "Expenses 67.6% / Profit 32.4% of revenue"; an
+  amber callout listing trips that have ended with no figures; By month and
+  By programme tables (programme sorted by margin). **All trips**:
+  Programme / Result filters, rows grouped by month, no footer total (a
+  filtered total would need amounts). The By project manager table, the
+  Manager column and filter were removed.
+- Each bar is **that row's own revenue as 100%**, split by its margin:
+  expenses (1 − m) in `--q-none` slate plus profit (m) in `--q-high` green;
+  on a loss the bar is the expenses, with revenue 1/(1 − m) in slate and the
+  overrun in `--q-low` red. Bars deliberately don't share a scale, so they
+  show no amount and no row's size against another's. Result shows a glyph
+  + label (▲ Gain, ▼ Loss, ■ Break-even, ○ Not entered). True minus (−).
+  Classes prefixed `rv-`.
+- Sheet quirks, shown as the sheet has them, not corrected: ~10 trips that
+  didn't run (or whose figures are missing) read "Break-even" with no
+  figures; "Bali| Building, B2B Trip MKS" has Destination ZNZ; two rows
+  are both numbered 6.
 
 ## Campaign on/off alerts (Slack)
 
