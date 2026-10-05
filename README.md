@@ -43,7 +43,7 @@ env-var changes on a new deployment.
 | Variable | Default | Effect |
 | --- | --- | --- |
 | `WETRAVEL_API_BASE` | `https://api.wetravel.com/v2` | Override only if WeTravel moves the API. |
-| `SEASON_END` | `2026-12-31` | Latest departure date shown on the board. |
+| `SEASON_END` | *(none)* | Latest departure date shown on the board. Unset, every departure WeTravel has open shows, however far out (it was `2026-12-31` until 5 Oct 2026, which hid the January 2027 trips). If a value is set in Vercel it still applies. |
 | `BOOKING_TARGET` | `10` | Seats-per-week target marker on each bar. |
 | `WEEKLY_BOOKING_TARGET` | `12` | New bookings/week target in the Report tab (Sun–Sat, Muscat). |
 | `EXCLUDED_TRIP_UUIDS` | `8612103268,9638755524,10127626,14919204,3489299932,6460642141,7328359188` | Departures hidden from the board: two charters (`8612103268`, `9638755524`), a broken record (`10127626`), Salalah Wellness & Explore Aug (`14919204`), Bali Teaching 20–26 Sep (`3489299932`), Bali Explore 20–26 Sep (`6460642141`), Korea Explore 24–31 Oct (`7328359188`). Look a trip up by ID at `wetravel.com/trips/<id>`. |

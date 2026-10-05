@@ -1,6 +1,9 @@
 const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
 
-const SEASON_END = process.env.SEASON_END || '2026-12-31';
+// No cut-off by default: every departure WeTravel has open shows, however far
+// out. It was 2026-12-31 until 5 Oct 2026, which hid the five January 2027
+// trips WeTravel already had on sale. Set SEASON_END to bring a limit back.
+const SEASON_END = process.env.SEASON_END || '2099-12-31';
 const TARGET = Number(process.env.BOOKING_TARGET || 10);
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 60000);
 
@@ -280,10 +283,13 @@ async function build() {
 
   const allWeeks = trips.flatMap((t) => t.weeks);
 
+  // The header reads "<today> to <seasonEnd>", so with no cut-off it names the
+  // last departure on the board rather than the far-off default.
+  const lastEnd = allWeeks.reduce((m, w) => ((w.end || '') > m ? w.end : m), '');
   return {
     asOf: new Date().toISOString(),
     today: todayKey,
-    seasonEnd: SEASON_END,
+    seasonEnd: SEASON_END < '2099' ? SEASON_END : (lastEnd || todayKey),
     target: TARGET,
     totalBooked: allWeeks.reduce((sum, w) => sum + w.booked, 0),
     weekCount: allWeeks.length,
