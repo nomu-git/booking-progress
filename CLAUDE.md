@@ -730,8 +730,11 @@ name, who it's assigned to and its status exactly as monday shows it.
   Corporate Admin / IT / Business Development, the monthly content
   calendars, CRM boards. Two boards are both named "General", so every
   board is labelled "<workspace> · <board>".
-- **Pending = status is anything but "Done"** (`MONDAY_DONE_LABELS`),
-  including items with no status. "Done" is the only finished label on
+- **Pending = status is anything but "Done"** (`MONDAY_DONE_LABELS`).
+  **An item with no status shows as "Not Started"** and counts as pending
+  (Anton, 5 Oct 2026; 18 of the first 28 items had none, mostly on the
+  Marketing board). It takes the board's own "Not Started" colour, else
+  grey. "Done" is the only finished label on
   these boards; finished items stay in their groups (no Done group), so
   status is the only signal. Stuck, Not Started etc. all show, labelled as
   monday labels them (Anton: "Just show what exactly is in the status").
