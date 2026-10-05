@@ -1028,32 +1028,47 @@
     #revenueWrap .ctable td.cname { min-width: 140px; }
   }
 
-  /* ---------- pending tasks (monday.com) ---------- */
-  #pendingWrap .ctable th.mon-l, #pendingWrap .ctable td.mon-l { text-align: left; }
-  #pendingWrap .ctable td.cname { min-width: 200px; }
-  #pendingWrap .ctable tr.mon-board td {
-    background: transparent; border-bottom: 0; text-align: left; padding: 14px 10px 4px;
-    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+  /* ---------- pending tasks (monday.com) ----------
+     One card per task on the brand navy, the brand yellow only for the
+     active tab and the count. Each person has their own colour, shown as an
+     initials badge, the card's left edge and their name chip, so whose task
+     it is reads at a glance; the name is always written too, so the colour
+     is never the only signal. Classes prefixed mon- (.mt* is taken). */
+  .mon-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 12px; }
+  .mon-head h2 { margin: 0; font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -.01em; }
+  .mon-head h2 b { color: var(--yellow); }
+  .mon-head span { font-size: 12px; color: var(--text-3); }
+  .mon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; align-items: start; }
+  .mon-card {
+    position: relative; display: flex; flex-direction: column; gap: 10px;
+    padding: 13px 14px 12px 17px; border-radius: 12px; background: var(--card);
+    border: 1px solid var(--line); overflow: hidden; transition: border-color .15s, transform .15s;
   }
-  .mon-st { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
-  .mon-st i { width: 10px; height: 10px; border-radius: 3px; flex: none; background: var(--q-none); }
-  .mon-st.none { color: var(--text-3); font-weight: 500; }
-  .mon-ppl { white-space: normal; min-width: 120px; color: var(--text-2); }
-  .mon-late { color: #ff9b91; font-weight: 600; white-space: nowrap; }
-  .mon-bars { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px 28px; }
-  .mon-bar { display: grid; grid-template-columns: minmax(0, 1fr) 120px 28px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-2); }
-  .mon-bar button { all: unset; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mon-bar button:hover, .mon-bar button[aria-pressed="true"] { color: #fff; text-decoration: underline; }
-  .mon-bar .abar { width: 120px; }
-  .mon-bar b { color: #fff; text-align: right; font-variant-numeric: tabular-nums; }
-  .mon-link { color: var(--text-3); font-size: 11px; text-decoration: none; margin-left: 6px; }
-  .mon-link:hover { color: #fff; }
-  @media (max-width: 600px) {
-    .mon-bars { grid-template-columns: 1fr; }
-    .mon-bar { grid-template-columns: minmax(0, 1fr) 80px 28px; }
-    .mon-bar .abar { width: 80px; }
-    #pendingWrap .ctable td.cname { min-width: 160px; }
+  .mon-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--who, var(--q-none)); }
+  .mon-card:hover { border-color: var(--info-line); transform: translateY(-1px); }
+  .mon-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .mon-who { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+  .mon-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px 2px 2px; border-radius: 999px;
+    background: color-mix(in srgb, var(--who) 18%, transparent); font-size: 11.5px; font-weight: 600; color: #fff; white-space: nowrap;
   }
+  .mon-chip i {
+    width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--who); color: #0b1a2e; font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: .02em;
+  }
+  .mon-chip.none { background: transparent; border: 1px dashed var(--line); color: var(--text-3); padding: 2px 9px; }
+  .mon-st {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; flex: none;
+    background: color-mix(in srgb, var(--st) 22%, transparent); font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap;
+  }
+  .mon-st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--st); }
+  .mon-name { font-size: 14.5px; font-weight: 700; color: #fff; line-height: 1.35; }
+  .mon-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--text-3); }
+  .mon-foot a { color: var(--text-3); text-decoration: none; white-space: nowrap; }
+  .mon-foot a:hover { color: var(--yellow); }
+  .mon-late { color: #ff9b91; font-weight: 700; }
+  .mon-empty { padding: 30px; text-align: center; color: var(--text-3); font-size: 13px; }
+  @media (max-width: 600px) { .mon-grid { grid-template-columns: 1fr; } }
 
   /* Ratings: a row per question, a column per trip. The question column
      stays put while the trips scroll sideways. */
@@ -1993,14 +2008,6 @@
     fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
     fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
     fbQuestion: ['Question', "Each question on this programme's survey, in the sheet's order. Scores are the average of the people who answered, 1 to 5; text answers are the sheet's own summary. Not asked means the question isn't on that trip's form."],
-    monPending: ['Pending', 'Items on the chosen monday.com boards whose status is anything but Done. An item with no status counts as pending and reads Not Started. Main items only, not sub-items.'],
-    monPeople: ['People', 'Everyone assigned to at least one pending item.'],
-    monOverdue: ['Overdue', "Pending items whose due date has passed. Most items here don't have a due date set in monday."],
-    monUnassigned: ['No one assigned', 'Pending items with nobody in their person column.'],
-    monTask: ['Task', 'The item name as it is in monday.com, with its board and group underneath.'],
-    monWho: ['Assigned to', "The person or people in the item's person column in monday."],
-    monStatus: ['Status', "What the item's Status column says in monday, in monday's colour. An item with no status in monday shows as Not Started."],
-    monDue: ['Due', "The item's due date in monday, if one is set."],
     rvSuggest: ['Suggestions', 'Plain-language pointers worked out from the margins in the sheet: what lost money, what earns little, what is working. Rules over the numbers, not a live AI, and they use only percentages and trip names.'],
     rvMargin: ['Margin', 'Profit as a share of revenue. Negative is a loss. Blank when there is no revenue to divide by.'],
     rvTrips: ['Trips', 'Departures in this group, including ones not filled in yet.'],
@@ -3719,16 +3726,18 @@
   /* ================= pending task tab (monday.com) ================= */
 
   let monData = null;
-  const monFilter = { board: 'all', person: 'all', status: 'all' };
-  const MON_NONE = 'No one assigned';
-  const MON_NOSTATUS = 'No status';
+  // Which workspace tab is open: 'all' or a workspace name.
+  let monTab = 'all';
+  const MON_TABS = ['Marketing & Sales', 'Operations'];
   const MON_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monDay = (iso) => `${Number(iso.slice(8, 10))} ${MON_MON[Number(iso.slice(5, 7)) - 1]}${iso.slice(0, 4) !== String(new Date().getFullYear()) ? ` ${iso.slice(0, 4)}` : ''}`;
-  // monday's own label colour, passed through only if it's a plain hex.
-  const monColor = (c) => (/^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : null);
-  const monStatus = (label, color) => (label
-    ? `<span class="mon-st"><i style="${monColor(color) ? `background:${monColor(color)}` : ''}"></i>${esc(label)}</span>`
-    : `<span class="mon-st none"><i></i>${MON_NOSTATUS}</span>`);
+  // monday's own status colour, passed through only if it's a plain hex.
+  const monColor = (c) => (/^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : 'var(--q-none)');
+  // One colour per person, light enough for dark initials on the navy cards.
+  // Assigned in alphabetical order over everyone on the boards, so a person
+  // keeps their colour on every tab; names are always written beside it.
+  const MON_PEOPLE = ['#5fb0f0', '#7fd8a4', '#f39a8f', '#c3a1f5', '#ffbe85', '#6ed8d4', '#ee9fcb', '#bccf72', '#a8b6ff', '#e6c56b', '#8fd0ff', '#d6a4a4'];
+  const monInitials = (n) => String(n).trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   function renderPending() {
     const p = monData;
@@ -3737,86 +3746,47 @@
       $('pendingWrap').innerHTML = `<div class="msg err">Could not load monday.com: ${esc(p.error)}</div>`;
       return;
     }
-    const t = p.totals;
-    const boardsList = p.boards.map((b) => b.name);
-    const people = p.byPerson.map((x) => x.name || MON_NONE);
-    const statuses = [...new Set(p.items.map((i) => i.status || MON_NOSTATUS))];
-    const lists = { board: boardsList, person: people, status: statuses };
-    for (const k of Object.keys(lists)) if (monFilter[k] !== 'all' && !lists[k].includes(monFilter[k])) monFilter[k] = 'all';
-    const has = (i, k, v) => (k === 'board' ? i.board === v
-      : k === 'person' ? (v === MON_NONE ? !i.people.length : i.people.includes(v))
-        : (i.status || MON_NOSTATUS) === v);
-    const passes = (i, skip) => Object.keys(lists).every((k) => k === skip || monFilter[k] === 'all' || has(i, k, monFilter[k]));
-    // Each button counts what it would show given the other two filters.
-    const pills = (key) => ['all', ...lists[key]].map((v) => {
-      const n = p.items.filter((i) => passes(i, key) && (v === 'all' || has(i, key, v))).length;
-      return `<button data-mon-f="${key}" data-mon-v="${attr(v)}" aria-pressed="${monFilter[key] === v}">${v === 'all' ? 'All' : esc(v)} <span class="ecount">${n}</span></button>`;
-    }).join('');
-    const shown = p.items.filter((i) => passes(i));
+    const everyone = [...new Set(p.items.flatMap((i) => i.people))].sort((a, b) => a.localeCompare(b));
+    const colorOf = new Map(everyone.map((n, k) => [n, MON_PEOPLE[k % MON_PEOPLE.length]]));
+    const tabs = ['all', ...MON_TABS.filter((w) => p.items.some((i) => i.workspace === w)),
+      ...[...new Set(p.items.map((i) => i.workspace).filter((w) => w && !MON_TABS.includes(w)))]];
+    if (!tabs.includes(monTab)) monTab = 'all';
+    const inTab = (i) => monTab === 'all' || i.workspace === monTab;
+    // Grouped by person, so each person's colour runs down the list together;
+    // tasks with no one assigned go last.
+    const shown = p.items.filter(inTab).sort((a, b) =>
+      (!a.people.length) - (!b.people.length)
+      || String(a.people[0] || '').localeCompare(String(b.people[0] || ''))
+      || String(a.board).localeCompare(String(b.board)));
+    const people = new Set(shown.flatMap((i) => i.people));
 
-    // Who holds what: one bar per person, scaled to the busiest. Clicking a
-    // name filters the table to them.
-    const maxP = Math.max(1, ...p.byPerson.map((x) => x.count));
-    const personBars = p.byPerson.map((x) => {
-      const name = x.name || MON_NONE;
-      return `<div class="mon-bar"><button data-mon-f="person" data-mon-v="${attr(monFilter.person === name ? 'all' : name)}" aria-pressed="${monFilter.person === name}">${esc(name)}</button><div class="abar"><div class="abar-fill" style="width:${((x.count / maxP) * 100).toFixed(1)}%;background:var(--fill)"></div></div><b>${int(x.count)}</b></div>`;
-    }).join('');
-    const boardBars = p.boards.map((b) => `<div class="mon-bar"><button data-mon-f="board" data-mon-v="${attr(monFilter.board === b.name ? 'all' : b.name)}" aria-pressed="${monFilter.board === b.name}">${esc(b.name)}</button><div class="abar" ${tipOf(b.name, [['Pending', int(b.pending)], ['All items', int(b.total)]])}><div class="abar-fill" style="width:${b.total ? ((b.pending / b.total) * 100).toFixed(1) : 0}%;background:var(--fill)"></div></div><b>${int(b.pending)}</b></div>`).join('');
-
-    const COLS = 4;
-    let board = null;
-    const rows = shown.map((i) => {
-      const head = i.board !== board ? `<tr class="mon-board"><td colspan="${COLS}">${esc(i.board)}</td></tr>` : '';
-      board = i.board;
-      return `${head}
-      <tr>
-        <td class="cname">${esc(i.name)}${i.url ? `<a class="mon-link" href="${attr(i.url)}" target="_blank" rel="noopener">open ↗</a>` : ''}<span class="trp-sub">${esc(i.group || '')}</span></td>
-        <td class="mon-l mon-ppl">${i.people.length ? esc(i.people.join(', ')) : `<span class="rv-na">${MON_NONE}</span>`}</td>
-        <td class="mon-l">${monStatus(i.status, i.statusColor)}</td>
-        <td class="mon-l">${i.due ? (i.overdue ? `<span class="mon-late">▼ ${esc(monDay(i.due))} · overdue</span>` : esc(monDay(i.due))) : '<span class="rv-na">—</span>'}</td>
-      </tr>`;
-    }).join('');
+    const card = (i) => {
+      const who = i.people.length ? colorOf.get(i.people[0]) : null;
+      const chips = i.people.length
+        ? i.people.map((n) => `<span class="mon-chip" style="--who:${colorOf.get(n)}"><i>${esc(monInitials(n))}</i>${esc(n)}</span>`).join('')
+        : '<span class="mon-chip none">No one assigned</span>';
+      const where = monTab === 'all' ? [i.workspace, i.group] : [i.group];
+      const due = i.due ? (i.overdue ? `<span class="mon-late">▼ Overdue · ${esc(monDay(i.due))}</span>` : `Due ${esc(monDay(i.due))}`) : '';
+      return `<div class="mon-card"${who ? ` style="--who:${who}"` : ''}>
+        <div class="mon-top"><div class="mon-who">${chips}</div><span class="mon-st" style="--st:${monColor(i.statusColor)}">${esc(i.status || 'Not Started')}</span></div>
+        <div class="mon-name">${esc(i.name)}</div>
+        <div class="mon-foot"><span>${esc(where.filter(Boolean).join(' · '))}${due ? ` · ${due}` : ''}</span>${i.url ? `<a href="${attr(i.url)}" target="_blank" rel="noopener">Open in monday ↗</a>` : ''}</div>
+      </div>`;
+    };
 
     $('pendingWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last copy from monday.com — ${esc(p.error || 'monday unreachable')}</div>` : ''}
-      <div class="panel">
-        <div class="ptitle">Pending tasks · monday.com</div>
-        <div class="bvhero trp-tiles">
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('monPending')}>Pending</span></div><div class="bv-n bv-act">${int(t.pending)}</div><div class="bv-s">not done yet</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('monPeople')}>People</span></div><div class="bv-n">${int(t.people)}</div><div class="bv-s">with pending tasks</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('monOverdue')}>Overdue</span></div><div class="bv-n">${int(t.overdue)}</div><div class="bv-s">past their due date</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('monUnassigned')}>No one assigned</span></div><div class="bv-n">${int(t.unassigned)}</div></div>
-        </div>
+      <div class="mon-head">
+        <h2><b>${int(shown.length)}</b> pending task${shown.length === 1 ? '' : 's'}</h2>
+        <span>${int(people.size)} ${people.size === 1 ? 'person' : 'people'} · live from monday.com</span>
       </div>
-      <div class="panel">
-        <div class="ptitle">By person</div>
-        <div class="mon-bars">${personBars || '<div class="pnote">Nothing pending.</div>'}</div>
+      <div class="seg subtabs" role="tablist" aria-label="Pending task sections">
+        ${tabs.map((w) => `<button role="tab" data-mon-tab="${attr(w)}" aria-pressed="${monTab === w}" aria-selected="${monTab === w}">${w === 'all' ? 'All' : esc(w)} <span class="ecount">${int(p.items.filter((i) => w === 'all' || i.workspace === w).length)}</span></button>`).join('')}
       </div>
-      <div class="panel">
-        <div class="ptitle">By board · pending of all items</div>
-        <div class="mon-bars">${boardBars}</div>
-      </div>
-      <div class="panel">
-        <div class="ptitle">Tasks · ${int(shown.length)} of ${int(p.items.length)}</div>
-        <div class="efilters">
-          <div class="efilter"><span class="efl">Board</span><div class="seg">${pills('board')}</div></div>
-          <div class="efilter"><span class="efl">Person</span><div class="seg">${pills('person')}</div></div>
-          <div class="efilter"><span class="efl">Status</span><div class="seg">${pills('status')}</div></div>
-        </div>
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              ${hcol('monTask', 'Task')}<th class="mon-l"><span ${hlp('monWho')}>Assigned to</span></th>
-              <th class="mon-l"><span ${hlp('monStatus')}>Status</span></th><th class="mon-l"><span ${hlp('monDue')}>Due</span></th>
-            </tr></thead>
-            <tbody>${rows || `<tr><td class="cname" colspan="${COLS}">No pending tasks match these filters.</td></tr>`}</tbody>
-          </table>
-        </div>
-      </div>`;
+      ${shown.length ? `<div class="mon-grid">${shown.map(card).join('')}</div>` : '<div class="mon-empty">Nothing pending here.</div>'}`;
 
-    bindHelp($('pendingWrap'));
-    $('pendingWrap').querySelectorAll('[data-mon-f]').forEach((b) => {
-      b.addEventListener('click', () => { monFilter[b.dataset.monF] = b.dataset.monV; renderPending(); });
+    $('pendingWrap').querySelectorAll('[data-mon-tab]').forEach((b) => {
+      b.addEventListener('click', () => { monTab = b.dataset.monTab; renderPending(); });
     });
   }
 
