@@ -3586,6 +3586,18 @@
   };
   const fbBar = (v, color, max = 5) => `<div class="abar"><div class="abar-fill" style="width:${Math.max(0, Math.min(100, (v / max) * 100)).toFixed(1)}%;background:${color}"></div></div>`;
   const fbScore = (label, sub, v) => `<div class="fb-score"><span>${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span>${fbBar(v, fbBand(v))}<b>${fbNum(v)}</b></div>`;
+  // The sheet has four surveys (Building / Medical, Teaching, Wellness,
+  // Explorer); the tab shows three groups (Anton, 5 Oct 2026: "only show and
+  // filter Volunteering, Wellness, and Explore ... no need to split per
+  // programme"). Building, Medical and Teaching are Volunteering.
+  const FB_GROUPS = ['Volunteering', 'Wellness', 'Explore'];
+  const fbGroupName = (name) => {
+    const n = String(name || '');
+    if (/building|medical|teach|volunt/i.test(n)) return 'Volunteering';
+    if (/wellness/i.test(n)) return 'Wellness';
+    if (/explor/i.test(n)) return 'Explore';
+    return n || 'Other';
+  };
   // Concerns and suggestions ahead of praise, as the sheet orders them.
   const FB_KINDS = ['Concern', 'Suggestion', 'Praise', 'Testimonial'];
 
@@ -3625,14 +3637,14 @@
       lastMonth = x.month;
       const detail = open ? `
         <tr class="trp-detail"><td colspan="${COLS}"><div class="fb-detail">
-          ${x.scores.length ? `<div class="fb-dh">Scores · 1 to 5${x.template ? ` · ${esc(x.template)} survey` : ''}</div><div class="fb-scores">${x.scores.map((s) => fbScore(s.q, null, s.v)).join('')}</div>` : ''}
+          ${x.scores.length ? `<div class="fb-dh">Scores · 1 to 5${x.template ? ` · ${esc(fbGroupName(x.template))} survey` : ''}</div><div class="fb-scores">${x.scores.map((s) => fbScore(s.q, null, s.v)).join('')}</div>` : ''}
           ${x.items.length ? `<div class="fb-dh">Hotels and activities</div><div class="fb-scores">${x.items.filter((s) => s.score != null).map((s) => fbScore(s.item, s.type, s.score)).join('')}</div>` : ''}
           ${x.facts.length ? `<dl class="trp-dl">${x.facts.map((f) => `<dt>${esc(f.q)}</dt><dd>${esc(f.text)}</dd>`).join('')}</dl>` : ''}
           ${x.noComments ? `<div class="pnote">${esc(x.noComments)}</div>` : ''}
         </div></td></tr>` : '';
       return `${monthRow}
       <tr>
-        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc(x.programme || x.template || '')}</span>${hasDetail ? `<button class="trp-toggle" data-fb-open="${attr(x.id)}" aria-expanded="${!!open}">${open ? 'Hide scores' : 'Details'}</button>` : ''}</td>
+        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc(fbGroupName(x.template || x.programme))}</span>${hasDetail ? `<button class="trp-toggle" data-fb-open="${attr(x.id)}" aria-expanded="${!!open}">${open ? 'Hide scores' : 'Details'}</button>` : ''}</td>
         <td class="abar-cell">${x.overall == null ? '<span class="fb-na">no answers</span>' : `${fbBar(x.overall, fbBand(x.overall))}<span class="abar-pct">${fbNum(x.overall)}</span>`}</td>
         <td class="num">${esc(x.responsesText || '—')}</td>
         <td class="abar-cell">${x.responseRate == null ? '<span class="fb-na">N/A</span>' : `${fbBar(x.responseRate, 'var(--text-3)', 1)}<span class="abar-pct">${pct(x.responseRate)}</span>`}</td>
@@ -3674,20 +3686,35 @@
       </div>` : ''}`;
 
     // ---- ratings: every question, trip by trip ----
-    // One table per survey, since each programme asks its own questions: a
-    // row per question, a column per trip. The sheet's own layout turned on
-    // its side, so a phone scrolls down it rather than across 20 columns.
-    const ratingsHtml = p.programmes.map((g) => {
+    // One table per group, a row per question and a column per trip. The
+    // sheet's own layout turned on its side, so a phone scrolls down it
+    // rather than across 20 columns. A group's questions are those of every
+    // survey in it, in the sheet's order; a trip not asked one shows "Not
+    // asked" (Teaching has no Trip Manual, for example).
+    const groups = FB_GROUPS.concat(p.programmes.map((g) => fbGroupName(g.name)).filter((n) => !FB_GROUPS.includes(n)))
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .map((name) => {
+        const members = p.programmes.filter((g) => fbGroupName(g.name) === name);
+        const questions = [];
+        for (const g of members) for (const q of g.questions || []) if (!questions.includes(q)) questions.push(q);
+        return { name, questions, summary: members.map((g) => g.summary).filter(Boolean).join(' ') };
+      })
+      .filter((g) => p.programmes.some((m) => fbGroupName(m.name) === g.name));
+    const ratingsHtml = groups.map((g) => {
       const answered = (x) => x.scores.length || x.facts.length;
-      const trips = p.trips.filter((x) => x.template === g.name && answered(x));
-      const silent = p.trips.filter((x) => x.template === g.name && !answered(x));
+      const trips = p.trips.filter((x) => fbGroupName(x.template || x.programme) === g.name && answered(x));
+      const silent = p.trips.filter((x) => fbGroupName(x.template || x.programme) === g.name && !answered(x));
       if (!trips.length && !silent.length) return '';
       const cell = (x, q) => {
         const sc = x.scores.find((a) => a.q === q);
         if (sc) return `<td class="fb-cell">${fbBar(sc.v, fbBand(sc.v))}<b>${fbNum(sc.v)}</b></td>`;
         const f = x.facts.find((a) => a.q === q);
         if (f) return `<td class="fb-txt">${esc(f.text)}</td>`;
-        return `<td class="fb-cell fb-na">${x.notAsked.includes(q) ? 'Not asked' : '—'}</td>`;
+        // "Not asked" when the trip's own survey doesn't have the question at
+        // all (a Teaching trip has no Giving questions); a dash when it does
+        // but nobody answered.
+        const own = (p.programmes.find((m) => m.name === x.template) || {}).questions;
+        return `<td class="fb-cell fb-na">${x.notAsked.includes(q) || (own && !own.includes(q)) ? 'Not asked' : '—'}</td>`;
       };
       // A question none of these trips was asked is left out, not shown as
       // a row of "Not asked".
@@ -3696,7 +3723,7 @@
       const rows = qs.map((q) => `<tr><td class="fb-q">${esc(q)}</td>${trips.map((x) => cell(x, q)).join('')}</tr>`).join('');
       return `
       <div class="panel">
-        <div class="ptitle">${esc(g.name)} survey · ${int(trips.length)} trip${trips.length === 1 ? '' : 's'}</div>
+        <div class="ptitle">${esc(g.name)} · ${int(trips.length)} trip${trips.length === 1 ? '' : 's'}</div>
         ${trips.length ? `
         <div class="tscroll">
           <table class="ctable fb-matrix">
@@ -3712,8 +3739,8 @@
     }).join('') || '<div class="msg">No ratings in the sheet yet.</div>';
 
     // ---- what people wrote ----
-    const progOf = new Map(p.trips.map((x) => [x.id, x.template || x.programme || 'Other']));
-    const progs = p.programmes.map((g) => g.name);
+    const progOf = new Map(p.trips.map((x) => [x.id, fbGroupName(x.template || x.programme)]));
+    const progs = groups.map((g) => g.name);
     const kinds = [...FB_KINDS.filter((k) => p.comments.some((c) => c.kind === k)), ...new Set(p.comments.map((c) => c.kind).filter((k) => !FB_KINDS.includes(k)))];
     if (fbFilter.prog !== 'all' && !progs.includes(fbFilter.prog)) fbFilter.prog = 'all';
     if (fbFilter.kind !== 'all' && !kinds.includes(fbFilter.kind)) fbFilter.kind = 'all';
@@ -3733,7 +3760,7 @@
     const progBlocks = progs.map((name) => {
       const list = shownComments.filter((c) => progOf.get(c.trip) === name);
       if (!list.length) return '';
-      const g = p.programmes.find((x) => x.name === name);
+      const g = groups.find((x) => x.name === name);
       const tripIds = [...new Set(list.map((c) => c.trip))];
       return `
         <div class="fb-prog">
@@ -3749,7 +3776,7 @@
       <div class="panel">
         <div class="ptitle">What people wrote · ${int(shownComments.length)} of ${int(p.comments.length)}</div>
         <div class="efilters">
-          <div class="efilter"><span class="efl">Programme</span><div class="seg">${pills('prog', progs)}</div></div>
+          <div class="efilter"><span class="efl">Type of trip</span><div class="seg">${pills('prog', progs)}</div></div>
           <div class="efilter"><span class="efl">Type</span><div class="seg">${pills('kind', kinds)}</div></div>
         </div>
         ${progBlocks || '<div class="pnote">No comments match these filters.</div>'}

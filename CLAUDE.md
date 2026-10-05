@@ -625,9 +625,21 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
     hotel/activity scores and the text facts, and a Lowest scores list
     (everything under 4.0, lowest first; matches the sheet's own "weakest
     items" note).
+  - **Three groups, not four surveys** (Anton, 5 Oct 2026: "only show and
+    filter Volunteering, Wellness, and Explore ... no need to split per
+    programme"): `fbGroupName()` maps the sheet's surveys to **Volunteering**
+    (Building / Medical + Teaching), **Wellness** and **Explore** (the
+    Explorer survey). The comments filter ("Type of trip"), the Ratings
+    tables, the trip subtitles and the Details header all use the groups; the
+    API still sends the four surveys, so a new survey whose name matches none
+    of the patterns shows under its own name. A group's summary line joins
+    its surveys' summaries.
   - **Ratings** (Anton asked to see every question per trip): one table
-    per survey (Building / Medical, Teaching, Wellness, Explorer), a row per
-    question and a column per trip, Overall satisfaction first. Scores get
+    per group, a row per question and a column per trip, Overall
+    satisfaction first. Volunteering merges Building / Medical and Teaching
+    questions (union in the sheet's order, so Teaching's extras sit at the
+    bottom); a trip whose own survey lacks a question shows "Not asked", and
+    a dash means it had the question but nobody answered. Scores get
     a band-coloured bar and the number; text answers show as the sheet has
     them; "Not asked" / "—" per cell. A question none of the survey's trips
     was asked is left out. The question column is sticky so trips scroll
