@@ -683,6 +683,14 @@ from `REVENUE_SHEET_URL` (Operations group, `data-view="revenue"`).
 - **No "Hidden" placeholders (Anton, 5 Oct 2026):** the Revenue / Expenses /
   Profit tiles and columns are gone entirely, not shown as "Hidden". The
   page has no column, tile, tooltip or word for an amount.
+- **Three groups, not six programmes** (Anton, 5 Oct 2026, "the same goes
+  with Trip revenue tab", after the Feedback request): `groupOf()` in
+  `lib/tabs/revenue.js` turns the sheet's Program column into **Volunteering**
+  (Building + Medical + Teaching), **Wellness** (Wellness, and "Wellness &
+  Explore", which resolves WL-first like the project codes) and **Explore**,
+  so the Programme filter, the By programme table, the trip subtitles and the
+  Suggestions all use them. Margins are recomputed per group from the
+  amounts, so nothing else changed (39 trips, 32.4%).
 - UI, two sub-tabs (`rvSub`: `'overview' | 'trips'`): Margin is the
   headline; Trips count with "N not entered yet"; a year bar split "Expenses
   67.6% / Profit 32.4% of revenue"; an amber callout listing trips that have
