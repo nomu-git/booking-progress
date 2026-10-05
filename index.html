@@ -2993,6 +2993,19 @@
   // 'all' or a content type as Maryam writes it (Reel, Carousel...). Posts
   // only: stories have a poll type instead, so they follow the month alone.
   let engType = 'all';
+  // How the Posts table is ordered (Anton, 5 Oct 2026): "newest" by default,
+  // else "<field>-desc" / "<field>-asc". A post with no value for the field
+  // always goes last, whichever way it's sorted.
+  let engSort = 'newest';
+  const ENG_SORTS = [
+    ['newest', 'Newest first'], ['oldest', 'Oldest first'],
+    ['views-desc', 'Views: high to low'], ['views-asc', 'Views: low to high'],
+    ['engagement-desc', 'Engagement: high to low'], ['engagement-asc', 'Engagement: low to high'],
+    ['likes-desc', 'Likes: high to low'], ['likes-asc', 'Likes: low to high'],
+    ['comments-desc', 'Comments: high to low'], ['comments-asc', 'Comments: low to high'],
+    ['shares-desc', 'Shares: high to low'], ['shares-asc', 'Shares: low to high'],
+    ['saves-desc', 'Saves: high to low'], ['saves-asc', 'Saves: low to high'],
+  ];
 
   const shortDay = (day) => {
     const d = dayOf(day);
@@ -3068,8 +3081,22 @@
       .map((t) => `<button data-eng-type="${attr(t)}" aria-pressed="${t === engType}">${t === 'all' ? 'All' : esc(t)} <span class="ecount">${typeCount(t)}</span></button>`).join('');
 
     const maxRate = Math.max(0.0001, ...posts.map((x) => x.engagement || 0));
-    const newestFirst = [...posts].reverse();
-    const postRows = newestFirst.map((x) => `
+    if (!ENG_SORTS.some(([k]) => k === engSort)) engSort = 'newest';
+    const sortedPosts = [...posts]; // posts arrive oldest first
+    if (engSort === 'newest') sortedPosts.reverse();
+    else if (engSort !== 'oldest') {
+      const [field, dir] = engSort.split('-');
+      const sign = dir === 'asc' ? 1 : -1;
+      sortedPosts.sort((a, b) => {
+        const av = a[field];
+        const bv = b[field];
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return (av - bv) * sign || String(a.date || '').localeCompare(String(b.date || ''));
+      });
+    }
+    const postRows = sortedPosts.map((x) => `
       <tr>
         <td class="cname"><span dir="auto">${esc(x.name)}</span><span class="esub"><span class="etype-sub">${esc(x.type || '—')} · </span>${esc([x.date ? shortDay(x.date) : x.dateText, x.language].filter(Boolean).join(' · '))}</span></td>
         <td class="etype">${esc(x.type || '—')}</td>
@@ -3105,6 +3132,7 @@
         <div class="efilters">
           <div class="efilter"><span class="efl">Month</span><div class="seg">${pills}</div></div>
           <div class="efilter"><span class="efl" ${hlp('engType')}>Type</span><div class="seg">${typePills}</div></div>
+          <div class="efilter"><span class="efl">Sort by</span><select class="fselect" id="engSortSel" aria-label="Sort posts">${ENG_SORTS.map(([k, l]) => `<option value="${k}"${k === engSort ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
         </div>
         <div class="bvhero">
           <div class="bv-side">
@@ -3184,6 +3212,8 @@
     $('engagementsWrap').querySelectorAll('[data-eng-type]').forEach((b) => {
       b.addEventListener('click', () => { engType = b.dataset.engType; renderEngagements(); });
     });
+    const sortSel = $('engagementsWrap').querySelector('#engSortSel');
+    if (sortSel) sortSel.addEventListener('change', () => { engSort = sortSel.value; renderEngagements(); });
   }
 
   async function loadEngagements(force) {

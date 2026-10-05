@@ -505,6 +505,12 @@ Story Engagement Question).
   poll type, not a content type). Each type shows its count for the chosen
   month; a type with none is hidden unless it's the one selected. Type is
   its own column on wide screens and moves under the post name on a phone.
+- **Sort by** (Anton, 5 Oct 2026): a dropdown beside the Month / Type
+  filters (`engSort`): Newest / Oldest first, or Views, Engagement, Likes,
+  Comments, Shares, Saves each high to low or low to high. It orders the
+  **Posts table only** (the views chart stays chronological, and the Stories
+  table is unchanged). A post with no value for the field goes last either
+  way (e.g. a blank Book marks cell), ties fall back to date.
 - UI: month pills, hero (posts, views, engagement, best post), a
   views-per-post bar chart (single series, `--fill`), a posts table with an
   engagement bar per row, and a stories table. Chart width scales with the
