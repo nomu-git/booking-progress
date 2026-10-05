@@ -33,8 +33,14 @@ no framework.
   `<script>`, no bundler. ~230,000 characters. Eleven views in four sidebar
   categories (`<aside class="sidebar">`, its `<nav id="viewSeg">` holds the
   `data-view` buttons `setView()` drives). Regrouped by Anton, 4 Oct 2026:
-  - **SALES**: Booking, Report, Leads
-  - **OPERATIONS**: Previous Projects, Trips & R&D, Feedback, Trip Revenue
+  - **SALES**: Booking, Report, Leads. **Previous Sales is a sub-tab of
+    Booking** (Muatasam, 5 Oct 2026: "add previous projects under sales ...
+    Call the tab Previous Sales ... combine ... as new tab under booking"):
+    `#bookSub` (Upcoming / Previous Sales, above `#announce`) switches
+    `setView('board')` / `setView('previous')`, and the Booking sidebar
+    button stays lit for both. Previous Projects is no longer in the
+    sidebar; `#previous` still opens it.
+  - **OPERATIONS**: Trips & R&D, Feedback, Trip Revenue
   - **MARKETING**: Campaign Ads, Engagements. **History Campaign is a
     sub-tab of Campaign Ads**, not a sidebar item: `#adsSub` (a `.seg.subtabs` bar above
     `#campaignsWrap`/`#historyWrap`, shown for either view) switches between
@@ -95,7 +101,7 @@ no framework.
 | --- | --- |
 | `lib/wetravel.js` | Shared WeTravel client. `WETRAVEL_API_KEY` is a **refresh token**, exchanged here for a 1-hour access token (cached, retried on 429/401). Also exports `mapWithConcurrency`. |
 | `api/trips-progress.js` | Booking tab (sidebar label; was "Dashboard") — live/upcoming departures, per-week booking bars. Keeps a departure for its whole month, drops it once the month passes. **No cut-off date**: every departure WeTravel has open shows, however far out (`SEASON_END` defaulted to 2026-12-31 until 5 Oct 2026, which hid five January 2027 trips WeTravel already had on sale; Anton: "show all trips that is available currently in wetravel"). If `SEASON_END` is set it still applies. The header's "<today> to <month>" is the last departure on the board. **`?audit=1`** (needs `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`) lists every upcoming WeTravel trip with why it is or isn't shown: excluded, past the season end, no booking record, or no weeks set up. Use it first when asked "why isn't trip X showing". Hidden **on purpose**, don't "fix": the charters and **Korea Explore 24–31 Oct 2026** (hidden by an earlier decision, see `EXCLUDED_TRIP_UUIDS` in the README). |
-| `api/previous-trips.js` | Previous Projects tab — the complement of trips-progress: everything whose month has already passed. `end < monthStart` is the exact filter, so a trip is never in both views or neither. |
+| `api/previous-trips.js` | Previous Sales (Booking sub-tab; was the Previous Projects tab) — the complement of trips-progress: everything whose month has already passed. `end < monthStart` is the exact filter, so a trip is never in both views or neither. Also returns **`sales`**: bookings taken per month (`{ 'YYYY-MM': { n, byDay[31] } }`, Muscat day of `created_at`, each order's `active_count`, charters left out, `charterExcluded` count) across **every** trip, upcoming ones included (their orders are fetched for this only). Counted exactly like the Report's "bookings taken"; checked 5 Oct 2026, all 11 months in the Report's window match. Data starts 2019-04; 2020 is all zero. |
 | `api/booking-report.js` | Report tab — flat list of booking events, last 300 days by default. Exports `build()`, reused by `slack-notify.js`. |
 | `api/slack-notify.js` | Cron target — posts the day's new bookings to Slack. `?preview=1` renders without posting. Gated by `CRON_SECRET` if set. |
 | `api/announcement.js` | Banner text from env vars, editable without a code change. |
@@ -199,6 +205,23 @@ first, then every way it might be written (both the long form and the short
 code itself, since a campaign already renamed to the scheme has to resolve
 back to the same pair — see the vocabulary-sharing regression noted below).
 
+## Previous Sales charts
+
+Above the previous-projects list (`psHtml()` in `index.html`, Report chart
+classes reused, `ps-` prefix for the rest):
+
+- **Same month, year on year** (Muatasam: "Mainly Im looking for same month
+  comparison against previous years ... Sep progress this year vs sep last
+  year vs years before of same month"): month pills (default the current
+  month, `psMonth`), one bar per year from the first year of data to now.
+  The current month's bar is hatched "so far"; years before the data starts
+  or months not reached yet show "—". The line under it: for the current
+  month, "so far" vs **last year by the same day of the month** (`byDay`)
+  and last year's full month; for other months, the latest one vs the year
+  before and the average of earlier years. Up ▲ green / down ▼ red.
+- **Bookings taken by month**: Last 12 / 24 / 36 (`psRange`), like the
+  Report's monthly chart; scrolls sideways when wider than 12 bars.
+
 ## Muatasam's standing preferences
 
 Distilled from repeated, sometimes blunt feedback across many rounds. Apply
@@ -282,6 +305,12 @@ these by default rather than waiting to be told again:
   `since` to the retention floor (see `retentionFloor()` in
   `campaign-history.js`) or the whole request errors instead of partially
   succeeding.
+- **Chart axis labels must not set the column width.** The Report's
+  `.caxis` labels had no `min-width: 0`, so on a phone "Nov 2025" was wider
+  than its bar and every label slid right; in a screenshot Muatasam sent,
+  July's 34 sat under "May 2026". Fixed 5 Oct 2026: labels keep their bar's
+  width and centre on it (flex column), spilling evenly if too wide. Never
+  use `overflow-wrap: anywhere` there (it broke "Nov" into "No v").
 - **CPM is cost per *thousand* impressions** — `spend / impressions * 1000`,
   not `spend / impressions`. Bit the project once as a value 1000x too small.
 - **Campaign Budget Optimization (CBO) is off** on these Meta ad accounts, so

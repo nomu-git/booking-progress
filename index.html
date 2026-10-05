@@ -395,7 +395,19 @@
   .clab { font-size: 10px; color: var(--text-3); margin-top: 8px; text-align: center; line-height: 1.3; }
   .cslot.partial .clab { color: var(--yellow); }
   .caxis { display: flex; gap: 10px; padding-left: 30px; }
-  .caxis > div { flex: 1 1 0; text-align: center; }
+  /* min-width: 0 so every label keeps its bar's width: on a phone "Nov
+     2025" was wider than its slot, the labels pushed each other right, and
+     July's bar read as May's. A label still wider than its bar is centred
+     on it and spills evenly both sides, so it stays under the right bar. */
+  .caxis > div { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .cslot { min-width: 0; }
+  @media (max-width: 600px) { .clab { font-size: 9px; } }
+  .ps-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 14px; }
+  .ps-line { margin-top: 12px; font-size: 13px; color: var(--text-2); line-height: 1.6; }
+  .ps-line b { color: #fff; }
+  .ps-line .up { color: var(--fill-full); font-weight: 700; }
+  .ps-line .down { color: #ff9b91; font-weight: 700; }
+  .ps-months { flex-wrap: wrap; }
 
   .rlegend { display: flex; gap: 15px; flex-wrap: wrap; font-size: 10.5px; color: var(--text-3); margin-top: 12px; }
   .rlegend i { display: inline-block; width: 16px; height: 8px; border-radius: 3px; vertical-align: -1px; margin-right: 5px; }
@@ -1131,7 +1143,6 @@
       </div>
       <div class="sb-group">
         <div class="sb-cat">Operations</div>
-        <button class="sb-item" data-view="previous" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span class="sb-label">Previous Projects</span></button>
         <button class="sb-item" data-view="trips" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg><span class="sb-label">Trips &amp; R&amp;D</span></button>
         <button class="sb-item" data-view="feedback" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="sb-label">Feedback</span></button>
         <button class="sb-item" data-view="revenue" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg><span class="sb-label">Trip Revenue</span></button>
@@ -1166,6 +1177,13 @@
       <span class="dot" id="dot" title="Live"></span>
       <button class="btn" id="refreshBtn">Refresh</button>
     </div>
+  </div>
+
+  <!-- Previous Sales is the Booking tab's second sub-tab (Muatasam, 5 Oct
+       2026). Both keep their own view (#board / #previous). -->
+  <div class="seg subtabs" id="bookSub" role="tablist" aria-label="Booking sections" hidden>
+    <button role="tab" data-book-sub="board">Upcoming</button>
+    <button role="tab" data-book-sub="previous">Previous Sales</button>
   </div>
 
   <div class="announce" id="announce" hidden>
@@ -2406,6 +2424,105 @@
   // long booking history doesn't turn into one endless scroll of every year
   // stacked on top of each other. Trips within the chosen year still break
   // out by month, since that grouping is what makes a busy year scannable.
+  // Previous Sales charts (Muatasam, 5 Oct 2026): bookings taken per month
+  // from /api/previous-trips' `sales` (counted like the Report), the same
+  // month across years, and the last 12/24/36 months.
+  let psMonth = null; // 0-11, defaults to the current month
+  let psRange = 12;
+  const PS_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const psKey = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}`;
+
+  // One bar chart in the Report's own style. Bars: [{ label, sub, n, partial, none, tip }].
+  function psChart(bars) {
+    const peak = Math.max(1, ...bars.map((b) => b.n || 0));
+    const step = peak > 60 ? 20 : peak > 25 ? 10 : 5;
+    const max = Math.ceil((peak + 1) / step) * step;
+    let chrome = '';
+    for (let v = 0; v <= max; v += step) chrome += `<div class="crule" style="bottom:${(v / max) * 100}%"><span class="ct">${v}</span></div>`;
+    const slots = bars.map((b) => `
+      <div class="cslot ${b.n ? '' : 'zero'} ${b.partial ? 'partial' : ''}" ${b.tip ? tipOf(b.tip[0], b.tip[1]) : ''}>
+        <div class="cval">${b.none ? '—' : int(b.n)}</div>
+        <div class="cbar" style="height:${b.none ? 0 : ((b.n || 0) / max) * 100}%"></div>
+      </div>`).join('');
+    const axis = bars.map((b) => `<div class="clab ${b.partial ? 'partial' : ''}">${esc(b.label)}${b.sub ? `<br><span style="font-size:9px">${esc(b.sub)}</span>` : ''}</div>`).join('');
+    const minW = bars.length > 12 ? `style="min-width:${bars.length * 34 + 30}px"` : '';
+    return `<div class="ps-scroll"><div ${minW}><div class="chart">${chrome}<div class="cbars">${slots}</div></div><div class="caxis">${axis}</div></div></div>`;
+  }
+
+  function psHtml(p) {
+    const sales = p.sales;
+    if (!sales || !sales.months) return '';
+    const months = sales.months;
+    const n = (y, m) => (months[psKey(y, m)] || { n: 0 }).n;
+    const today = p.today;
+    const ty = Number(today.slice(0, 4));
+    const tm = Number(today.slice(5, 7)) - 1;
+    const td = Number(today.slice(8, 10));
+    const first = Object.keys(months).sort()[0] || today.slice(0, 7);
+    const fy = Number(first.slice(0, 4));
+    if (psMonth == null) psMonth = tm;
+    const m = psMonth;
+
+    // ---- same month, year on year ----
+    const years = [];
+    for (let y = fy; y <= ty; y++) years.push(y);
+    const yoy = years.map((y) => {
+      const key = psKey(y, m);
+      const future = y === ty && m > tm;
+      const before = key < first;
+      const partial = y === ty && m === tm;
+      const prev = y > fy ? n(y - 1, m) : null;
+      const v = n(y, m);
+      const rows = [['Bookings taken', future || before ? 'no data' : int(v)]];
+      if (prev != null && !future && !before && !partial && prev) rows.push([`vs ${PS_MON[m]} ${y - 1}`, `${v >= prev ? '+' : '−'}${Math.round(Math.abs(v - prev) / prev * 100)}%`]);
+      return { label: String(y), sub: partial ? 'so far' : '', n: future || before ? 0 : v, none: future || before, partial, tip: [`${PS_MON[m]} ${y}`, rows] };
+    });
+    const pctTxt = (a, b) => (b ? `<span class="${a >= b ? 'up' : 'down'}">${a >= b ? '▲ +' : '▼ −'}${Math.round(Math.abs(a - b) / b * 100)}%</span>` : '');
+    let line = '';
+    if (m === tm) {
+      // This month isn't over, so it's compared with the same days last year.
+      const sofar = n(ty, m);
+      const lastByNow = ((months[psKey(ty - 1, m)] || {}).byDay || []).slice(0, td).reduce((a, b) => a + b, 0);
+      const lastFull = n(ty - 1, m);
+      line = `<b>${PS_MON[m]} ${ty}</b> so far: <b>${int(sofar)}</b> · ${PS_MON[m]} ${ty - 1} by ${td} ${PS_MON[m]}: <b>${int(lastByNow)}</b> ${pctTxt(sofar, lastByNow)} · full ${PS_MON[m]} ${ty - 1}: <b>${int(lastFull)}</b>`;
+    } else {
+      const y = m < tm ? ty : ty - 1;
+      const cur = n(y, m);
+      const prev = n(y - 1, m);
+      const past = years.filter((x) => x < y && psKey(x, m) >= first).map((x) => n(x, m));
+      const avg = past.length ? past.reduce((a, b) => a + b, 0) / past.length : null;
+      line = `<b>${PS_MON[m]} ${y}</b>: <b>${int(cur)}</b> · ${PS_MON[m]} ${y - 1}: <b>${int(prev)}</b> ${pctTxt(cur, prev)}${avg != null ? ` · average of earlier years: <b>${avg.toFixed(0)}</b>` : ''}`;
+    }
+
+    // ---- last N months ----
+    const recent = [];
+    for (let k = psRange - 1; k >= 0; k--) {
+      const d = new Date(Date.UTC(ty, tm - k, 1));
+      const y = d.getUTCFullYear();
+      const mm = d.getUTCMonth();
+      const partial = y === ty && mm === tm;
+      recent.push({ label: PS_MON[mm], sub: partial ? 'so far' : String(y), n: n(y, mm), partial, tip: [`${PS_MON[mm]} ${y}`, [['Bookings taken', int(n(y, mm))]]] });
+    }
+
+    return `
+      <div class="panel">
+        <div class="ptitle">Same month, year on year · bookings taken</div>
+        <div class="filters"><div class="seg ps-months" id="psMonthSeg">${PS_MON.map((x, i) => `<button data-m="${i}" aria-pressed="${i === m}">${x}</button>`).join('')}</div></div>
+        ${psChart(yoy)}
+        <div class="ps-line">${line}</div>
+        <div class="rlegend">
+          <span><i style="background:#f5b935"></i>Bookings taken in ${PS_MON[m]}</span>
+          <span><i style="background:repeating-linear-gradient(135deg,#f5b935 0 4px,rgba(245,185,53,.35) 4px 8px)"></i>Still in progress</span>
+          ${sales.charterExcluded ? `<span>${int(sales.charterExcluded)} charter booking(s) excluded, as on the Report</span>` : ''}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Bookings taken by month</div>
+        <div class="filters"><div class="seg" id="psRangeSeg">${[12, 24, 36].map((x) => `<button data-n="${x}" aria-pressed="${x === psRange}">Last ${x}</button>`).join('')}</div></div>
+        ${psChart(recent)}
+      </div>`;
+  }
+
   function renderPreviousTrips() {
     const p = previousTrips;
     if (!p) return;
@@ -2459,6 +2576,8 @@
     $('previousWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'WeTravel unreachable')}</div>` : ''}
 
+      ${psHtml(p)}
+
       <div class="panel">
         <div class="ptitle">Previous projects · ${ptYear ?? '—'}</div>
         <div class="filters"><div class="seg" id="ptYearSeg">${yearTabs}</div></div>
@@ -2487,6 +2606,13 @@
       });
     });
     $('ptMonthSel').addEventListener('change', (e) => { ptMonth = e.target.value; renderPreviousTrips(); saveViewState(); });
+    bindHelp($('previousWrap'));
+    $('previousWrap').querySelectorAll('#psMonthSeg [data-m]').forEach((b) => {
+      b.addEventListener('click', () => { psMonth = Number(b.dataset.m); renderPreviousTrips(); });
+    });
+    $('previousWrap').querySelectorAll('#psRangeSeg [data-n]').forEach((b) => {
+      b.addEventListener('click', () => { psRange = Number(b.dataset.n); renderPreviousTrips(); });
+    });
     $('previousWrap').querySelectorAll('[data-toggle]').forEach((b) => {
       b.addEventListener('click', () => {
         const uuid = b.dataset.toggle;
@@ -3853,7 +3979,8 @@
     view = next;
     $('viewSeg').querySelectorAll('button').forEach((b) => {
       // History is a sub-tab of Ads, so Ads stays lit while it's open.
-      const lit = b.dataset.view === view || (b.dataset.view === 'campaigns' && view === 'history');
+      const lit = b.dataset.view === view || (b.dataset.view === 'campaigns' && view === 'history')
+        || (b.dataset.view === 'board' && view === 'previous');
       b.setAttribute('aria-pressed', String(lit));
     });
     $('board').hidden = view !== 'board';
@@ -3868,6 +3995,12 @@
     $('campaignsWrap').hidden = view !== 'campaigns';
     $('historyWrap').hidden = view !== 'history';
     $('adsSub').hidden = view !== 'campaigns' && view !== 'history';
+    $('bookSub').hidden = view !== 'board' && view !== 'previous';
+    $('bookSub').querySelectorAll('[data-book-sub]').forEach((b) => {
+      const on = b.dataset.bookSub === view;
+      b.setAttribute('aria-pressed', String(on));
+      b.setAttribute('aria-selected', String(on));
+    });
     $('adsSub').querySelectorAll('[data-ads-sub]').forEach((b) => {
       const on = b.dataset.adsSub === view;
       b.setAttribute('aria-pressed', String(on));
@@ -3934,6 +4067,9 @@
 
   $('viewSeg').querySelectorAll('button').forEach((b) => {
     b.addEventListener('click', () => setView(b.dataset.view));
+  });
+  $('bookSub').querySelectorAll('[data-book-sub]').forEach((b) => {
+    b.addEventListener('click', () => { if (view !== b.dataset.bookSub) setView(b.dataset.bookSub); });
   });
   $('adsSub').querySelectorAll('[data-ads-sub]').forEach((b) => {
     b.addEventListener('click', () => { if (view !== b.dataset.adsSub) setView(b.dataset.adsSub); });
