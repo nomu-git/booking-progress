@@ -603,15 +603,33 @@ from `REVENUE_SHEET_URL` (Operations group, `data-view="revenue"`).
   (amounts are summed internally to get each group's margin, then dropped).
   Verified against the sheet's own Dashboard on 30 Sep 2026 (32.4% margin
   overall, all month / programme rows match).
-- UI, two sub-tabs (`rvSub`: `'overview' | 'trips'`), layout kept as built
-  at Anton's request: Revenue / Expenses / Net profit tiles and columns read
-  **"Hidden"**; Margin is the headline; Trips count with "N not entered
-  yet"; a year bar split "Expenses 67.6% / Profit 32.4% of revenue"; an
-  amber callout listing trips that have ended with no figures; By month and
-  By programme tables (programme sorted by margin). **All trips**:
-  Programme / Result filters, rows grouped by month, no footer total (a
-  filtered total would need amounts). The By project manager table, the
+- **No "Hidden" placeholders (Anton, 5 Oct 2026):** the Revenue / Expenses /
+  Profit tiles and columns are gone entirely, not shown as "Hidden". The
+  page has no column, tile, tooltip or word for an amount.
+- UI, two sub-tabs (`rvSub`: `'overview' | 'trips'`): Margin is the
+  headline; Trips count with "N not entered yet"; a year bar split "Expenses
+  67.6% / Profit 32.4% of revenue"; an amber callout listing trips that have
+  ended with no figures; then **Suggestions**; then By month and By
+  programme tables (Margin | bar | Trips; programme sorted by margin).
+  **All trips**: Programme / Result filters, rows grouped by month (Trip |
+  Margin | bar | Result), no footer total. The By project manager table, the
   Manager column and filter were removed.
+- **Suggestions** (Anton: "put some AI suggestion based on profit or a
+  suggestion to what to improve"): `suggest()` in `lib/tabs/revenue.js`,
+  sent as `suggestions: [{ level, title, text }]`, shown as cards tagged
+  Fix (red ▼) / Improve (amber ■) / Keep doing (green ▲) / Note (grey ○),
+  highest priority first, at most 8. **They are rules over the sheet, not a
+  live AI call**, and the panel says so in its tooltip. Rules: trips that
+  lost money (expenses as a multiple of revenue); a programme that is a big
+  share of trips but a small share of revenue; the lowest-margin programme;
+  trips under 15% margin; the strongest programme and trips at 45%+; finished
+  trips with no figures; the overall margin band (30%+ healthy, 15–30%
+  workable, under 15% thin). Thresholds `THIN` / `HEALTHY` at the top of the
+  file. **They are computed server-side from the real figures but written
+  with percentages, ratios and trip names only**: never put an amount or a
+  manager in a sentence (checked against the live output). A real Claude API
+  version would need `ANTHROPIC_API_KEY` in Vercel and a cache, and was not
+  built; offered to Anton.
 - Each bar is **that row's own revenue as 100%**, split by its margin:
   expenses (1 − m) in `--q-none` slate plus profit (m) in `--q-high` green;
   on a loss the bar is the expenses, with revenue 1/(1 − m) in slate and the

@@ -1012,6 +1012,12 @@
   .rv-na { color: var(--text-3); }
   .rv-res { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
   .rv-res i { font-style: normal; font-size: 9px; }
+  .rv-sug { display: grid; gap: 8px; }
+  .rv-s { padding: 9px 13px; border-radius: 8px; border-left: 3px solid var(--q-none); background: var(--track); }
+  .rv-s-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 13px; color: #fff; }
+  .rv-s-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .rv-s-tag i { font-style: normal; font-size: 9px; }
+  .rv-s-text { margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: var(--text-2); max-width: 900px; }
   .rv-alert {
     margin-top: 16px; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--q-med);
     background: color-mix(in srgb, var(--q-med) 10%, transparent); font-size: 12.5px; line-height: 1.55; color: var(--text-2);
@@ -1955,9 +1961,7 @@
     fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
     fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
     fbQuestion: ['Question', "Each question on this programme's survey, in the sheet's order. Scores are the average of the people who answered, 1 to 5; text answers are the sheet's own summary. Not asked means the question isn't on that trip's form."],
-    rvRevenue: ['Revenue', 'Hidden on this dashboard: amounts are not shown, only percentages.'],
-    rvExpenses: ['Expenses', 'Hidden on this dashboard: amounts are not shown, only percentages.'],
-    rvProfit: ['Profit', 'Hidden on this dashboard: amounts are not shown, only percentages. The margin says how much of revenue was profit.'],
+    rvSuggest: ['Suggestions', 'Plain-language pointers worked out from the margins in the sheet: what lost money, what earns little, what is working. Rules over the numbers, not a live AI, and they use only percentages and trip names.'],
     rvMargin: ['Margin', 'Profit as a share of revenue. Negative is a loss. Blank when there is no revenue to divide by.'],
     rvTrips: ['Trips', 'Departures in this group, including ones not filled in yet.'],
     rvSplit: ['Expenses and profit', "The row's revenue as 100%: expenses in grey plus profit in green. On a loss the expenses run past revenue and the overrun is red. Every bar is its own 100%, so bars don't compare amounts."],
@@ -3469,8 +3473,8 @@
   const rvFilter = { programme: 'all', result: 'all' };
 
   // Muatasam, 4 Oct 2026: percentages only, no amounts, nothing per person.
-  // The API no longer sends any amount, so every money cell just says so.
-  const RV_HIDDEN = '<span class="rv-na">Hidden</span>';
+  // The API sends no amount at all, and the page no longer has a column or a
+  // word for one (Anton, 5 Oct: remove "Hidden" entirely).
   // A true minus, matching the rest of the dashboard.
   const rvPct = (n) => (n == null ? '—' : pct(n).replace('-', '−'));
   const rvMonth = (key) => {
@@ -3485,6 +3489,14 @@
     Gain: { c: 'var(--q-high)', g: '▲' },
     Loss: { c: 'var(--q-low)', g: '▼' },
     'Break-even': { c: 'var(--q-none)', g: '■' },
+  };
+  // Suggestion levels, in the status colours with a glyph and a word, so
+  // colour is never the only signal.
+  const RV_SUG = {
+    fix: { c: 'var(--q-low)', g: '▼', l: 'Fix' },
+    improve: { c: 'var(--q-med)', g: '■', l: 'Improve' },
+    keep: { c: 'var(--q-high)', g: '▲', l: 'Keep doing' },
+    note: { c: 'var(--q-none)', g: '○', l: 'Note' },
   };
   const rvResult = (r) => {
     if (!r) return '<span class="rv-na">—</span>';
@@ -3529,11 +3541,8 @@
       const body = rows.map((g) => `
         <tr>
           <td class="cname">${esc(labelOf(g))}</td>
-          <td class="num">${g.figures ? RV_HIDDEN : '—'}</td>
-          <td class="num">${g.figures ? RV_HIDDEN : '—'}</td>
           <td class="num"><b>${g.margin == null ? '—' : rvPct(g.margin)}</b></td>
           <td class="rv-l">${rvBar(g, labelOf(g))}</td>
-          <td class="num">${g.figures ? RV_HIDDEN : '—'}</td>
           <td class="num">${int(g.trips)}</td>
         </tr>`).join('');
       return `
@@ -3542,13 +3551,12 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              ${hcol(helpKey, head)}${hcol('rvRevenue', 'Revenue')}${hcol('rvProfit', 'Profit')}${hcol('rvMargin', 'Margin')}
-              <th class="rv-l"><span ${hlp('rvSplit')}>Expenses and profit</span></th>${hcol('rvExpenses', 'Expenses')}${hcol('rvTrips', 'Trips')}
+              ${hcol(helpKey, head)}${hcol('rvMargin', 'Margin')}
+              <th class="rv-l"><span ${hlp('rvSplit')}>Expenses and profit</span></th>${hcol('rvTrips', 'Trips')}
             </tr></thead>
             <tbody>${body}</tbody>
             <tfoot><tr>
-              <td class="cname">TOTAL</td><td class="num">${RV_HIDDEN}</td><td class="num">${RV_HIDDEN}</td>
-              <td class="num">${t.margin == null ? '—' : rvPct(t.margin)}</td><td></td><td class="num">${RV_HIDDEN}</td><td class="num">${int(t.trips)}</td>
+              <td class="cname">TOTAL</td><td class="num">${t.margin == null ? '—' : rvPct(t.margin)}</td><td></td><td class="num">${int(t.trips)}</td>
             </tr></tfoot>
           </table>
         </div>
@@ -3561,9 +3569,6 @@
       <div class="panel">
         <div class="ptitle">Trip revenue · ${esc(String((p.byMonth[0] && p.byMonth[0].key) || p.asOf).slice(0, 4))}</div>
         <div class="bvhero trp-tiles">
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvRevenue')}>Revenue</span></div><div class="bv-n">Hidden</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvExpenses')}>Expenses</span></div><div class="bv-n">Hidden</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('rvProfit')}>Net profit</span></div><div class="bv-n">Hidden</div></div>
           <div class="bv-side"><div class="bv-lab"><span ${hlp('rvMargin')}>Margin</span></div><div class="bv-n bv-act">${t.margin == null ? '—' : rvPct(t.margin)}</div></div>
           <div class="bv-side"><div class="bv-lab"><span ${hlp('rvTrips')}>Trips</span></div><div class="bv-n">${int(t.trips)}</div><div class="bv-s">${int(notEntered)} not entered yet</div></div>
         </div>
@@ -3571,6 +3576,14 @@
         ${t.margin == null ? '' : `<div class="rv-leg"><span><i class="rv-exp"></i>Expenses <b>${rvPct(1 - t.margin)}</b> of revenue</span><span><i class="${t.margin < 0 ? 'rv-loss' : 'rv-pro'}"></i>${t.margin < 0 ? 'Loss' : 'Profit'} <b>${rvPct(Math.abs(t.margin))}</b> of revenue</span></div>`}
         ${overdue.length ? `<div class="rv-alert"><b>${int(overdue.length)} trip${overdue.length === 1 ? ' has' : 's have'} ended with no figures entered</b> · ${overdue.map((x) => esc(`${x.name} (${rvDates(x)})`)).join('; ')}</div>` : ''}
       </div>
+      ${(p.suggestions || []).length ? `
+      <div class="panel">
+        <div class="ptitle"><span ${hlp('rvSuggest')}>Suggestions</span> · what to improve</div>
+        <div class="rv-sug">${p.suggestions.map((x) => {
+          const st = RV_SUG[x.level] || RV_SUG.note;
+          return `<div class="rv-s" style="border-left-color:${st.c}"><div class="rv-s-head"><span class="rv-s-tag" style="color:${st.c}"><i>${st.g}</i> ${st.l}</span><b>${esc(x.title)}</b></div><div class="rv-s-text">${esc(x.text)}</div></div>`;
+        }).join('')}</div>
+      </div>` : ''}
       ${groupTable('By month', 'rvMonth', 'Month', p.byMonth, (g) => rvMonth(g.key))}
       ${groupTable('By programme', 'rvProgramme', 'Programme', [...p.byProgramme].sort(byMargin), (g) => g.key || 'No programme')}`;
 
@@ -3593,7 +3606,7 @@
       return `<button data-rv-f="${key}" data-rv-v="${attr(v)}" aria-pressed="${rvFilter[key] === v}">${v === 'all' ? 'All' : esc(v)} <span class="ecount">${n}</span></button>`;
     }).join('');
     const shown = p.trips.filter((x) => passes(x));
-    const COLS = 7;
+    const COLS = 4;
     let month = null;
     const tripRows = shown.map((x) => {
       const head = x.month !== month ? `<tr class="rv-month"><td colspan="${COLS}">${esc(rvMonth(x.month))}</td></tr>` : '';
@@ -3601,11 +3614,8 @@
       return `${head}
       <tr>
         <td class="cname">${esc(x.name)}<span class="trp-sub">${esc([x.destination, x.programme, rvDates(x)].filter(Boolean).join(' · '))}</span></td>
-        <td class="num">${x.figures ? RV_HIDDEN : '—'}</td>
-        <td class="num">${x.figures ? RV_HIDDEN : '—'}</td>
         <td class="num"><b>${x.margin == null ? '—' : rvPct(x.margin)}</b></td>
         <td class="rv-l">${x.figures ? rvBar(x, x.name) : ''}</td>
-        <td class="num">${x.figures ? RV_HIDDEN : '—'}</td>
         <td class="rv-l">${rvResult(x.result)}</td>
       </tr>`;
     }).join('');
@@ -3619,8 +3629,8 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              ${hcol('rvTrip', 'Trip')}${hcol('rvRevenue', 'Revenue')}${hcol('rvProfit', 'Profit')}${hcol('rvMargin', 'Margin')}
-              <th class="rv-l"><span ${hlp('rvSplit')}>Expenses and profit</span></th>${hcol('rvExpenses', 'Expenses')}
+              ${hcol('rvTrip', 'Trip')}${hcol('rvMargin', 'Margin')}
+              <th class="rv-l"><span ${hlp('rvSplit')}>Expenses and profit</span></th>
               <th class="rv-l"><span ${hlp('rvResult')}>Result</span></th>
             </tr></thead>
             <tbody>${tripRows || `<tr><td class="cname" colspan="${COLS}">No trips match these filters.</td></tr>`}</tbody>
