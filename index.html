@@ -2014,8 +2014,6 @@
     leadsIg: ['Instagram', 'Leads who came in through an Instagram DM.'],
     leadsWa: ['WhatsApp', 'Leads who came in through WhatsApp.'],
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
-    leadsShare: ['Share of week', "This project's slice of the week's leads."],
-    leadsShareDay: ['Share of day', "This project's slice of the day's leads."],
     leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
     leadsConv: ['Conversion', "Bookings divided by leads, for the same project in the same week or day. They aren't necessarily the same people: someone who books this week may have messaged weeks ago, so a project can read over 100%. NA leads named no trip, so they have no rate."],
     engPosts: ['Posts', "Instagram posts in Maryam's Social Media sheet for the period picked above."],
@@ -2829,12 +2827,7 @@
     const srcLabel = day ? dayName(day.date) : sel.label;
     const srcSplit = splits(src.total, src.ig, src.wa);
     const projSplit = src.projects.length > 0 && src.projects.every((x) => x.ig != null && x.wa != null);
-    const projMax = Math.max(1, ...src.projects.map((x) => x.total));
-    // Shares are of the rows shown, so they always add up to 100%. When the
-    // sheet's own total disagrees with its project cells (flagged above),
-    // dividing by that total would print shares summing past 100%.
-    const rowSum = src.projects.reduce((sum, x) => sum + x.total, 0);
-    const projCols = projSplit ? 7 : 5;
+    const projCols = projSplit ? 6 : 4;
     // Bookings in the same week (or the day picked) beside the leads, and the
     // conversion between them (Anton, 5 Oct 2026).
     const bk = leadBookings(day ? day.date : sel.start, day ? day.date : sel.end);
@@ -2851,7 +2844,6 @@
         <td class="cname">${esc(x.code === 'NA' ? 'NA (no trip given)' : x.code)}</td>
         <td class="num"><b>${int(x.total)}</b></td>
         ${projSplit ? `<td class="num">${int(x.wa)}</td><td class="num">${int(x.ig)}</td>` : ''}
-        <td class="abar-cell"><div class="abar"><div class="abar-fill lead" style="width:${((x.total / projMax) * 100).toFixed(1)}%"></div></div><span class="abar-pct">${show(ratio(x.total, rowSum), pct)}</span></td>
         <td class="num">${b == null ? '<span class="rv-na">—</span>' : int(b)}</td>
         ${convCell(b, x.total)}
       </tr>`;
@@ -2907,7 +2899,6 @@
             <thead><tr>
               ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}
               ${projSplit ? hcol('leadsWa', 'WhatsApp') + hcol('leadsIg', 'Instagram') : ''}
-              ${hcol(day ? 'leadsShareDay' : 'leadsShare', day ? 'Share of day' : 'Share of week')}
               ${hcol('leadsBooked', 'Bookings')}${hcol('leadsConv', 'Conversion')}
             </tr></thead>
             <tbody>${projRows || `<tr><td class="cname" colspan="${projCols}">No leads logged for this ${scope} yet.</td></tr>`}</tbody>
@@ -2915,7 +2906,6 @@
               <td class="cname">TOTAL</td>
               <td class="num">${int(src.total)}</td>
               ${projSplit ? `<td class="num">${srcSplit ? int(src.wa) : '—'}</td><td class="num">${srcSplit ? int(src.ig) : '—'}</td>` : ''}
-              <td></td>
               <td class="num">${bk ? int(bk.all) : '—'}</td>
               ${convCell(bk ? bk.all : null, src.total)}
             </tr></tfoot>

@@ -443,8 +443,11 @@ webhooks.
   table, which sits directly under the daily chart (Muatasam: "When I press
   daily should show daily leads breakdown in table below"); tapping it
   again, or "Whole week", goes back. Each `days[]` entry in `/api/sheets?name=leads`
-  carries its own `projects`. Shares are of the rows shown, so they always
-  total 100% even when the sheet's own Total disagrees.
+  carries its own `projects`. (The share column that used to sit there was removed.)
+- **No Share column** (Anton, 5 Oct 2026, "remove this", with a screenshot of
+  the Share of week bars): the Leads by project table is Project | Leads |
+  WhatsApp | Instagram (when split) | Bookings | Conversion. The old Share of
+  week / Share of day column and its glossary entries are gone.
 - The **Leads by project** table puts the count straight after the name,
   and shows WhatsApp/Instagram columns only when that week really has the
   split. Two columns of dashes read as "no breakdown at all" to Muatasam on
