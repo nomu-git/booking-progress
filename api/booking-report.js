@@ -1,4 +1,27 @@
 const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
+const { classify } = require('../lib/trip-code');
+
+// Which of Marina's lead projects ("ZNZ|BL", "SA|EX", "SL") a trip's bookings
+// belong to, so the Leads tab can put bookings beside leads. Her codes are
+// mostly the project-code vocabulary in trip-code.js; a few destinations she
+// uses aren't on Muatasam's list yet (South Africa, Morocco, AlUla), so
+// they're recognised here for this matching only, leaving the shared
+// vocabulary (and the project codes built from it) unchanged.
+const LEAD_DEST_EXTRA = [
+  ['SA', (w) => w.includes('sa') || (w.includes('south') && w.includes('africa'))],
+  ['MO', (w) => w.includes('morocco')],
+  ['ALAULA', (w) => w.includes('alula') || (w.includes('al') && w.includes('ula'))],
+];
+function leadProject(trip) {
+  const c = classify({ title: trip.title, destination: trip.destination });
+  let dest = c.destination;
+  if (!dest) {
+    const words = String(`${trip.title || ''} ${trip.destination || ''}`).toLowerCase().split(/[^a-z]+/).filter(Boolean);
+    const hit = LEAD_DEST_EXTRA.find(([, test]) => test(words));
+    dest = hit ? hit[0] : null;
+  }
+  return { pd: dest || undefined, pg: c.programme || undefined };
+}
 
 // Muatasam's sales target: new bookings taken per calendar week, counted
 // Sunday to Saturday (his example week ran 9 Aug – 15 Aug 2026, a Sunday start).
@@ -89,6 +112,7 @@ async function build() {
   for (const { trip, orders } of perTrip) {
     const name = productName(trip.title);
     const charter = CHARTERS.has(String(trip.uuid));
+    const proj = leadProject(trip);
     for (const order of orders) {
       const at = Date.parse(order.created_at);
       if (!Number.isFinite(at) || at > nowMs) continue;
@@ -104,6 +128,9 @@ async function build() {
         t: name,
         u: trip.uuid,
         x: charter || undefined,
+        // Destination / programme codes, for matching against lead projects.
+        pd: proj.pd,
+        pg: proj.pg,
       });
     }
   }
