@@ -746,22 +746,26 @@ name, who it's assigned to and its status exactly as monday shows it.
   (`labels_colors` by the value's `index`). Each item gets an "open ↗" link
   to `https://<account slug>.monday.com/boards/<id>/pulses/<item>` (needs a
   monday login to open). Descriptions, files and updates are never read.
-- **UI, redesigned at Anton's request (5 Oct 2026, "Make this simple ...
-  stylish ... colour coding per person"):** the tiles, By person and By
-  board panels were removed. Now: a "<N> pending tasks · <people> people"
-  heading (count in brand yellow), three tabs **All / Marketing & Sales /
-  Operations** (`monTab`, by monday workspace, each with its count; any
-  other workspace that appears gets its own tab after these), and a grid of
-  **task cards**: person chips (initials badge + name), the status as a pill
-  in monday's colour, the task name, then workspace (on All) · group · due
-  date ("▼ Overdue · date" in red when past) and "Open in monday ↗".
+- **UI, modelled on a list-view mock-up Anton shared (5 Oct 2026)**, in the
+  dashboard's navy instead of the mock-up's white (assumption, flagged to
+  Anton). Title "Pending Tasks" with the count; underline text tabs **All /
+  Marketing & Sales / Operations** (`monTab`, by monday workspace; any other
+  workspace gets its own tab after these); a **Show** dropdown on the right
+  (`monWho`: Everyone, each person with their count on that tab, No one
+  assigned; resets to Everyone if the person has nothing on the tab). Then a
+  header row and one rounded row per task: **Task | Status | Due date |
+  Board | Assignees | ↗** (open in monday). Status is monday's label in its
+  own colour (text lightened for contrast, with a dot); overdue dates in red
+  with ▼. On a phone the header hides and each row stacks (task + avatars,
+  status + due, board + link). The earlier tiles, By person / By board
+  panels and card grid were all removed.
 - **Per-person colour:** `MON_PEOPLE` (12 light hues for dark initials on
   navy), assigned alphabetically over everyone on the boards so a person
-  keeps their colour on every tab. It colours their badge, their chip and
-  the card's 4px left edge (first assignee). Cards are sorted by first
-  assignee so each person's colour runs together; unassigned last, with a
-  dashed "No one assigned" chip. Names are always written, so colour is
-  never the only signal. More than 12 people would repeat colours.
+  keeps their colour on every tab. Shown as overlapping initials badges
+  (up to 3, then "+N"; overlap kept small so initials stay readable), with
+  the full names in the badge tooltip and in the Show menu. Rows are sorted
+  by first assignee so each person's colour runs together; unassigned last
+  (dashed "?" badge). More than 12 people would repeat colours.
 - **Public page, no login: task names and people's names are readable by
   anyone with the link.** Flagged to Anton; he chose "Show names and tasks
   as asked" (5 Oct 2026).

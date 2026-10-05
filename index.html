@@ -1029,46 +1029,64 @@
   }
 
   /* ---------- pending tasks (monday.com) ----------
-     One card per task on the brand navy, the brand yellow only for the
-     active tab and the count. Each person has their own colour, shown as an
-     initials badge, the card's left edge and their name chip, so whose task
-     it is reads at a glance; the name is always written too, so the colour
-     is never the only signal. Classes prefixed mon- (.mt* is taken). */
-  .mon-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 12px; }
-  .mon-head h2 { margin: 0; font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -.01em; }
-  .mon-head h2 b { color: var(--yellow); }
-  .mon-head span { font-size: 12px; color: var(--text-3); }
-  .mon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; align-items: start; }
-  .mon-card {
-    position: relative; display: flex; flex-direction: column; gap: 10px;
-    padding: 13px 14px 12px 17px; border-radius: 12px; background: var(--card);
-    border: 1px solid var(--line); overflow: hidden; transition: border-color .15s, transform .15s;
+     Laid out like the list view Anton shared (title, text tabs, a "Show"
+     filter, then one rounded row per task with a header row above), in the
+     dashboard's own navy rather than that reference's white. Each person has
+     their own colour on their initials badge; their names are in the badge's
+     tooltip and in the Show filter. Classes prefixed mon- (.mt* is taken). */
+  .mon-top { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 18px; }
+  .mon-top h2 { margin: 0 0 10px; font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -.01em; }
+  .mon-top h2 small { margin-left: 10px; font-size: 13px; font-weight: 600; color: var(--text-3); letter-spacing: 0; }
+  .mon-tabs { display: flex; gap: 22px; }
+  .mon-tabs button { all: unset; cursor: pointer; padding-bottom: 6px; font-size: 13.5px; font-weight: 600; color: var(--text-3); border-bottom: 2px solid transparent; }
+  .mon-tabs button:hover { color: var(--text-2); }
+  .mon-tabs button[aria-pressed="true"] { color: #fff; border-bottom-color: var(--yellow); }
+  .mon-tabs button span { margin-left: 5px; font-size: 11px; color: var(--text-3); }
+  .mon-tabs button[aria-pressed="true"] span { color: var(--yellow); }
+  .mon-show { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-3); }
+  .mon-show select {
+    appearance: none; background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238698b4' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border: 1px solid var(--line); border-radius: 8px; color: #fff; font: inherit; font-size: 12.5px; padding: 8px 32px 8px 12px; min-width: 190px; cursor: pointer;
   }
-  .mon-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--who, var(--q-none)); }
-  .mon-card:hover { border-color: var(--info-line); transform: translateY(-1px); }
-  .mon-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .mon-who { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
-  .mon-chip {
-    display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px 2px 2px; border-radius: 999px;
-    background: color-mix(in srgb, var(--who) 18%, transparent); font-size: 11.5px; font-weight: 600; color: #fff; white-space: nowrap;
+  .mon-row, .mon-headrow {
+    display: grid; align-items: center; gap: 14px;
+    grid-template-columns: minmax(0, 2.3fr) 130px 100px minmax(0, 1.5fr) 128px 26px;
   }
-  .mon-chip i {
-    width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-    background: var(--who); color: #0b1a2e; font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: .02em;
+  .mon-headrow { padding: 0 18px 10px; font-size: 11.5px; font-weight: 600; color: var(--text-3); }
+  .mon-list { display: grid; gap: 8px; }
+  .mon-row {
+    padding: 13px 18px; border-radius: 10px; background: var(--card); border: 1px solid transparent;
+    font-size: 12.5px; color: var(--text-2); transition: border-color .15s, background .15s;
   }
-  .mon-chip.none { background: transparent; border: 1px dashed var(--line); color: var(--text-3); padding: 2px 9px; }
-  .mon-st {
-    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; flex: none;
-    background: color-mix(in srgb, var(--st) 22%, transparent); font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap;
-  }
+  .mon-row:hover { border-color: var(--yellow); }
+  .mon-task { font-size: 13.5px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mon-st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: color-mix(in srgb, var(--st) 72%, #fff); white-space: nowrap; }
   .mon-st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--st); }
-  .mon-name { font-size: 14.5px; font-weight: 700; color: #fff; line-height: 1.35; }
-  .mon-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--text-3); }
-  .mon-foot a { color: var(--text-3); text-decoration: none; white-space: nowrap; }
-  .mon-foot a:hover { color: var(--yellow); }
+  .mon-where { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mon-late { color: #ff9b91; font-weight: 700; }
-  .mon-empty { padding: 30px; text-align: center; color: var(--text-3); font-size: 13px; }
-  @media (max-width: 600px) { .mon-grid { grid-template-columns: 1fr; } }
+  .mon-av { display: flex; align-items: center; justify-content: flex-end; }
+  .mon-av i {
+    width: 28px; height: 28px; margin-left: -3px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--who); color: #0b1a2e; font-style: normal; font-size: 10.5px; font-weight: 800; border: 2px solid var(--card);
+  }
+  .mon-av i:first-child { margin-left: 0; }
+  .mon-av i.more { background: var(--track); color: var(--text-2); }
+  .mon-av i.none { background: transparent; border: 1.5px dashed var(--line); color: var(--text-3); font-size: 13px; }
+  .mon-open { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; color: var(--text-3); text-decoration: none; font-size: 13px; }
+  .mon-open:hover { background: var(--track); color: var(--yellow); }
+  .mon-empty { padding: 34px; text-align: center; color: var(--text-3); font-size: 13px; background: var(--card); border-radius: 10px; }
+  @media (max-width: 760px) {
+    .mon-headrow { display: none; }
+    .mon-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'task av' 'st due' 'meta open'; gap: 6px 12px; }
+    .mon-task { grid-area: task; white-space: normal; }
+    .mon-row > .mon-stc { grid-area: st; }
+    .mon-row > .mon-due { grid-area: due; justify-self: end; font-size: 11.5px; }
+    .mon-row > .mon-due.none { visibility: hidden; }
+    .mon-row > .mon-where { grid-area: meta; font-size: 11.5px; color: var(--text-3); white-space: normal; }
+    .mon-row > .mon-av { grid-area: av; align-self: start; }
+    .mon-row > .mon-open { grid-area: open; justify-self: end; }
+    .mon-show select { min-width: 160px; }
+  }
 
   /* Ratings: a row per question, a column per trip. The question column
      stays put while the trips scroll sideways. */
@@ -3739,6 +3757,10 @@
   const MON_PEOPLE = ['#5fb0f0', '#7fd8a4', '#f39a8f', '#c3a1f5', '#ffbe85', '#6ed8d4', '#ee9fcb', '#bccf72', '#a8b6ff', '#e6c56b', '#8fd0ff', '#d6a4a4'];
   const monInitials = (n) => String(n).trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
+  // Who the "Show" filter is set to: 'all', a person, or MON_NOBODY.
+  let monWho = 'all';
+  const MON_NOBODY = '__none__';
+
   function renderPending() {
     const p = monData;
     if (!p) return;
@@ -3751,43 +3773,64 @@
     const tabs = ['all', ...MON_TABS.filter((w) => p.items.some((i) => i.workspace === w)),
       ...[...new Set(p.items.map((i) => i.workspace).filter((w) => w && !MON_TABS.includes(w)))]];
     if (!tabs.includes(monTab)) monTab = 'all';
+    if (monWho !== 'all' && monWho !== MON_NOBODY && !everyone.includes(monWho)) monWho = 'all';
     const inTab = (i) => monTab === 'all' || i.workspace === monTab;
-    // Grouped by person, so each person's colour runs down the list together;
-    // tasks with no one assigned go last.
-    const shown = p.items.filter(inTab).sort((a, b) =>
+    const isWho = (i) => monWho === 'all' || (monWho === MON_NOBODY ? !i.people.length : i.people.includes(monWho));
+    // Grouped by first assignee, so each person's colour runs together;
+    // unassigned last.
+    const tabItems = p.items.filter(inTab);
+    const whoCount = (n) => tabItems.filter((i) => (n === MON_NOBODY ? !i.people.length : i.people.includes(n))).length;
+    // Someone picked in Show who has nothing on this tab: back to Everyone,
+    // rather than an empty list under a menu that no longer lists them.
+    if (monWho !== 'all' && !whoCount(monWho)) monWho = 'all';
+    const shown = p.items.filter((i) => inTab(i) && isWho(i)).sort((a, b) =>
       (!a.people.length) - (!b.people.length)
       || String(a.people[0] || '').localeCompare(String(b.people[0] || ''))
       || String(a.board).localeCompare(String(b.board)));
-    const people = new Set(shown.flatMap((i) => i.people));
+    const options = [
+      `<option value="all"${monWho === 'all' ? ' selected' : ''}>Everyone (${tabItems.length})</option>`,
+      ...everyone.filter((n) => whoCount(n)).map((n) => `<option value="${attr(n)}"${monWho === n ? ' selected' : ''}>${esc(n)} (${whoCount(n)})</option>`),
+      whoCount(MON_NOBODY) ? `<option value="${MON_NOBODY}"${monWho === MON_NOBODY ? ' selected' : ''}>No one assigned (${whoCount(MON_NOBODY)})</option>` : '',
+    ].join('');
 
-    const card = (i) => {
-      const who = i.people.length ? colorOf.get(i.people[0]) : null;
-      const chips = i.people.length
-        ? i.people.map((n) => `<span class="mon-chip" style="--who:${colorOf.get(n)}"><i>${esc(monInitials(n))}</i>${esc(n)}</span>`).join('')
-        : '<span class="mon-chip none">No one assigned</span>';
-      const where = monTab === 'all' ? [i.workspace, i.group] : [i.group];
-      const due = i.due ? (i.overdue ? `<span class="mon-late">▼ Overdue · ${esc(monDay(i.due))}</span>` : `Due ${esc(monDay(i.due))}`) : '';
-      return `<div class="mon-card"${who ? ` style="--who:${who}"` : ''}>
-        <div class="mon-top"><div class="mon-who">${chips}</div><span class="mon-st" style="--st:${monColor(i.statusColor)}">${esc(i.status || 'Not Started')}</span></div>
-        <div class="mon-name">${esc(i.name)}</div>
-        <div class="mon-foot"><span>${esc(where.filter(Boolean).join(' · '))}${due ? ` · ${due}` : ''}</span>${i.url ? `<a href="${attr(i.url)}" target="_blank" rel="noopener">Open in monday ↗</a>` : ''}</div>
-      </div>`;
+    const avatars = (i) => {
+      if (!i.people.length) return `<span class="mon-av" ${tipOf('Assigned to', [['', 'No one yet']])}><i class="none">?</i></span>`;
+      const max = 3;
+      const faces = i.people.slice(0, max).map((n) => `<i style="--who:${colorOf.get(n)}">${esc(monInitials(n))}</i>`).join('');
+      const more = i.people.length > max ? `<i class="more">+${i.people.length - max}</i>` : '';
+      return `<span class="mon-av" ${tipOf('Assigned to', i.people.map((n) => ['', n]))}>${faces}${more}</span>`;
     };
+    const row = (i) => `
+      <div class="mon-row">
+        <div class="mon-task" title="${attr(i.name)}">${esc(i.name)}</div>
+        <div class="mon-stc"><span class="mon-st" style="--st:${monColor(i.statusColor)}">${esc(i.status || 'Not Started')}</span></div>
+        <div class="mon-due${i.due ? '' : ' none'}">${i.due ? (i.overdue ? `<span class="mon-late">▼ ${esc(monDay(i.due))}</span>` : esc(monDay(i.due))) : '—'}</div>
+        <div class="mon-where">${esc([monTab === 'all' ? i.workspace : null, i.group].filter(Boolean).join(' · '))}</div>
+        ${avatars(i)}
+        ${i.url ? `<a class="mon-open" href="${attr(i.url)}" target="_blank" rel="noopener" title="Open in monday">↗</a>` : '<span></span>'}
+      </div>`;
 
     $('pendingWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last copy from monday.com — ${esc(p.error || 'monday unreachable')}</div>` : ''}
-      <div class="mon-head">
-        <h2><b>${int(shown.length)}</b> pending task${shown.length === 1 ? '' : 's'}</h2>
-        <span>${int(people.size)} ${people.size === 1 ? 'person' : 'people'} · live from monday.com</span>
+      <div class="mon-top">
+        <div>
+          <h2>Pending Tasks<small>${int(shown.length)} task${shown.length === 1 ? '' : 's'} · live from monday.com</small></h2>
+          <div class="mon-tabs" role="tablist" aria-label="Workspaces">
+            ${tabs.map((w) => `<button role="tab" data-mon-tab="${attr(w)}" aria-pressed="${monTab === w}" aria-selected="${monTab === w}">${w === 'all' ? 'All' : esc(w)}<span>${int(p.items.filter((i) => w === 'all' || i.workspace === w).length)}</span></button>`).join('')}
+          </div>
+        </div>
+        <label class="mon-show">Show <select id="monWho">${options}</select></label>
       </div>
-      <div class="seg subtabs" role="tablist" aria-label="Pending task sections">
-        ${tabs.map((w) => `<button role="tab" data-mon-tab="${attr(w)}" aria-pressed="${monTab === w}" aria-selected="${monTab === w}">${w === 'all' ? 'All' : esc(w)} <span class="ecount">${int(p.items.filter((i) => w === 'all' || i.workspace === w).length)}</span></button>`).join('')}
-      </div>
-      ${shown.length ? `<div class="mon-grid">${shown.map(card).join('')}</div>` : '<div class="mon-empty">Nothing pending here.</div>'}`;
+      ${shown.length ? `
+      <div class="mon-headrow"><span>Task</span><span>Status</span><span>Due date</span><span>Board</span><span style="text-align:right">Assignees</span><span></span></div>
+      <div class="mon-list">${shown.map(row).join('')}</div>` : '<div class="mon-empty">Nothing pending here.</div>'}`;
 
+    bindHelp($('pendingWrap'));
     $('pendingWrap').querySelectorAll('[data-mon-tab]').forEach((b) => {
       b.addEventListener('click', () => { monTab = b.dataset.monTab; renderPending(); });
     });
+    const sel = $('pendingWrap').querySelector('#monWho');
+    if (sel) sel.addEventListener('change', () => { monWho = sel.value; renderPending(); });
   }
 
   async function loadPending(force) {
