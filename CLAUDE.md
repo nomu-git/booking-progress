@@ -41,8 +41,9 @@ no framework.
     `setView('campaigns')` and `setView('history')`; the Ads sidebar button
     stays lit for both. Both views keep their own hash (`#campaigns`,
     `#history`), so old links still work.
-  - **CORPORATE**: Pending Task (`data-view="pending"`, added 5 Oct 2026;
-    see "Pending Task tab" below).
+  - **CORPORATE**: Monday (`data-view="pending"`, added 5 Oct 2026 as
+    "Pending Task", sidebar label renamed to "Monday" the same day; the page
+    title inside is still "Pending Tasks"; see "Pending Task tab" below).
 
   Labels only, renamed by Muatasam/Anton, 30 Sep–4 Oct 2026: tab
   "Dashboard" -> "Booking", "Trips" -> "Trips & R&D", "Campaigns" -> "Ads" -> "Campaign Ads" (4 Oct 2026),
