@@ -302,7 +302,7 @@
      and those tabs' panels have touched since; Previous Projects and Leads
      never had it. */
   #previousWrap > .panel, #campaignsWrap > .panel,
-  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel, #revenueWrap > .panel { margin-bottom: 12px; }
+  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel, #revenueWrap > .panel, #pendingWrap > .panel { margin-bottom: 12px; }
   .ptitle {
     font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-3); margin-bottom: 10px;
@@ -1028,6 +1028,33 @@
     #revenueWrap .ctable td.cname { min-width: 140px; }
   }
 
+  /* ---------- pending tasks (monday.com) ---------- */
+  #pendingWrap .ctable th.mon-l, #pendingWrap .ctable td.mon-l { text-align: left; }
+  #pendingWrap .ctable td.cname { min-width: 200px; }
+  #pendingWrap .ctable tr.mon-board td {
+    background: transparent; border-bottom: 0; text-align: left; padding: 14px 10px 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+  }
+  .mon-st { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
+  .mon-st i { width: 10px; height: 10px; border-radius: 3px; flex: none; background: var(--q-none); }
+  .mon-st.none { color: var(--text-3); font-weight: 500; }
+  .mon-ppl { white-space: normal; min-width: 120px; color: var(--text-2); }
+  .mon-late { color: #ff9b91; font-weight: 600; white-space: nowrap; }
+  .mon-bars { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px 28px; }
+  .mon-bar { display: grid; grid-template-columns: minmax(0, 1fr) 120px 28px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-2); }
+  .mon-bar button { all: unset; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mon-bar button:hover, .mon-bar button[aria-pressed="true"] { color: #fff; text-decoration: underline; }
+  .mon-bar .abar { width: 120px; }
+  .mon-bar b { color: #fff; text-align: right; font-variant-numeric: tabular-nums; }
+  .mon-link { color: var(--text-3); font-size: 11px; text-decoration: none; margin-left: 6px; }
+  .mon-link:hover { color: #fff; }
+  @media (max-width: 600px) {
+    .mon-bars { grid-template-columns: 1fr; }
+    .mon-bar { grid-template-columns: minmax(0, 1fr) 80px 28px; }
+    .mon-bar .abar { width: 80px; }
+    #pendingWrap .ctable td.cname { min-width: 160px; }
+  }
+
   /* Ratings: a row per question, a column per trip. The question column
      stays put while the trips scroll sideways. */
   #feedbackWrap .fb-matrix th.fb-trip-h { white-space: normal; min-width: 118px; max-width: 150px; text-align: left; vertical-align: bottom; line-height: 1.3; }
@@ -1080,6 +1107,10 @@
         <div class="sb-cat">Marketing</div>
         <button class="sb-item" data-view="campaigns" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4a1 1 0 0 0 1 1h2.5L16 19.5V4.5L6.5 9H4a1 1 0 0 0-1 1z"/><path d="M7 15.2l1.6 4.4a1 1 0 0 0 .94.66h1.1a1 1 0 0 0 .92-1.38L10.4 16.8"/><path d="M19 8l2-1.5M19.5 12H22M19 16l2 1.5"/></svg><span class="sb-label">Campaign Ads</span></button>
         <button class="sb-item" data-view="engagements" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="sb-label">Engagements</span></button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-cat">Corporate</div>
+        <button class="sb-item" data-view="pending" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11l2 2 4-4M9 17h6"/></svg><span class="sb-label">Pending Task</span></button>
       </div>
     </nav>
   </aside>
@@ -1136,6 +1167,7 @@
   <div id="tripsWrap" hidden></div>
   <div id="feedbackWrap" hidden></div>
   <div id="revenueWrap" hidden></div>
+  <div id="pendingWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   </div>
@@ -1208,7 +1240,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements'].includes(s.view)) view = s.view;
+      if (['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending'].includes(s.view)) view = s.view;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -1961,6 +1993,14 @@
     fbOverall: ['Overall (1–5)', 'Average overall satisfaction of the people who answered, 5 highest. Green 4.0 and up, amber 3.0 to 3.9, red under 3.0, as the sheet colours them.'],
     fbComments: ['Comments', 'Written comments on the trip. A red flag counts comments the sheet marks to escalate.'],
     fbQuestion: ['Question', "Each question on this programme's survey, in the sheet's order. Scores are the average of the people who answered, 1 to 5; text answers are the sheet's own summary. Not asked means the question isn't on that trip's form."],
+    monPending: ['Pending', 'Items on the chosen monday.com boards whose status is anything but Done, including items with no status yet. Main items only, not sub-items.'],
+    monPeople: ['People', 'Everyone assigned to at least one pending item.'],
+    monOverdue: ['Overdue', "Pending items whose due date has passed. Most items here don't have a due date set in monday."],
+    monUnassigned: ['No one assigned', 'Pending items with nobody in their person column.'],
+    monTask: ['Task', 'The item name as it is in monday.com, with its board and group underneath.'],
+    monWho: ['Assigned to', "The person or people in the item's person column in monday."],
+    monStatus: ['Status', "Exactly what the item's Status column says in monday, in monday's colour. No status means it hasn't been set."],
+    monDue: ['Due', "The item's due date in monday, if one is set."],
     rvSuggest: ['Suggestions', 'Plain-language pointers worked out from the margins in the sheet: what lost money, what earns little, what is working. Rules over the numbers, not a live AI, and they use only percentages and trip names.'],
     rvMargin: ['Margin', 'Profit as a share of revenue. Negative is a loss. Blank when there is no revenue to divide by.'],
     rvTrips: ['Trips', 'Departures in this group, including ones not filled in yet.'],
@@ -3676,6 +3716,122 @@
     }
   }
 
+  /* ================= pending task tab (monday.com) ================= */
+
+  let monData = null;
+  const monFilter = { board: 'all', person: 'all', status: 'all' };
+  const MON_NONE = 'No one assigned';
+  const MON_NOSTATUS = 'No status';
+  const MON_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monDay = (iso) => `${Number(iso.slice(8, 10))} ${MON_MON[Number(iso.slice(5, 7)) - 1]}${iso.slice(0, 4) !== String(new Date().getFullYear()) ? ` ${iso.slice(0, 4)}` : ''}`;
+  // monday's own label colour, passed through only if it's a plain hex.
+  const monColor = (c) => (/^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : null);
+  const monStatus = (label, color) => (label
+    ? `<span class="mon-st"><i style="${monColor(color) ? `background:${monColor(color)}` : ''}"></i>${esc(label)}</span>`
+    : `<span class="mon-st none"><i></i>${MON_NOSTATUS}</span>`);
+
+  function renderPending() {
+    const p = monData;
+    if (!p) return;
+    if (p.error && !p.items) {
+      $('pendingWrap').innerHTML = `<div class="msg err">Could not load monday.com: ${esc(p.error)}</div>`;
+      return;
+    }
+    const t = p.totals;
+    const boardsList = p.boards.map((b) => b.name);
+    const people = p.byPerson.map((x) => x.name || MON_NONE);
+    const statuses = [...new Set(p.items.map((i) => i.status || MON_NOSTATUS))];
+    const lists = { board: boardsList, person: people, status: statuses };
+    for (const k of Object.keys(lists)) if (monFilter[k] !== 'all' && !lists[k].includes(monFilter[k])) monFilter[k] = 'all';
+    const has = (i, k, v) => (k === 'board' ? i.board === v
+      : k === 'person' ? (v === MON_NONE ? !i.people.length : i.people.includes(v))
+        : (i.status || MON_NOSTATUS) === v);
+    const passes = (i, skip) => Object.keys(lists).every((k) => k === skip || monFilter[k] === 'all' || has(i, k, monFilter[k]));
+    // Each button counts what it would show given the other two filters.
+    const pills = (key) => ['all', ...lists[key]].map((v) => {
+      const n = p.items.filter((i) => passes(i, key) && (v === 'all' || has(i, key, v))).length;
+      return `<button data-mon-f="${key}" data-mon-v="${attr(v)}" aria-pressed="${monFilter[key] === v}">${v === 'all' ? 'All' : esc(v)} <span class="ecount">${n}</span></button>`;
+    }).join('');
+    const shown = p.items.filter((i) => passes(i));
+
+    // Who holds what: one bar per person, scaled to the busiest. Clicking a
+    // name filters the table to them.
+    const maxP = Math.max(1, ...p.byPerson.map((x) => x.count));
+    const personBars = p.byPerson.map((x) => {
+      const name = x.name || MON_NONE;
+      return `<div class="mon-bar"><button data-mon-f="person" data-mon-v="${attr(monFilter.person === name ? 'all' : name)}" aria-pressed="${monFilter.person === name}">${esc(name)}</button><div class="abar"><div class="abar-fill" style="width:${((x.count / maxP) * 100).toFixed(1)}%;background:var(--fill)"></div></div><b>${int(x.count)}</b></div>`;
+    }).join('');
+    const boardBars = p.boards.map((b) => `<div class="mon-bar"><button data-mon-f="board" data-mon-v="${attr(monFilter.board === b.name ? 'all' : b.name)}" aria-pressed="${monFilter.board === b.name}">${esc(b.name)}</button><div class="abar" ${tipOf(b.name, [['Pending', int(b.pending)], ['All items', int(b.total)]])}><div class="abar-fill" style="width:${b.total ? ((b.pending / b.total) * 100).toFixed(1) : 0}%;background:var(--fill)"></div></div><b>${int(b.pending)}</b></div>`).join('');
+
+    const COLS = 4;
+    let board = null;
+    const rows = shown.map((i) => {
+      const head = i.board !== board ? `<tr class="mon-board"><td colspan="${COLS}">${esc(i.board)}</td></tr>` : '';
+      board = i.board;
+      return `${head}
+      <tr>
+        <td class="cname">${esc(i.name)}${i.url ? `<a class="mon-link" href="${attr(i.url)}" target="_blank" rel="noopener">open ↗</a>` : ''}<span class="trp-sub">${esc(i.group || '')}</span></td>
+        <td class="mon-l mon-ppl">${i.people.length ? esc(i.people.join(', ')) : `<span class="rv-na">${MON_NONE}</span>`}</td>
+        <td class="mon-l">${monStatus(i.status, i.statusColor)}</td>
+        <td class="mon-l">${i.due ? (i.overdue ? `<span class="mon-late">▼ ${esc(monDay(i.due))} · overdue</span>` : esc(monDay(i.due))) : '<span class="rv-na">—</span>'}</td>
+      </tr>`;
+    }).join('');
+
+    $('pendingWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing the last copy from monday.com — ${esc(p.error || 'monday unreachable')}</div>` : ''}
+      <div class="panel">
+        <div class="ptitle">Pending tasks · monday.com</div>
+        <div class="bvhero trp-tiles">
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('monPending')}>Pending</span></div><div class="bv-n bv-act">${int(t.pending)}</div><div class="bv-s">not done yet</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('monPeople')}>People</span></div><div class="bv-n">${int(t.people)}</div><div class="bv-s">with pending tasks</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('monOverdue')}>Overdue</span></div><div class="bv-n">${int(t.overdue)}</div><div class="bv-s">past their due date</div></div>
+          <div class="bv-side"><div class="bv-lab"><span ${hlp('monUnassigned')}>No one assigned</span></div><div class="bv-n">${int(t.unassigned)}</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">By person</div>
+        <div class="mon-bars">${personBars || '<div class="pnote">Nothing pending.</div>'}</div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">By board · pending of all items</div>
+        <div class="mon-bars">${boardBars}</div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Tasks · ${int(shown.length)} of ${int(p.items.length)}</div>
+        <div class="efilters">
+          <div class="efilter"><span class="efl">Board</span><div class="seg">${pills('board')}</div></div>
+          <div class="efilter"><span class="efl">Person</span><div class="seg">${pills('person')}</div></div>
+          <div class="efilter"><span class="efl">Status</span><div class="seg">${pills('status')}</div></div>
+        </div>
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              ${hcol('monTask', 'Task')}<th class="mon-l"><span ${hlp('monWho')}>Assigned to</span></th>
+              <th class="mon-l"><span ${hlp('monStatus')}>Status</span></th><th class="mon-l"><span ${hlp('monDue')}>Due</span></th>
+            </tr></thead>
+            <tbody>${rows || `<tr><td class="cname" colspan="${COLS}">No pending tasks match these filters.</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    bindHelp($('pendingWrap'));
+    $('pendingWrap').querySelectorAll('[data-mon-f]').forEach((b) => {
+      b.addEventListener('click', () => { monFilter[b.dataset.monF] = b.dataset.monV; renderPending(); });
+    });
+  }
+
+  async function loadPending(force) {
+    try {
+      const res = await fetch('/api/sheets?name=pending' + (force ? '&refresh=1' : ''));
+      const p = await res.json();
+      if (!res.ok && !p.items) throw new Error(p.error || `HTTP ${res.status}`);
+      monData = p;
+      renderPending();
+    } catch (err) {
+      if (!monData) $('pendingWrap').innerHTML = `<div class="msg err">Could not load monday.com: ${esc(err.message)}</div>`;
+    }
+  }
+
   /* ================= view switching ================= */
 
   // Explicit target, not a toggle — Dashboard is always one click away from
@@ -3709,6 +3865,7 @@
     $('tripsWrap').hidden = view !== 'trips';
     $('feedbackWrap').hidden = view !== 'feedback';
     $('revenueWrap').hidden = view !== 'revenue';
+    $('pendingWrap').hidden = view !== 'pending';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -3749,6 +3906,10 @@
       if (!revData) $('revenueWrap').innerHTML = '<div class="msg">Loading trip revenue…</div>';
       loadRevenue(false);
     }
+    if (view === 'pending') {
+      if (!monData) $('pendingWrap').innerHTML = '<div class="msg">Loading pending tasks…</div>';
+      loadPending(false);
+    }
     // Keep the address bar in step, so a reload or a copied link lands on the
     // same tab. replaceState rather than the hash property: no history entry
     // per tab click, so Back still leaves the dashboard.
@@ -3775,6 +3936,7 @@
     if (tripsData) loadTrips(true);
     if (feedback) loadFeedback(true);
     if (revData) loadRevenue(true);
+    if (monData) loadPending(true);
   });
 
   /* ================= sidebar ================= */
@@ -3835,7 +3997,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements'];
+  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;
@@ -3868,6 +4030,7 @@
   setInterval(() => { if (tripsData) loadTrips(false); }, 300000);
   setInterval(() => { if (feedback) loadFeedback(false); }, 300000);
   setInterval(() => { if (revData) loadRevenue(false); }, 300000);
+  setInterval(() => { if (monData) loadPending(false); }, 300000);
   // Re-render between fetches so a highlight lapses at its own 24h mark and the
   // "3h ago" text stays honest, without waiting on the server cache.
   setInterval(() => { if (latest) render(latest); }, 20000);

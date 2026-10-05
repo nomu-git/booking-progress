@@ -30,7 +30,7 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~215,000 characters. Ten views in three sidebar
+  `<script>`, no bundler. ~230,000 characters. Eleven views in four sidebar
   categories (`<aside class="sidebar">`, its `<nav id="viewSeg">` holds the
   `data-view` buttons `setView()` drives). Regrouped by Anton, 4 Oct 2026:
   - **SALES**: Booking, Report, Leads
@@ -41,6 +41,8 @@ no framework.
     `setView('campaigns')` and `setView('history')`; the Ads sidebar button
     stays lit for both. Both views keep their own hash (`#campaigns`,
     `#history`), so old links still work.
+  - **CORPORATE**: Pending Task (`data-view="pending"`, added 5 Oct 2026;
+    see "Pending Task tab" below).
 
   Labels only, renamed by Muatasam/Anton, 30 Sep–4 Oct 2026: tab
   "Dashboard" -> "Booking", "Trips" -> "Trips & R&D", "Campaigns" -> "Ads" -> "Campaign Ads" (4 Oct 2026),
@@ -60,8 +62,10 @@ no framework.
   level because they're fixed-position overlays.
 - `api/*.js`: **endpoints only.** CommonJS Vercel functions (`module.exports = async (req, res) => {...}`).
 - **Sheet-mirror tabs all go through one function, `api/sheets.js?name=`**
-  (`leads`, `engagements`, `trips`, `feedback`, `revenue`). Each tab's
-  builder lives in `lib/tabs/<name>.js` and exports `{ build, envVar, ttl }`;
+  (`leads`, `engagements`, `trips`, `feedback`, `revenue`, and `pending`,
+  which reads monday.com rather than a workbook). Each tab's builder lives in
+  `lib/tabs/<name>.js` and exports `{ build, envVar, ttl }`, or `{ build,
+  load, ttl }` when its data isn't a workbook;
   `api/sheets.js` fetches the workbook from that env var, caches per tab,
   and serves stale on error. The page fetches `/api/sheets?name=<name>`
   (`&refresh=1` to bypass the cache); `vercel.json` rewrites the old
@@ -707,6 +711,49 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
 - Meta load: every 2 minutes x 2 accounts = ~60 activity-log calls an hour
   per account, well inside the Marketing API limits; don't go to every
   minute without a reason.
+
+## Pending Task tab (monday.com)
+
+Asked for by Anton, 5 Oct 2026: a **Corporate** sidebar category with
+**Pending Task**, listing every monday.com item that isn't done, with its
+name, who it's assigned to and its status exactly as monday shows it.
+
+- **Source is monday's API, not Slack.** Anton pointed at a Slack "Monday
+  Reminders" channel; Cowork found it's an app with an empty message tab
+  (most likely private DMs per person), so there was nothing to read. The
+  monday GraphQL API (`lib/monday.js`, `API-Version: 2024-10` pinned, token
+  in `MONDAY_API_TOKEN`) gives the items directly. Cowork is not allowed to
+  create or enter API tokens, so Anton sets that one himself.
+- **Boards** (`MONDAY_BOARD_IDS`, default, Anton's pick): Operations
+  General `5102303383`, Asia `5102494784`, Africa `5102494871`, Marketing &
+  Sales General `5103011662`. Not included: Management (locked in monday),
+  Corporate Admin / IT / Business Development, the monthly content
+  calendars, CRM boards. Two boards are both named "General", so every
+  board is labelled "<workspace> · <board>".
+- **Pending = status is anything but "Done"** (`MONDAY_DONE_LABELS`),
+  including items with no status. "Done" is the only finished label on
+  these boards; finished items stay in their groups (no Done group), so
+  status is the only signal. Stuck, Not Started etc. all show, labelled as
+  monday labels them (Anton: "Just show what exactly is in the status").
+  **Main items only**, no sub-items (barely used anyway).
+- Columns are found by **type**, not ID (the boards come from different
+  templates): first `people` column; the `status` column titled "Status"
+  (Marketing General also has a Priority status column); first `date`
+  column as Due. Status colours come from the column's `settings_str`
+  (`labels_colors` by the value's `index`). Each item gets an "open ↗" link
+  to `https://<account slug>.monday.com/boards/<id>/pulses/<item>` (needs a
+  monday login to open). Descriptions, files and updates are never read.
+- UI: tiles (Pending, People, Overdue, No one assigned); By person bars
+  (click a name to filter); By board bars (pending of all items); a Tasks
+  table grouped by board (Task with group underneath | Assigned to |
+  Status as a coloured square + monday's label | Due, "▼ date · overdue" in
+  red when past). Board / Person / Status filters, each counting given the
+  other two. Classes prefixed `mon-` (`.mt*` is taken).
+- **Public page, no login: task names and people's names are readable by
+  anyone with the link.** Flagged to Anton; he chose "Show names and tasks
+  as asked" (5 Oct 2026).
+- Due dates are sparse on these boards (Cowork: 1 of 17 on Operations
+  General), so Overdue will usually read low; that's the data, not a bug.
 
 **Function budget: 10 of Vercel Hobby's 12** (sheets merged into one;
 `campaign-alerts` added). New sheet tabs don't add to it.
