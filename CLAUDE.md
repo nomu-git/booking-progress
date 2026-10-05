@@ -499,18 +499,26 @@ Story Engagement Question).
   recorded", shown as a dash, not 0.
 - Story Responses can be text ("8 Link Clicks"): the number is kept and the
   unit shown under it. Response rate (responses / views) is computed here.
-- **Filters: Month and Type** (Reel, Carousel, Static, Photo dump, plus any
-  new type Maryam adds, in that order). They combine; the hero, chart and
-  posts table all follow them, stories follow the month only (they have a
-  poll type, not a content type). Each type shows its count for the chosen
-  month; a type with none is hidden unless it's the one selected. Type is
-  its own column on wide screens and moves under the post name on a phone.
+- **Posts | Stories tabs replaced the Type filter** (Anton, 5 Oct 2026:
+  "I only want to show Posts and Stories", with a screenshot of the old
+  Type pills): `engSub` switches between a Posts view and a Stories view,
+  each with its own heading figures. The only filter left is **Month**
+  (shared by both). **Content type is no longer a filter** but stays as the
+  Type column in the posts table (and under the name on a phone), and its
+  tooltip no longer says to pick one above.
+- **Top performing** (Anton: "have also like top performing"): a panel in
+  each view with the best three, ranked 1–3 with a bar scaled to the best:
+  **posts by engagement rate**, **stories by response rate** (responses ÷
+  views). Zero or blank values are excluded; ties go to more views. The sort
+  menus also have it as an option ("Top performing (engagement)" / "(response
+  rate)").
 - **Sort by** (Anton, 5 Oct 2026): a dropdown beside the Month / Type
   filters (`engSort`): Newest / Oldest first, or Views, Engagement, Likes,
-  Comments, Shares, Saves each high to low or low to high. It orders the
-  **Posts table only** (the views chart stays chronological, and the Stories
-  table is unchanged). A post with no value for the field goes last either
-  way (e.g. a blank Book marks cell), ties fall back to date.
+  Comments, Shares, Saves each high to low or low to high (stories: Newest /
+  Oldest, Top performing = response rate, Views, Responses; `storySort`).
+  It orders the **table only** (the views chart stays chronological). A row
+  with no value for the field goes last either way (e.g. a blank Book marks
+  cell), ties fall back to date.
 - UI: month pills, hero (posts, views, engagement, best post), a
   views-per-post bar chart (single series, `--fill`), a posts table with an
   engagement bar per row, and a stories table. Chart width scales with the
