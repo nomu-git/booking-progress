@@ -293,7 +293,53 @@ async function build() {
   };
 }
 
+// ?audit=1 lists every WeTravel trip dated this month or later with the
+// reason it is or isn't on the board: excluded, past the season end, no
+// booking record, or no weeks left. For answering "why isn't this trip
+// showing" without guessing. It needs the same bearer secret as the campaign
+// alerts, since it also names the excluded (charter) trips.
+async function audit() {
+  const todayKey = omanToday();
+  const monthStart = `${todayKey.slice(0, 7)}-01`;
+  const all = await listAllTrips();
+  const upcoming = all.filter((t) => {
+    const start = dayKey(t.start_date);
+    const end = dayKey(t.end_date) || start;
+    return !start || end >= monthStart;
+  });
+  const extra = ['status', 'state', 'published', 'is_published', 'visibility', 'archived', 'is_archived'];
+  const rows = [];
+  const loadable = [];
+  for (const t of upcoming) {
+    const start = dayKey(t.start_date);
+    const end = dayKey(t.end_date) || start;
+    const row = { uuid: t.uuid, title: t.title, start, end };
+    for (const k of extra) if (t[k] !== undefined) row[k] = t[k];
+    if (EXCLUDED.has(String(t.uuid))) row.reason = 'excluded (EXCLUDED_TRIP_UUIDS)';
+    else if (!start) row.reason = 'no start date';
+    else if (start > SEASON_END) row.reason = `starts after SEASON_END (${SEASON_END})`;
+    else loadable.push({ t, row });
+    rows.push(row);
+  }
+  const loaded = await mapWithConcurrency(loadable, 4, ({ t }) => loadTrip(t));
+  const month = todayKey.slice(0, 7);
+  loadable.forEach(({ row }, i) => {
+    const d = loaded[i];
+    if (d.bookingsMissing) { row.reason = 'WeTravel has no booking record'; return; }
+    const shown = d.weeks.filter((w) => w.start && w.start <= SEASON_END && (w.end >= todayKey || w.start.slice(0, 7) === month));
+    row.reason = shown.length ? 'shown' : (d.weeks.length ? 'no weeks left (all ended in earlier months)' : 'no packages (weeks) set up in WeTravel');
+    row.weeks = d.weeks.length;
+  });
+  rows.sort((a, b) => String(a.start || '').localeCompare(String(b.start || '')));
+  return { today: todayKey, seasonEnd: SEASON_END, total: rows.length, byReason: rows.reduce((m, r) => ({ ...m, [r.reason]: (m[r.reason] || 0) + 1 }), {}), trips: rows };
+}
+
 module.exports = async (req, res) => {
+  if (req.query && req.query.audit === '1') {
+    const secret = (process.env.CAMPAIGN_ALERT_SECRET || '').trim();
+    if (!secret || (req.headers.authorization || '') !== `Bearer ${secret}`) return res.status(401).json({ error: 'unauthorized' });
+    try { return res.status(200).json(await audit()); } catch (err) { return res.status(500).json({ error: err.message }); }
+  }
   try {
     const fresh = req.query && req.query.refresh === '1';
     if (!fresh && cache.payload && Date.now() - cache.at < CACHE_TTL_MS) {
