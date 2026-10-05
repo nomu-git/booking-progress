@@ -795,13 +795,13 @@ name, who it's assigned to and its status exactly as monday shows it.
   monday login to open). Descriptions, files and updates are never read.
 - **UI, modelled on a list-view mock-up Anton shared (5 Oct 2026)**, in the
   dashboard's navy instead of the mock-up's white (assumption, flagged to
-  Anton). Title "Pending Tasks" with the count; underline text tabs **All /
-  Marketing / Sales / Operations** (`monTab`, via `monSection()`; Anton, 5
-  Oct 2026): **Sales = only the "Sales" group** on the Marketing & Sales
+  Anton). Title "Pending Tasks" with the count; underline text tabs
+  **Marketing / Sales / Operations**, **no "All" tab** (removed at Anton's
+  request, 5 Oct 2026; it opens on Marketing) (`monTab`, via
+  `monSection()`): **Sales = only the "Sales" group** on the Marketing & Sales
   General board, **Marketing = every other group** on that board,
   Operations = the Operations workspace; any other workspace gets its own
-  tab after these. On All, the Board column shows the section, not the
-  workspace; a **Show** dropdown on the right
+  tab after these. The Board column shows the group; a **Show** dropdown on the right
   (`monWho`: Everyone, each person with their count on that tab, No one
   assigned; resets to Everyone if the person has nothing on the tab). Then a
   header row and one rounded row per task: **Task | Status | Due date |

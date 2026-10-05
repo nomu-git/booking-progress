@@ -3917,7 +3917,7 @@
 
   let monData = null;
   // Which workspace tab is open: 'all' or a workspace name.
-  let monTab = 'all';
+  let monTab = 'Marketing';
   // Tabs (Anton, 5 Oct 2026): Sales is the "Sales" group on the Marketing &
   // Sales board only; Marketing is the rest of that board; Operations is the
   // Operations workspace. Any other workspace gets a tab of its own.
@@ -3948,10 +3948,11 @@
     }
     const everyone = [...new Set(p.items.flatMap((i) => i.people))].sort((a, b) => a.localeCompare(b));
     const colorOf = new Map(everyone.map((n, k) => [n, MON_PEOPLE[k % MON_PEOPLE.length]]));
-    const tabs = ['all', ...MON_TABS, ...[...new Set(p.items.map(monSection))].filter((w) => !MON_TABS.includes(w))];
-    if (!tabs.includes(monTab)) monTab = 'all';
+    // No "All" tab (Anton, 5 Oct 2026): it opens on Marketing.
+    const tabs = [...MON_TABS, ...[...new Set(p.items.map(monSection))].filter((w) => !MON_TABS.includes(w))];
+    if (!tabs.includes(monTab)) monTab = tabs[0];
     if (monWho !== 'all' && monWho !== MON_NOBODY && !everyone.includes(monWho)) monWho = 'all';
-    const inTab = (i) => monTab === 'all' || monSection(i) === monTab;
+    const inTab = (i) => monSection(i) === monTab;
     const isWho = (i) => monWho === 'all' || (monWho === MON_NOBODY ? !i.people.length : i.people.includes(monWho));
     // Grouped by first assignee, so each person's colour runs together;
     // unassigned last.
@@ -3982,7 +3983,7 @@
         <div class="mon-task" title="${attr(i.name)}">${esc(i.name)}</div>
         <div class="mon-stc"><span class="mon-st" style="--st:${monColor(i.statusColor)}">${esc(i.status || 'Not Started')}</span></div>
         <div class="mon-due${i.due ? '' : ' none'}">${i.due ? (i.overdue ? `<span class="mon-late">▼ ${esc(monDay(i.due))}</span>` : esc(monDay(i.due))) : '—'}</div>
-        <div class="mon-where">${esc([monTab === 'all' ? monSection(i) : null, i.group].filter(Boolean).join(' · '))}</div>
+        <div class="mon-where">${esc(i.group || '')}</div>
         ${avatars(i)}
         ${i.url ? `<a class="mon-open" href="${attr(i.url)}" target="_blank" rel="noopener" title="Open in monday">↗</a>` : '<span></span>'}
       </div>`;
@@ -3993,7 +3994,7 @@
         <div>
           <h2>Pending Tasks<small>${int(shown.length)} task${shown.length === 1 ? '' : 's'} · live from monday.com</small></h2>
           <div class="mon-tabs" role="tablist" aria-label="Workspaces">
-            ${tabs.map((w) => `<button role="tab" data-mon-tab="${attr(w)}" aria-pressed="${monTab === w}" aria-selected="${monTab === w}">${w === 'all' ? 'All' : esc(w)}<span>${int(p.items.filter((i) => w === 'all' || monSection(i) === w).length)}</span></button>`).join('')}
+            ${tabs.map((w) => `<button role="tab" data-mon-tab="${attr(w)}" aria-pressed="${monTab === w}" aria-selected="${monTab === w}">${esc(w)}<span>${int(p.items.filter((i) => monSection(i) === w).length)}</span></button>`).join('')}
           </div>
         </div>
         <label class="mon-show">Show <select id="monWho">${options}</select></label>
