@@ -158,7 +158,37 @@ async function loadTripDetail(trip) {
   const weeksBooked = weeks.reduce((sum, w) => sum + w.booked, 0);
   const unallocated = Math.max(0, booked - weeksBooked);
 
-  return { booked, cancelled, weeks, unallocated };
+  return { booked, cancelled, weeks, unallocated, orders };
+}
+
+// Bookings taken per month, by the day they were taken (Muscat calendar),
+// across every trip WeTravel has, past and upcoming: the Previous Sales
+// graphs and the same-month-across-years comparison Muatasam asked for
+// ("Sep progress this year vs sep last year vs years before of same
+// month"). Counted exactly as the Report counts "bookings taken" (each
+// order's active travellers, charters left out), so a month reads the same
+// number here as on the Report's monthly chart. byDay lets the page compare
+// the current, unfinished month against the same days in earlier years.
+function salesByMonth(tripOrders, nowMs) {
+  const months = {};
+  let charterExcluded = 0;
+  for (const { trip, orders } of tripOrders) {
+    const charter = CHARTERS.has(String(trip.uuid));
+    for (const order of orders || []) {
+      const at = Date.parse(order.created_at);
+      if (!Number.isFinite(at) || at > nowMs) continue;
+      const n = order.active_count || 0;
+      if (!n) continue;
+      if (charter) { charterExcluded += n; continue; }
+      const oman = new Date(at + OMAN_OFFSET_MS).toISOString();
+      const key = oman.slice(0, 7);
+      const day = Number(oman.slice(8, 10));
+      const m = months[key] || (months[key] = { n: 0, byDay: new Array(31).fill(0) });
+      m.n += n;
+      m.byDay[day - 1] += n;
+    }
+  }
+  return { months, charterExcluded };
 }
 
 async function build() {
@@ -179,7 +209,21 @@ async function build() {
     return end && end < monthStart;
   });
 
-  const loaded = await mapWithConcurrency(candidates, 4, (trip) => loadTripDetail(trip));
+  // Upcoming trips aren't listed here, but bookings for them count towards
+  // the month they were taken in, so their orders are read for the sales
+  // series only.
+  const upcoming = allTrips.filter((trip) => !EXCLUDED.has(String(trip.uuid)) && !candidates.includes(trip) && dayKey(trip.start_date));
+  const [loaded, upcomingOrders] = await Promise.all([
+    mapWithConcurrency(candidates, 4, (trip) => loadTripDetail(trip)),
+    mapWithConcurrency(upcoming, 4, (trip) => fetchOrders(trip.uuid).catch((err) => {
+      console.error(`previous-trips: sales orders failed for ${trip.uuid}: ${err.message}`);
+      return [];
+    })),
+  ]);
+  const sales = salesByMonth([
+    ...candidates.map((trip, i) => ({ trip, orders: loaded[i] ? loaded[i].orders : [] })),
+    ...upcoming.map((trip, i) => ({ trip, orders: upcomingOrders[i] })),
+  ], Date.now());
 
   const trips = [];
   candidates.forEach((trip, i) => {
@@ -261,6 +305,7 @@ async function build() {
     asOf: new Date().toISOString(),
     today: todayKey,
     years,
+    sales,
     totals: {
       trips: trips.length,
       coded: trips.filter((t) => t.code).length,
