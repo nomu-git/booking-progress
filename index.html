@@ -2831,7 +2831,8 @@
     const convCell = (b, l) => {
       if (b == null || !l) return '<td class="abar-cell"><span class="rv-na">—</span></td>';
       const r = b / l;
-      return `<td class="abar-cell"><div class="abar"><div class="abar-fill" style="width:${Math.min(100, r * 100).toFixed(1)}%;background:var(--fill-full)"></div></div><span class="abar-pct"><b>${pct(r)}</b></span></td>`;
+      // No minimum width at 0%, so an empty bar never shows a green dot.
+      return `<td class="abar-cell"><div class="abar"><div class="abar-fill" style="width:${Math.min(100, r * 100).toFixed(1)}%;background:var(--fill-full)${r ? '' : ';min-width:0'}"></div></div><span class="abar-pct"><b>${pct(r)}</b></span></td>`;
     };
     const projRows = src.projects.map((x) => {
       const b = bk ? bk.by(x.code) : null;

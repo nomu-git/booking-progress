@@ -450,6 +450,23 @@ webhooks.
   split. Two columns of dashes read as "no breakdown at all" to Muatasam on
   his phone, with the numbers scrolled out of sight. On a phone the weekly
   chart scrolls to the selected week, since it opened on January.
+- **Bookings and Conversion columns** (Anton, 5 Oct 2026): the Leads by
+  project table shows, for each project, the bookings taken in the **same
+  week** (or the day picked) and Conversion = bookings ÷ leads, with a TOTAL
+  of all bookings that period ÷ all leads. Bookings come from the Report's
+  events (`/api/booking-report`), which now carry `pd`/`pg` (destination /
+  programme code, via `trip-code.js` `classify()` plus a leads-only alias
+  list in `booking-report.js` for South Africa → SA, Morocco → MO, AlUla →
+  ALAULA, which aren't on Muatasam's code list). A lead code "ZNZ|BL"
+  matches both; "SL" / "KN" (no programme in Marina's code) match the
+  destination alone; "NA" has no rate. Charters left out, as on the Report.
+  "Nomuhub payments" (a general payment link) has no project, so it counts
+  only in the TOTAL. Bookings for a project with no leads that week only
+  show in the TOTAL. **It's same-period, not cohort**: a booking this week
+  may come from a lead weeks ago, so a project can read over 100%; the
+  column's tooltip says so. The Report only looks back 300 days, so leads
+  weeks older than that would show 0 bookings. Checked 5 Oct 2026: 1–7 Oct
+  = 4 bookings / 55 leads (7.3%), matching the Report.
 - **The sheet has known inconsistencies, shown as warnings, not silently
   corrected**: 14/20 July (IG 18 + WA 104 ≠ IG+WA 92; the WA 31 on ZNZ|EX
   looks like a typo for 1), 21-27 July (31 + 124 ≠ 166), 18-24 Aug and
