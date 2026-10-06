@@ -154,9 +154,10 @@ Column by column, once that access exists:
       July don't add up; 18-24 Aug and 24-31 Aug overlap), and to record
       IG vs WA per day in "Leads Quality", which currently only has the
       combined count
-- [ ] "HP" (high potential) and the per-lead Status column (HP,
-      interested, Paid, Ghost, ...) already exist in the sheet and could
-      feed a qualified-leads count, if Muatasam wants it
+- [x] "HP" (high potential) on the Leads tab (6 Oct 2026): from the logs'
+      Status column (to 21 Jul) and the daily sheet's new HP column (from
+      23 Sep). Weeks only in the weekly reports have none. Other statuses
+      (interested, Paid, Ghost, ...) are still unused.
 - [ ] ManyChat check: Cowork prompt sent, waiting on results
 - [x] Seen Maryam's engagement report (30 Sep) — organic content, confirmed
       needs instagram_basic/instagram_manage_insights, see above

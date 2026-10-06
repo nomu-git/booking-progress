@@ -444,6 +444,27 @@ webhooks.
   daily should show daily leads breakdown in table below"); tapping it
   again, or "Whole week", goes back. Each `days[]` entry in `/api/sheets?name=leads`
   carries its own `projects`. (The share column that used to sit there was removed.)
+- **High potential (HP)** (Anton, 6 Oct 2026: Marina added an HP column):
+  counted from two places in `lib/tabs/leads.js`: **"HP" in the Status
+  column of the per-lead logs** (Q1 / Q2 / July, to 21 Jul) and, from 23 Sep,
+  the **free-text HP column** of the daily sheet ("Leads Quality", header
+  "HP" past Total, on row 0), written beside a day's IG or WA row, like
+  "2 med|1 vn", "1 SL+1 BL", "3 znz BL", "1 kenya". `readHp()` splits on
+  `| + , ; &` / "and", reads "<number> <project>", and `hpProject()` matches
+  the project to that sheet's codes (direct code first, then
+  destination / programme words; a match must be unique) or counts it as
+  "Other". Days / weeks get `hp` (null when nothing records HP: the weekly-
+  report-only weeks, late Jul to mid Sep), `hpOther` (HP naming no project,
+  or a project with no leads in that period: shown only in the TOTAL, with a
+  note) and per-project `hp`. UI: a "High potential" tile (N, % of leads)
+  and an **HP** column after Leads (yellow pill), hidden with a note when
+  the period has no HP recorded. Checked 6 Oct 2026: 52 HP this year; 22–30
+  Sep 10, 1–7 Oct 7. Only counts leave the API, as ever.
+- The daily sheet now also has **IG and WA rows under each date** (from 23
+  Sep), which the reader already handled, so days and weeks since then are
+  split WhatsApp / Instagram. Its headers changed spelling ("ZNZ|MD",
+  "ZNZ |EX", "Kenya", "Sri Lanka", "TH/WL") and **VN|EX appears twice**
+  (both columns are added together); `ALIASES` folds them onto the codes.
 - **No Share column** (Anton, 5 Oct 2026, "remove this", with a screenshot of
   the Share of week bars): the Leads by project table is Project | Leads |
   WhatsApp | Instagram (when split) | Bookings | Conversion. The old Share of

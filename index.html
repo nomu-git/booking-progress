@@ -698,6 +698,8 @@
   .lleg { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); margin-top: 10px; }
   .lleg i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
   .pnote.warn { color: #ffb3ab; }
+  /* HP count: the brand yellow, as a small pill, so it reads apart from leads. */
+  .lhp { display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--yellow) 22%, transparent); color: var(--yellow); font-weight: 700; text-align: center; }
   .abar-fill.lead { background: var(--lead-all); }
 
   /* ---------- trips (decision dashboard) ---------- */
@@ -2014,6 +2016,7 @@
     leadsIg: ['Instagram', 'Leads who came in through an Instagram DM.'],
     leadsWa: ['WhatsApp', 'Leads who came in through WhatsApp.'],
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
+    leadsHp: ['High potential', "Leads Marina marked HP (high potential) in the sheet: the Status column of the per-lead logs (to 21 Jul) and the HP column of the daily sheet (from 23 Sep). Weeks covered only by the weekly reports (late Jul to mid Sep) have no HP recorded, so they show a dash."],
     leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
     leadsConv: ['Conversion', "Bookings divided by leads, for the same project in the same week or day. They aren't necessarily the same people: someone who books this week may have messaged weeks ago, so a project can read over 100%. NA leads named no trip, so they have no rate."],
     engPosts: ['Posts', "Instagram posts in Maryam's Social Media sheet for the period picked above."],
@@ -2827,7 +2830,8 @@
     const srcLabel = day ? dayName(day.date) : sel.label;
     const srcSplit = splits(src.total, src.ig, src.wa);
     const projSplit = src.projects.length > 0 && src.projects.every((x) => x.ig != null && x.wa != null);
-    const projCols = projSplit ? 6 : 4;
+    const hpKnown = src.hp != null;
+    const projCols = (projSplit ? 6 : 4) + (hpKnown ? 1 : 0);
     // Bookings in the same week (or the day picked) beside the leads, and the
     // conversion between them (Anton, 5 Oct 2026).
     const bk = leadBookings(day ? day.date : sel.start, day ? day.date : sel.end);
@@ -2843,6 +2847,7 @@
       <tr>
         <td class="cname">${esc(x.code === 'NA' ? 'NA (no trip given)' : x.code)}</td>
         <td class="num"><b>${int(x.total)}</b></td>
+        ${hpKnown ? `<td class="num">${x.hp ? `<span class="lhp">${int(x.hp)}</span>` : '<span class="rv-na">0</span>'}</td>` : ''}
         ${projSplit ? `<td class="num">${int(x.wa)}</td><td class="num">${int(x.ig)}</td>` : ''}
         <td class="num">${b == null ? '<span class="rv-na">—</span>' : int(b)}</td>
         ${convCell(b, x.total)}
@@ -2877,6 +2882,11 @@
             <div class="bv-n bv-act">${int(sel.total)}</div>
             <div class="bv-s">${split ? `WhatsApp ${int(sel.wa)} · Instagram ${int(sel.ig)}` : 'WhatsApp + Instagram'}</div>
           </div>
+          <div class="bv-side">
+            <div class="bv-lab"><span ${hlp('leadsHp')}>High potential</span></div>
+            <div class="bv-n">${sel.hp == null ? '—' : int(sel.hp)}</div>
+            <div class="bv-s">${sel.hp == null ? 'not recorded this week' : sel.total ? `${pct(sel.hp / sel.total)} of leads` : 'HP leads'}</div>
+          </div>
           ${second}
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('leadsAvg')}>Per day</span></div>
@@ -2897,7 +2907,7 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}
+              ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}${hpKnown ? hcol('leadsHp', 'HP') : ''}
               ${projSplit ? hcol('leadsWa', 'WhatsApp') + hcol('leadsIg', 'Instagram') : ''}
               ${hcol('leadsBooked', 'Bookings')}${hcol('leadsConv', 'Conversion')}
             </tr></thead>
@@ -2905,6 +2915,7 @@
             <tfoot><tr>
               <td class="cname">TOTAL</td>
               <td class="num">${int(src.total)}</td>
+              ${hpKnown ? `<td class="num"><span class="lhp">${int(src.hp)}</span></td>` : ''}
               ${projSplit ? `<td class="num">${srcSplit ? int(src.wa) : '—'}</td><td class="num">${srcSplit ? int(src.ig) : '—'}</td>` : ''}
               <td class="num">${bk ? int(bk.all) : '—'}</td>
               ${convCell(bk ? bk.all : null, src.total)}
@@ -2912,6 +2923,8 @@
           </table>
         </div>
         ${splitNote}
+        ${hpKnown && src.hpOther ? `<div class="pnote">${int(src.hpOther)} high-potential lead${src.hpOther === 1 ? '' : 's'} named a project with no leads in this ${scope}, or none, so ${src.hpOther === 1 ? 'it is' : 'they are'} only in the TOTAL.</div>` : ''}
+        ${!hpKnown ? `<div class="pnote">High-potential (HP) leads weren't recorded for this ${scope} in the sheet.</div>` : ''}
       </div>
 
       <div class="panel">
