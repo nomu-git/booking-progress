@@ -444,6 +444,23 @@ webhooks.
   daily should show daily leads breakdown in table below"); tapping it
   again, or "Whole week", goes back. Each `days[]` entry in `/api/sheets?name=leads`
   carries its own `projects`. (The share column that used to sit there was removed.)
+- **Week picker is a dropdown, weeks are Sunday to Saturday** (Anton, 6 Oct
+  2026): the Prev / This week / Next buttons were replaced by a **Week**
+  dropdown (`#leadsWeekSel`, newest first, "Sun 4 Oct – Sat 10 Oct · this
+  week"); tapping a bar in the weekly chart still selects that week. In
+  `lib/tabs/leads.js`, days with no report week are grouped **Sunday to
+  Saturday** (the Report's week, so Bookings / Conversion line up), and a
+  report row Marina hasn't filled in yet (a placeholder like "22-30 Sep") is
+  **not a week**: its days are cut from the daily entries until her figures
+  arrive. **Weeks that come from her weekly reports are kept exactly as she
+  reported them** (Mon–Sun in the spring, Tue–Mon from July, some 9 days
+  long; labelled "weekly report" in the dropdown): they're her official
+  totals, and ~12 of them differ slightly from the per-lead log, so re-cutting
+  their days Sunday to Saturday would change the numbers. Sunday to Saturday
+  therefore holds from 22 Sep on (and for 1–11 Jan, before the first report
+  week: Thu 1–Sat 3, Sun 4–Sat 10, Sun 11). 22 Jul to 21 Sep has no daily
+  entries at all, so it can't be re-cut. Totals checked unchanged (2,306
+  leads, 1,289 in daily entries) before and after the change.
 - **High potential (HP)** (Anton, 6 Oct 2026: Marina added an HP column):
   counted from two places in `lib/tabs/leads.js`: **"HP" in the Status
   column of the per-lead logs** (Q1 / Q2 / July, to 21 Jul) and, from 23 Sep,

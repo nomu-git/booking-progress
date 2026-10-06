@@ -2783,7 +2783,6 @@
     }
     const current = weeks.find((w) => w.current) || weeks[weeks.length - 1];
     const sel = weeks.find((w) => w.start === leadsWeek) || current;
-    const at = weeks.indexOf(sel);
     const today = p.today;
 
     // ---- headline figures for the week on screen ----
@@ -2862,6 +2861,16 @@
       ? `<div class="pnote">WhatsApp vs Instagram isn't split in the sheet for this ${scope} yet, so it can't be shown here.</div>`
       : '';
 
+    // The week picker (Anton, 6 Oct 2026, instead of Prev / This week / Next):
+    // newest first, each labelled with its weekdays. Weeks since 23 Sep run
+    // Sunday to Saturday like the Report; older ones follow Marina's weekly
+    // reports, which don't, so they say so.
+    const sunSat = (w) => dayOf(w.start).getUTCDay() === 0 && dayOf(w.end).getUTCDay() === 6;
+    const weekOptions = [...weeks].reverse().map((w) => {
+      const tag = w.current ? ' · this week' : (!sunSat(w) && w.source === 'report' ? ' · weekly report' : '');
+      return `<option value="${w.current ? '' : attr(w.start)}"${w === sel ? ' selected' : ''}>${esc(dayName(w.start))} – ${esc(dayName(w.end))}${tag}</option>`;
+    }).join('');
+
     const anyCombined = weeks.some((w) => w.total && !splits(w.total, w.ig, w.wa));
 
     $('leadsWrap').innerHTML = `
@@ -2870,11 +2879,7 @@
       <div class="panel">
         <div class="lhead">
           <div class="ptitle">Daily leads · ${esc(sel.label)}${sel.current ? ' · this week' : ''}</div>
-          <div class="lnav">
-            <button data-step="-1" ${at <= 0 ? 'disabled' : ''} aria-label="Previous week">‹ Prev</button>
-            <button data-step="0" ${sel === current ? 'disabled' : ''}>This week</button>
-            <button data-step="1" ${at >= weeks.length - 1 ? 'disabled' : ''} aria-label="Next week">Next ›</button>
-          </div>
+          <div class="efilter"><span class="efl">Week</span><select class="fselect" id="leadsWeekSel" aria-label="Choose a week">${weekOptions}</select></div>
         </div>
         <div class="bvhero">
           <div class="bv-side">
@@ -2956,18 +2961,8 @@
     $('leadsWrap').querySelectorAll('[data-week]').forEach((b) => {
       b.addEventListener('click', () => { leadsWeek = b.dataset.week; leadsDay = null; renderLeads(); });
     });
-    $('leadsWrap').querySelectorAll('[data-step]').forEach((b) => {
-      b.addEventListener('click', () => {
-        const step = Number(b.dataset.step);
-        if (step === 0) leadsWeek = null;
-        else {
-          const next = weeks[at + step];
-          if (next) leadsWeek = next.current ? null : next.start;
-        }
-        leadsDay = null;
-        renderLeads();
-      });
-    });
+    const weekSel = $('leadsWrap').querySelector('#leadsWeekSel');
+    if (weekSel) weekSel.addEventListener('change', () => { leadsWeek = weekSel.value || null; leadsDay = null; renderLeads(); });
     // Tapping a day shows its breakdown; tapping it again goes back to the
     // week. The table is brought into view (only as far as needed), since on
     // a phone it can sit below the fold.
