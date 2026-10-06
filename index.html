@@ -40,6 +40,8 @@
        them. Status green/red stay reserved for good/bad. */
     --lead-wa: #199e70;
     --lead-ig: #d95926;
+    --tgt-leads: #9fc4ff;   /* daily target line, leads */
+    --tgt-hp: #f2b233;      /* daily target line and bars, high-potential leads */
     --lead-all: #3987e5;
 
     /* Trips quality ratings. High/Medium/Low are the dataviz skill's fixed
@@ -675,6 +677,17 @@
   .lseg.ig { background: var(--lead-ig); }
   .lseg.all { background: var(--lead-all); }
   .lcol.sel .lval { color: #fff; }
+  /* Daily targets (Muatasam, 6 Oct 2026: 20 leads and 10 high-potential leads
+     a day): a dashed line each, in its own colour, across the plot; and each
+     day's high-potential leads as a thin bar beside its lead bar. */
+  .lpair { display: flex; align-items: flex-end; justify-content: center; gap: 3px; width: 100%; }
+  .lpair .lstack { flex: 0 1 24px; width: auto; }
+  .lhp1 { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 0 0 10px; }
+  .lhpn { font-size: 9.5px; font-weight: 700; color: var(--tgt-hp); line-height: 1; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+  .lhpbar { display: block; width: 8px; min-height: 2px; background: var(--tgt-hp); border-radius: 3px 3px 0 0; }
+  .ltgt { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed var(--c); pointer-events: none; z-index: 2; }
+  .ltgt span { position: absolute; right: 0; top: -17px; padding: 0 5px; border-radius: 4px; background: var(--track); font-size: 9.5px; font-weight: 700; letter-spacing: .04em; color: var(--c); white-space: nowrap; }
+  .lleg .ltl { display: inline-block; width: 16px; height: 0; border-top: 2px dashed var(--c); margin-right: 6px; vertical-align: 3px; }
   .laxis { display: flex; gap: 2px; margin-top: 6px; }
   .laxis span {
     flex: 1; min-width: 0; text-align: center; font-size: 10px; color: var(--text-3);
@@ -2699,9 +2712,15 @@
     return `<span class="lstack${thin ? ' thin' : ''}" style="height:${Math.max(2, px)}px">${inner}</span>`;
   }
 
+  // The team's daily targets, set by Muatasam (6 Oct 2026).
+  const LEADS_DAILY_TARGET = 20;
+  const HP_DAILY_TARGET = 10;
+
   function dailyChart(w, today, picked) {
     const H = 130;
-    const top = Math.max(1, ...w.days.map((d) => d.total || 0));
+    // The scale always reaches the leads target, so its line is on the chart
+    // even on a quiet week.
+    const top = Math.max(LEADS_DAILY_TARGET, ...w.days.map((d) => d.total || 0));
     const cols = w.days.map((d) => {
       const name = dayName(d.date) + (d.date === today ? ' (today)' : '');
       if (d.future) return `<div class="lcol future" ${tipOf(name, [['Status', 'Still to come']])}><span class="lval"></span></div>`;
@@ -2709,15 +2728,29 @@
       const rows = splits(d.total, d.ig, d.wa)
         ? [['WhatsApp', int(d.wa)], ['Instagram', int(d.ig)], ['Total', int(d.total)]]
         : [['IG + WA', int(d.total)]];
+      rows.push(['Target ' + LEADS_DAILY_TARGET, d.total >= LEADS_DAILY_TARGET ? '✓ reached' : `${LEADS_DAILY_TARGET - d.total} short`]);
+      if (d.hp != null) rows.push(['High potential', `${int(d.hp)} of ${HP_DAILY_TARGET}`]);
       const on = d.date === picked;
-      return `<button class="lcol${on ? ' sel' : ''}" data-day="${attr(d.date)}" aria-pressed="${on}" ${tipOf(name, rows, on ? 'Tap again for the whole week' : 'Tap for this day\'s breakdown')}><span class="lval">${int(d.total)}</span>${leadStack(d.total, d.ig, d.wa, (d.total / top) * H)}</button>`;
+      const hpBar = d.hp ? `<span class="lhp1"><b class="lhpn">${int(d.hp)}</b><i class="lhpbar" style="height:${Math.max(2, (d.hp / top) * H)}px"></i></span>` : '';
+      return `<button class="lcol${on ? ' sel' : ''}" data-day="${attr(d.date)}" aria-pressed="${on}" ${tipOf(name, rows, on ? 'Tap again for the whole week' : 'Tap for this day\'s breakdown')}><span class="lval">${int(d.total)}</span><span class="lpair">${leadStack(d.total, d.ig, d.wa, (d.total / top) * H)}${hpBar}</span></button>`;
     }).join('');
     const axis = w.days.map((d) => {
       const dt = dayOf(d.date);
       const cls = [d.date === today ? 'on' : '', d.date === picked ? 'pick' : ''].filter(Boolean).join(' ');
       return `<span class="${cls}">${WEEKDAYS[dt.getUTCDay()]}<b>${dt.getUTCDate()}</b></span>`;
     }).join('');
-    return `<div class="lchart"><div class="lplot" style="height:${H + 20}px">${cols}</div><div class="laxis">${axis}</div></div>`;
+    const line = (n, c, label) => `<div class="ltgt" style="--c:${c};bottom:${(n / top) * H}px"><span>${label}</span></div>`;
+    const anyHp = w.days.some((d) => d.hp != null);
+    const lines = line(LEADS_DAILY_TARGET, 'var(--tgt-leads)', `TARGET ${LEADS_DAILY_TARGET} LEADS`)
+      + (anyHp ? line(HP_DAILY_TARGET, 'var(--tgt-hp)', `TARGET ${HP_DAILY_TARGET} HP`) : '');
+    const legend = `<div class="lleg">
+      <span><i style="background:var(--lead-wa)"></i>WhatsApp</span>
+      <span><i style="background:var(--lead-ig)"></i>Instagram</span>
+      ${anyHp ? '<span><i style="background:var(--tgt-hp)"></i>High potential (HP)</span>' : ''}
+      <span><span class="ltl" style="--c:var(--tgt-leads)"></span>Target ${LEADS_DAILY_TARGET} leads a day</span>
+      ${anyHp ? `<span><span class="ltl" style="--c:var(--tgt-hp)"></span>Target ${HP_DAILY_TARGET} HP a day</span>` : ''}
+    </div>`;
+    return `<div class="lchart"><div class="lplot" style="height:${H + 20}px">${lines}${cols}</div><div class="laxis">${axis}</div></div>${legend}`;
   }
 
   function weeklyChart(weeks, sel) {

@@ -444,6 +444,19 @@ webhooks.
   daily should show daily leads breakdown in table below"); tapping it
   again, or "Whole week", goes back. Each `days[]` entry in `/api/sheets?name=leads`
   carries its own `projects`. (The share column that used to sit there was removed.)
+- **Daily targets on the daily chart** (Anton, 6 Oct 2026: "a target line
+  per day, 20 for overall leads and 10 for high potential leads, a colour
+  line for each"): `LEADS_DAILY_TARGET = 20` and `HP_DAILY_TARGET = 10` at
+  the top of `dailyChart()` in `index.html`. A dashed line each, light blue
+  (`--tgt-leads`) for leads and brand yellow (`--tgt-hp`) for HP, labelled at
+  the right ("TARGET 20 LEADS" / "TARGET 10 HP"). The scale always reaches
+  the leads target. Each day also gets a thin yellow **HP bar** beside its
+  lead bar (same scale, with its count) so the HP line has something to
+  measure; days or weeks with no HP recorded draw neither the HP bars nor
+  the HP line. A legend sits under the chart, and each day's tooltip says
+  whether the target was reached ("✓ reached" / "N short") and "HP n of
+  10". Only the daily chart has targets; the weekly chart doesn't. If the
+  targets change, edit those two constants.
 - **Week picker is a dropdown, weeks are Sunday to Saturday** (Anton, 6 Oct
   2026): the Prev / This week / Next buttons were replaced by a **Week**
   dropdown (`#leadsWeekSel`, newest first, "Sun 4 Oct – Sat 10 Oct · this
