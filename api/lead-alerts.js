@@ -8,11 +8,11 @@
 //   High potential leads did not meet the target. Please review the Leads
 //   tab: https://crm.nomuhub.com/#leads
 //
-// cron-job.org calls this at 11:30 PM Muscat (Anton's time) and again at
-// 10:00 AM. Marina logs a day in the leads sheet by the next afternoon, so it
-// may not be in yet at 11:30 PM; a day that isn't logged is skipped and
-// judged on the morning run instead. Each day is judged once: a claim in
-// Upstash (lib/kv.js) records it, pass or fail, so nothing is posted twice.
+// cron-job.org calls this once a day at 11:30 PM Muscat. Marina fills in the
+// day around 6 PM Oman time (she told Anton, 6 Oct 2026), so it's in by then.
+// A day she logs after the check is judged by the next night's run, which
+// also looks at yesterday. Each day is judged once: a claim in Upstash
+// (lib/kv.js) records it, pass or fail, so nothing is posted twice.
 // Only days from LEAD_ALERTS_FROM on are judged, so switching it on doesn't
 // replay past days into the channel.
 //
@@ -41,8 +41,8 @@ const dayLabel = (day) => {
   return `${WD[d.getUTCDay()]} ${d.getUTCDate()} ${MON[d.getUTCMonth()]}`;
 };
 
-// Which days to look at now: yesterday always (the morning catch-up), and
-// today from 11 PM Muscat (the 11:30 PM check).
+// Which days to look at now: yesterday always (catches a day logged late),
+// and today from 11 PM Muscat (the 11:30 PM check).
 function candidateDays(now = omanNow()) {
   const today = now.toISOString().slice(0, 10);
   const days = [addDays(today, -1)];

@@ -36,7 +36,7 @@ env-var changes on a new deployment.
 | `CRON_SECRET` | Any long random string. Vercel sends it as `Authorization: Bearer <value>` on cron calls, and `slack-notify` rejects anything else. **If it is unset the check is skipped entirely** and anyone who knows the URL can post to the channel. |
 | `CAMPAIGN_ALERT_SECRET` | Any long random string. The campaign on/off / created alerts (`api/campaign-alerts.js`) only run when the call carries `Authorization: Bearer <value>`; cron-job.org sends it every 2 minutes. |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Set automatically by connecting a free **Upstash for Redis** store to the project (Vercel → Storage). The alerts use it to remember what they already posted. `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` work too. |
-| `LEADS_DAILY_TARGET` / `HP_DAILY_TARGET` | Optional, default `20` / `10`. The daily leads alert (`api/lead-alerts.js`, cron-job.org at 11:30 PM and 10 AM Muscat, same Bearer secret) posts to Slack when a day misses either. |
+| `LEADS_DAILY_TARGET` / `HP_DAILY_TARGET` | Optional, default `20` / `10`. The daily leads alert (`api/lead-alerts.js`, cron-job.org daily at 11:30 PM Muscat, same Bearer secret) posts to Slack when a day misses either. |
 | `MONDAY_API_TOKEN` | monday.com → profile picture → **Developers** → **API token**. Read by the Pending Task tab. Without it the tab says `MONDAY_API_TOKEN is not set`. |
 | `MONDAY_BOARD_IDS` | Optional. Comma-separated board IDs for Pending Task. Defaults to Operations General, Asia, Africa and Marketing & Sales General. |
 | `DASHBOARD_URL` | The deployment URL used in the Slack message's "Open dashboard" link. Defaults to `https://bookingprogress.vercel.app`; change it if the project's domain changed. |

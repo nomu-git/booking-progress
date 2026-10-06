@@ -861,12 +861,12 @@ both are met. Wording: "🚨 Leads alert · Sun 4 Oct / Overall leads: 21
 meet the target (or "Both targets were missed."). Please review the Leads
 tab: https://crm.nomuhub.com/#leads".
 
-- **Runs from cron-job.org at 11:30 PM Muscat** (Anton's time) **and 10:00
-  AM**, GET with `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`. Marina
-  logs a day the next day, so at 11:30 PM the day is often not in the sheet
-  yet; an unlogged day is skipped (`waiting`) and judged on the morning run
-  (which looks at yesterday). The 10 AM run is an assumption, flagged to
-  Anton.
+- **Runs from cron-job.org once a day at 11:30 PM Muscat**, GET with
+  `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`. Marina fills the day in
+  around **6 PM Oman time**, once a day (she confirmed to Anton, 6 Oct 2026),
+  so it's in by then. Each run also looks at yesterday, so a day logged
+  after 11:30 PM is judged the next night; an unlogged day is reported as
+  `waiting`.
 - Each day is judged **once**: `SET lead-alerts:<date> NX EX 30d` in Upstash,
   pass or fail, so a later edit to the sheet doesn't re-alert. A failed
   Slack post deletes the claim so the next run retries.
