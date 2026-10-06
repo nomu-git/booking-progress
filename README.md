@@ -56,7 +56,7 @@ env-var changes on a new deployment.
 | `REPORT_LOOKBACK_DAYS` | `300` | How far back the Report tab scans. |
 | `CACHE_TTL_MS` | `60000` | Dashboard cache. |
 | `REPORT_CACHE_TTL_MS` | `180000` | Report cache. |
-| `ANNOUNCEMENT_TITLE` / `ANNOUNCEMENT_BODY` | *(empty)* | Banner at the top of the dashboard. Empty = "No current announcement". |
+| `ANNOUNCEMENT_TITLE` / `ANNOUNCEMENT_BODY` | *(empty)* | Banner at the top of the dashboard, shown beside any dated reminders in `api/announcement.js`'s `REMINDERS` (those drop off after their due day). Nothing at all = "No current announcement". |
 
 ## Verifying the setup
 

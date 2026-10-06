@@ -936,6 +936,18 @@
     font-weight: 600; font-size: 12.5px; color: var(--text-3); margin-bottom: 0;
   }
 
+  /* Several banners can show at once (env banner + dated reminders). */
+  .announce-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .announce-list > .announce { margin-bottom: 0; }
+  /* A reminder with a deadline: amber edge, so it reads as "act on this",
+     distinct from the blue general banner. */
+  .announce.due { border-color: #f2b233; border-left-color: #f2b233; box-shadow: 0 0 0 1px rgba(242,178,51,.18), 0 6px 20px rgba(242,178,51,.16); }
+  .announce-due {
+    display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+    color: #7a5200; background: #fff1cf; border-radius: 999px; padding: 3px 10px; margin-bottom: 7px;
+  }
+  .announce-due.soon { color: #fff; background: #d64545; }
+
   [hidden] { display: none !important; }
   .msg { padding: 24px 4px; color: var(--text-2); font-size: 14px; }
   .msg.err { color: #ffbfa8; }
@@ -1235,13 +1247,7 @@
     <button role="tab" data-book-sub="previous">Previous Sales</button>
   </div>
 
-  <div class="announce" id="announce" hidden>
-    <div class="announce-icon" id="announceIcon">📢</div>
-    <div>
-      <div class="announce-title" id="announceTitle"></div>
-      <div class="announce-body" id="announceBody"></div>
-    </div>
-  </div>
+  <div class="announce-list" id="announce" hidden></div>
 
   <div class="legend" id="legend" hidden>
     <span><i style="background:#f5b935"></i>Booking</span>
@@ -1299,25 +1305,41 @@
   // be changed without touching code. Null means nothing is set, which renders
   // a quiet "no current announcement" placeholder rather than vanishing — a
   // disappearing element reads as broken, and keeps the layout from jumping.
+  // Several can show at once: the env-var banner plus dated reminders, each
+  // with a countdown to its due day (Muscat). The API drops them once past.
   let announcement = null;
   async function loadAnnouncement() {
     try {
       const res = await fetch('/api/announcement');
       const a = await res.json();
-      announcement = (a && (a.title || a.body)) ? a : null;
+      const items = (a && a.items) || (a && (a.title || a.body) ? [a] : []);
+      announcement = items.length ? { items, today: a.today } : null;
     } catch (e) {
       announcement = null;
     }
     applyAnnouncement();
   }
+  function annCountdown(due, today) {
+    const days = Math.round((Date.parse(due + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86400000);
+    const d = new Date(due + 'T00:00:00Z');
+    const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const left = days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days} days left`;
+    return { text: `${left} · ${date}`, soon: days <= 2 };
+  }
   function applyAnnouncement() {
-    const has = !!announcement;
     const el = $('announce');
-    el.classList.toggle('empty', !has);
-    $('announceIcon').textContent = has ? '📢' : '🔕';
-    $('announceTitle').textContent = has ? announcement.title : 'No current announcement';
-    $('announceBody').textContent = has ? announcement.body : '';
-    $('announceBody').hidden = !has;
+    const today = (announcement && announcement.today) || new Date(Date.now() + 4 * 3600 * 1000).toISOString().slice(0, 10);
+    el.innerHTML = announcement ? announcement.items.map((a) => {
+      const c = a.due ? annCountdown(a.due, today) : null;
+      return `<div class="announce${a.due ? ' due' : ''}">
+        <div class="announce-icon">${a.due ? '⏰' : '📢'}</div>
+        <div>
+          ${c ? `<div class="announce-due${c.soon ? ' soon' : ''}">${esc(c.text)}</div>` : ''}
+          <div class="announce-title">${esc(a.title || '')}</div>
+          ${a.body ? `<div class="announce-body">${esc(a.body)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('') : `<div class="announce empty"><div class="announce-icon">🔕</div><div><div class="announce-title">No current announcement</div></div></div>`;
     el.hidden = view !== 'board';
   }
 
