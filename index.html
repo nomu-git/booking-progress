@@ -684,10 +684,34 @@
   .lpair .lstack { flex: 0 1 24px; width: auto; }
   .lhp1 { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 0 0 10px; }
   .lhpn { font-size: 9.5px; font-weight: 700; color: var(--tgt-hp); line-height: 1; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
-  .lhpbar { display: block; width: 8px; min-height: 2px; background: var(--tgt-hp); border-radius: 3px 3px 0 0; }
-  .ltgt { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed var(--c); pointer-events: none; z-index: 2; }
-  .ltgt span { position: absolute; right: 0; top: -17px; padding: 0 5px; border-radius: 4px; background: var(--track); font-size: 9.5px; font-weight: 700; letter-spacing: .04em; color: var(--c); white-space: nowrap; }
-  .lleg .ltl { display: inline-block; width: 16px; height: 0; border-top: 2px dashed var(--c); margin-right: 6px; vertical-align: 3px; }
+  .lhpbar {
+    display: block; width: 8px; min-height: 3px; border-radius: 4px 4px 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--tgt-hp) 70%, #fff), var(--tgt-hp));
+    box-shadow: 0 0 10px color-mix(in srgb, var(--tgt-hp) 45%, transparent);
+  }
+  /* A target line: short dashes, a glowing round cap on the right, and its
+     label as a small pill in a gutter beyond the bars. */
+  .ltgt { position: absolute; left: 0; right: 0; height: 0; pointer-events: none; z-index: 2; }
+  .ltgt::before {
+    content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 2px; border-radius: 2px;
+    background: repeating-linear-gradient(90deg, var(--c) 0 8px, transparent 8px 13px);
+  }
+  .ltgt::after {
+    content: ''; position: absolute; right: 0; top: -4px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent);
+  }
+  /* The labels sit in a gutter to the right of the bars, so a tall bar never
+     runs under one. */
+  .lplot.tg, .laxis.tg { margin-right: 84px; }
+  .ltgt span {
+    position: absolute; left: calc(100% + 14px); top: -9px; padding: 3px 10px; border-radius: 999px;
+    background: color-mix(in srgb, var(--c) 16%, var(--track)); border: 1px solid color-mix(in srgb, var(--c) 50%, transparent);
+    font-size: 9.5px; font-weight: 700; letter-spacing: .07em; line-height: 1; color: var(--c); white-space: nowrap;
+  }
+  .lleg .ltl {
+    display: inline-block; width: 22px; height: 3px; margin-right: 7px; vertical-align: 2px; border-radius: 2px;
+    background: repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 8px);
+  }
   .laxis { display: flex; gap: 2px; margin-top: 6px; }
   .laxis span {
     flex: 1; min-width: 0; text-align: center; font-size: 10px; color: var(--text-3);
@@ -2741,8 +2765,8 @@
     }).join('');
     const line = (n, c, label) => `<div class="ltgt" style="--c:${c};bottom:${(n / top) * H}px"><span>${label}</span></div>`;
     const anyHp = w.days.some((d) => d.hp != null);
-    const lines = line(LEADS_DAILY_TARGET, 'var(--tgt-leads)', `TARGET ${LEADS_DAILY_TARGET} LEADS`)
-      + (anyHp ? line(HP_DAILY_TARGET, 'var(--tgt-hp)', `TARGET ${HP_DAILY_TARGET} HP`) : '');
+    const lines = line(LEADS_DAILY_TARGET, 'var(--tgt-leads)', `${LEADS_DAILY_TARGET} LEADS`)
+      + (anyHp ? line(HP_DAILY_TARGET, 'var(--tgt-hp)', `${HP_DAILY_TARGET} HP`) : '');
     const legend = `<div class="lleg">
       <span><i style="background:var(--lead-wa)"></i>WhatsApp</span>
       <span><i style="background:var(--lead-ig)"></i>Instagram</span>
@@ -2750,7 +2774,7 @@
       <span><span class="ltl" style="--c:var(--tgt-leads)"></span>Target ${LEADS_DAILY_TARGET} leads a day</span>
       ${anyHp ? `<span><span class="ltl" style="--c:var(--tgt-hp)"></span>Target ${HP_DAILY_TARGET} HP a day</span>` : ''}
     </div>`;
-    return `<div class="lchart"><div class="lplot" style="height:${H + 20}px">${lines}${cols}</div><div class="laxis">${axis}</div></div>${legend}`;
+    return `<div class="lchart"><div class="lplot tg" style="height:${H + 20}px">${lines}${cols}</div><div class="laxis tg">${axis}</div></div>${legend}`;
   }
 
   function weeklyChart(weeks, sel) {

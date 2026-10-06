@@ -448,9 +448,13 @@ webhooks.
   per day, 20 for overall leads and 10 for high potential leads, a colour
   line for each"): `LEADS_DAILY_TARGET = 20` and `HP_DAILY_TARGET = 10` at
   the top of `dailyChart()` in `index.html`. A dashed line each, light blue
-  (`--tgt-leads`) for leads and brand yellow (`--tgt-hp`) for HP, labelled at
-  the right ("TARGET 20 LEADS" / "TARGET 10 HP"). The scale always reaches
-  the leads target. Each day also gets a thin yellow **HP bar** beside its
+  (`--tgt-leads`) for leads and brand yellow (`--tgt-hp`) for HP, each ending
+  in a glowing round cap with its label ("20 LEADS" / "10 HP") as a small
+  pill in a **gutter to the right of the bars** (`.lplot.tg` / `.laxis.tg`,
+  84px), so a tall bar never runs under a label. Don't put a CSS `mask` or
+  `filter` on the dashed layer: in Quick Look it turned the dashes white,
+  and a mask also clips the label and cap if they share the element. The
+  scale always reaches the leads target. Each day also gets a thin yellow **HP bar** beside its
   lead bar (same scale, with its count) so the HP line has something to
   measure; days or weeks with no HP recorded draw neither the HP bars nor
   the HP line. A legend sits under the chart, and each day's tooltip says
