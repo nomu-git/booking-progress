@@ -851,6 +851,34 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
   per account, well inside the Marketing API limits; don't go to every
   minute without a reason.
 
+## Leads target alert (Slack)
+
+Asked for by Anton, 6 Oct 2026: `api/lead-alerts.js` posts to living-room
+(`SLACK_WEBHOOK_URL`) when a day's leads miss **20 overall** or **10 high
+potential** (`LEADS_DAILY_TARGET` / `HP_DAILY_TARGET`). Nothing posts when
+both are met. Wording: "🚨 Leads alert · Sun 4 Oct / Overall leads: 21
+(target 20) ✅ / High potential: 1 (target 10) ❌ / <which target> did not
+meet the target (or "Both targets were missed."). Please review the Leads
+tab: https://crm.nomuhub.com/#leads".
+
+- **Runs from cron-job.org at 11:30 PM Muscat** (Anton's time) **and 10:00
+  AM**, GET with `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`. Marina
+  logs a day the next day, so at 11:30 PM the day is often not in the sheet
+  yet; an unlogged day is skipped (`waiting`) and judged on the morning run
+  (which looks at yesterday). The 10 AM run is an assumption, flagged to
+  Anton.
+- Each day is judged **once**: `SET lead-alerts:<date> NX EX 30d` in Upstash,
+  pass or fail, so a later edit to the sheet doesn't re-alert. A failed
+  Slack post deletes the claim so the next run retries.
+  `LEAD_ALERTS_FROM` (default 2026-10-06) stops it replaying older days.
+- Numbers come from `lib/tabs/leads.js`'s own `build()`, so the alert and
+  the tab agree. No HP recorded for a day: judged on leads alone, the HP
+  line says "not recorded".
+- `?preview=1` (`&date=YYYY-MM-DD`) shows what would post, posting nothing;
+  still needs the secret. Only counts leave it, never sheet rows.
+- The HP target has been missed every day so far (best was 3), so expect
+  an alert almost every day; flagged to Anton.
+
 ## Pending Task tab (monday.com)
 
 Asked for by Anton, 5 Oct 2026: a **Corporate** sidebar category with
@@ -915,8 +943,8 @@ name, who it's assigned to and its status exactly as monday shows it.
 - Due dates are sparse on these boards (Cowork: 1 of 17 on Operations
   General), so Overdue will usually read low; that's the data, not a bug.
 
-**Function budget: 10 of Vercel Hobby's 12** (sheets merged into one;
-`campaign-alerts` added). New sheet tabs don't add to it.
+**Function budget: 11 of Vercel Hobby's 12** (sheets merged into one;
+`campaign-alerts` and `lead-alerts` added). New sheet tabs don't add to it.
 
 ## Open items waiting on Muatasam
 
