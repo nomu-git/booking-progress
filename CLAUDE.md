@@ -446,10 +446,10 @@ webhooks.
   carries its own `projects`. (The share column that used to sit there was removed.)
 - **Daily targets on the daily chart** (Anton, 6 Oct 2026: "a target line
   per day, 20 for overall leads and 10 for high potential leads, a colour
-  line for each"): `LEADS_DAILY_TARGET = 20` and `HP_DAILY_TARGET = 10` at
+  line for each"): `LEADS_DAILY_TARGET = 20` and `HP_DAILY_TARGET = 5` at
   the top of `dailyChart()` in `index.html`. A dashed line each, light blue
   (`--tgt-leads`) for leads and brand yellow (`--tgt-hp`) for HP, each ending
-  in a glowing round cap with its label ("20 LEADS" / "10 HP") as a small
+  in a glowing round cap with its label ("20 LEADS" / "5 HP") as a small
   pill in a **gutter to the right of the bars** (`.lplot.tg` / `.laxis.tg`,
   84px), so a tall bar never runs under a label. Don't put a CSS `mask` or
   `filter` on the dashed layer: in Quick Look it turned the dashes white,
@@ -854,10 +854,10 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
 ## Leads target alert (Slack)
 
 Asked for by Anton, 6 Oct 2026: `api/lead-alerts.js` posts to living-room
-(`SLACK_WEBHOOK_URL`) when a day's leads miss **20 overall** or **10 high
+(`SLACK_WEBHOOK_URL`) when a day's leads miss **20 overall** or **5 high
 potential** (`LEADS_DAILY_TARGET` / `HP_DAILY_TARGET`). Nothing posts when
 both are met. Wording: "🚨 Leads alert · Sun 4 Oct / Overall leads: 21
-(target 20) ✅ / High potential: 1 (target 10) ❌ / <which target> did not
+(target 20) ✅ / High potential: 1 (target 5) ❌ / <which target> did not
 meet the target (or "Both targets were missed."). Please review the Leads
 tab: https://crm.nomuhub.com/#leads".
 
@@ -876,8 +876,12 @@ tab: https://crm.nomuhub.com/#leads".
   line says "not recorded".
 - `?preview=1` (`&date=YYYY-MM-DD`) shows what would post, posting nothing;
   still needs the secret. Only counts leave it, never sheet rows.
-- The HP target has been missed every day so far (best was 3), so expect
-  an alert almost every day; flagged to Anton.
+- **HP target was 10, changed to 5 on 7 Oct 2026** (Anton: "I was asked to
+  adjust the High potential target to 5"), on the chart and in the alert
+  together. With 10 it was missed every day (best was 3); at 5, 30 Sep (3)
+  and most days since still miss it, so alerts stay frequent. The 10 was
+  also in the Leads tab text (target line, "N of 5" tooltip, legend), all
+  driven by the one constant.
 
 ## Pending Task tab (monday.com)
 

@@ -4,7 +4,7 @@
 //
 //   🚨 Leads alert · Tue 6 Oct
 //   Overall leads: 21 (target 20) ✅
-//   High potential: 1 (target 10) ❌
+//   High potential: 1 (target 5) ❌
 //   High potential leads did not meet the target. Please review the Leads
 //   tab: https://crm.nomuhub.com/#leads
 //
@@ -26,7 +26,7 @@ const kv = require('../lib/kv');
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
 const SECRET = (process.env.CAMPAIGN_ALERT_SECRET || '').trim();
 const LEADS_TARGET = Number(process.env.LEADS_DAILY_TARGET || 20);
-const HP_TARGET = Number(process.env.HP_DAILY_TARGET || 10);
+const HP_TARGET = Number(process.env.HP_DAILY_TARGET || 5);
 const FROM = process.env.LEAD_ALERTS_FROM || '2026-10-06';
 const LINK = process.env.LEADS_ALERT_LINK || 'https://crm.nomuhub.com/#leads';
 const CLAIM_TTL_S = 30 * 24 * 3600;
