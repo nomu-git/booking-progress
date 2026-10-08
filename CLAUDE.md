@@ -886,6 +886,44 @@ the report currency, no USD conversion.
   moves slowly. When the limit went to SAR 25, all 5 running campaigns were
   over (25.88 to 74.05), so the first check posted them as one list.
 
+## Running campaigns · lead quality (Campaign Ads)
+
+Muatasam, 8 Oct 2026 (via Anton, with a spec drafted in Claude chat): link
+high potential leads to campaigns, beside cost per result, to see which
+running campaigns perform best. Panel between the budget hero and the
+budget table: Campaign (project under it) | Status | Leads | High potential
+| High potential rate (bar, `--tgt-hp`) | Cost / Result | Cost / HP lead,
+best first (Good, Watch, Bad, then by cost per HP lead).
+
+- **Built in `api/campaigns.js` (`addLeadQuality`)**, sent as each running
+  campaign's `leadQuality` plus a payload-level `leadQuality` (`avgCostPerHp`,
+  thresholds, `error`). It reads the leads workbook itself
+  (`LEADS_SHEET_URL`, `lib/tabs/leads.js` `build()`), so the campaigns
+  endpoint now depends on the leads sheet too; if that fails the panel shows
+  the error and everything else still loads.
+- **The link is by project, not by ad.** Meta can't say which lead came from
+  which ad, so a campaign's project comes from its name via
+  `booking-report.js` `leadProject()` (`classify()` + SA / MO / ALAULA):
+  EB-ZNZ-EX-202612-01C -> ZNZ|EX, matched against Marina's daily project
+  codes ("SL" / "KN" with no programme match on destination). Leads and HP
+  are summed **from the campaign's start (Muscat day) to today**, so they
+  include the project's leads from any source (organic too), and two
+  running campaigns on one project read the same leads (`sharedWith`, shown
+  as "shared"). A campaign with no project in its name (Winter Trips
+  (Instagram Post Boost)) shows "Not linked". **Running campaigns only**:
+  older ones fall in late Jul - Sep, which has no daily entries.
+- **Status** (from the spec; 10% and "the average" are placeholders until
+  Muatasam sets a cost per HP lead target): under 5 leads -> Watch (too
+  early); 0 HP or HP rate under 10% -> Bad; cost per HP lead at or below the
+  average of running campaigns with HP -> Good; otherwise Watch. Env:
+  `LQ_MIN_LEADS` (5), `LQ_MIN_HP_RATE` (0.1). Cost per HP lead = the
+  campaign's year-to-date spend / HP (= since start for these).
+- First live read, 8 Oct 2026: ZNZ-EX 10 leads / 1 HP (Watch, above average),
+  BA-TA 4 / 1 (Watch, too early), ZNZ-TA 9 / 0 and SL-EX 9 / 0 (Bad), Winter
+  Trips not linked. Average cost per HP lead SAR 553.
+- The daily leads (20) and HP (5) targets and their alert were **left as
+  they are** (Anton: ignore the spec's suggestions on those).
+
 ## Leads target alert (Slack)
 
 Asked for by Anton, 6 Oct 2026: `api/lead-alerts.js` posts to living-room

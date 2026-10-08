@@ -5,6 +5,9 @@ const {
 const { mapWithConcurrency } = require('../lib/wetravel');
 const { build: buildMediaPlan } = require('./media-plan');
 const { classify } = require('../lib/trip-code');
+const { fetchWorkbook } = require('../lib/sheet');
+const leadsTab = require('../lib/tabs/leads');
+const { leadProject } = require('./booking-report');
 
 const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
 
@@ -125,6 +128,100 @@ async function loadAccount(accountId, since, until) {
   ]);
 
   return { accountId, account, campaigns, insights, monthly, adsets };
+}
+
+// ---- Lead quality per running campaign (Muatasam, 8 Oct 2026: link high
+// potential leads to campaigns, beside cost per result, to see which running
+// campaigns perform best). Meta can't tell which lead came from which ad, so
+// the link is by PROJECT: a campaign named EB-ZNZ-EX-... is matched to the
+// ZNZ|EX leads in Marina's sheet, counted from the campaign's start to today.
+// That includes the project's leads from any source, not only this ad, and
+// two running campaigns on one project share the same leads (flagged).
+// Running campaigns only: older ones fall in the late Jul - Sep stretch the
+// sheet has no daily entries for, so their figures would be short.
+//
+// Status (rules agreed with Anton, 8 Oct 2026; 10% and "the average" stand in
+// until Muatasam sets a cost per high potential lead target):
+//   Watch  fewer than LQ_MIN_LEADS (5) leads: too early to judge
+//   Bad    no high potential leads, or a high potential rate under 10%
+//   Good   cost per high potential lead at or below the running average
+//   Watch  otherwise (has high potential leads, but costs more than average)
+const LQ_MIN_LEADS = Number(process.env.LQ_MIN_LEADS || 5);
+const LQ_MIN_HP_RATE = Number(process.env.LQ_MIN_HP_RATE || 0.1);
+
+const LEAD_DEST_ALIAS = { SALALAH: 'SAL', KENYA: 'KN', 'SRI LANKA': 'SL' };
+function leadCodeParts(code) {
+  const [d, g] = String(code || '').split('|');
+  const dest = (LEAD_DEST_ALIAS[d] || d || '').trim();
+  return { dest, prog: g ? g.trim().split(' ')[0] : null };
+}
+
+async function addLeadQuality(campaigns) {
+  const running = campaigns.filter((c) => c.status === 'Active');
+  let days = null;
+  let error = null;
+  try {
+    const payload = leadsTab.build(await fetchWorkbook(leadsTab.envVar));
+    days = [];
+    for (const w of payload.weeks || []) for (const d of w.days || []) if (d.recorded && !d.future) days.push(d);
+  } catch (err) {
+    error = err.message;
+  }
+  const today = new Date(Date.now() + 4 * 3600 * 1000).toISOString().slice(0, 10);
+
+  for (const c of running) {
+    const { pd, pg } = leadProject({ title: c.name });
+    if (!pd || !days) {
+      c.leadQuality = { linked: false, reason: !days ? 'Leads sheet unavailable' : 'No project in the campaign name' };
+      continue;
+    }
+    const since = c.startDate ? new Date(Date.parse(c.startDate) + 4 * 3600 * 1000).toISOString().slice(0, 10) : today;
+    let total = 0;
+    let hp = 0;
+    let hpKnown = false;
+    for (const d of days) {
+      if (d.date < since || d.date > today) continue;
+      for (const p of d.projects || []) {
+        const { dest, prog } = leadCodeParts(p.code);
+        // "SL" / "KN" carry no programme in Marina's codes: destination alone.
+        if (dest !== pd || (prog && pg && prog !== pg)) continue;
+        total += p.total || 0;
+        if (p.hp != null) { hp += p.hp; hpKnown = true; }
+      }
+    }
+    c.leadQuality = {
+      linked: true,
+      project: pg ? `${pd}|${pg}` : pd,
+      since,
+      leads: total,
+      hp: hpKnown ? hp : null,
+      hpRate: hpKnown && total ? hp / total : null,
+      costPerHp: hpKnown && hp ? c.spend / hp : null,
+    };
+  }
+
+  // Two running campaigns on one project read the same leads.
+  const byProject = new Map();
+  for (const c of running) if (c.leadQuality.linked) {
+    byProject.set(c.leadQuality.project, [...(byProject.get(c.leadQuality.project) || []), c.name]);
+  }
+  for (const c of running) if (c.leadQuality.linked) {
+    c.leadQuality.sharedWith = byProject.get(c.leadQuality.project).filter((n) => n !== c.name);
+  }
+
+  const withHp = running.filter((c) => c.leadQuality.costPerHp != null);
+  const avgCostPerHp = withHp.length ? withHp.reduce((s, c) => s + c.leadQuality.costPerHp, 0) / withHp.length : null;
+  for (const c of running) {
+    const q = c.leadQuality;
+    if (!q.linked) { q.status = null; continue; }
+    if (q.leads < LQ_MIN_LEADS) { q.status = 'Watch'; q.why = `Too early to judge: ${q.leads} lead${q.leads === 1 ? '' : 's'} so far`; }
+    else if (q.hp == null) { q.status = null; q.why = 'No high potential recorded for these days'; }
+    else if (q.hp === 0) { q.status = 'Bad'; q.why = `No high potential from ${q.leads} leads`; }
+    else if (q.hpRate < LQ_MIN_HP_RATE) { q.status = 'Bad'; q.why = `High potential rate under ${Math.round(LQ_MIN_HP_RATE * 100)}%`; }
+    else if (q.costPerHp <= avgCostPerHp) { q.status = 'Good'; q.why = 'Cost per high potential lead at or below the running average'; }
+    else { q.status = 'Watch'; q.why = 'Cost per high potential lead above the running average'; }
+  }
+  return { avgCostPerHp, minLeads: LQ_MIN_LEADS, minHpRate: LQ_MIN_HP_RATE, error };
 }
 
 async function build() {
@@ -349,6 +446,9 @@ async function build() {
   totals.costPerResult = totals.results ? totals.spend / totals.results : null;
   totals.onPlan = campaigns.filter((c) => c.budgetSource === 'plan').length;
 
+  const leadQuality = await addLeadQuality(campaigns);
+
+
   return {
     asOf: new Date().toISOString(),
     year: YEAR,
@@ -363,6 +463,7 @@ async function build() {
     defaultBudgetUsd: DEFAULT_BUDGET_USD,
     usdSar: USD_SAR,
     cprLimit: { report: CPR_LIMIT, minResults: CPR_MIN_RESULTS },
+    leadQuality,
     campaigns,
   };
 }

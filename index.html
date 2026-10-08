@@ -481,6 +481,16 @@
   .cpr-over { display: inline-block; padding: 1px 8px; border-radius: 999px; background: rgba(239,83,80,.16); color: #ff8a80; font-weight: 700; cursor: help; }
   .cpr-note { font-size: 12.5px; color: var(--text-2); margin: -4px 0 12px; }
   .cpr-note.bad { color: #ff8a80; }
+  /* Lead quality of running campaigns: status uses the fixed status steps
+     with a glyph, HP rate bar in the HP target's yellow (as on Leads). */
+  .lq-st { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: help; white-space: nowrap; }
+  .lq-st.good { background: rgba(12,163,12,.18); color: #5fd35f; }
+  .lq-st.watch { background: rgba(250,178,25,.16); color: var(--q-med); }
+  .lq-st.bad { background: rgba(208,59,59,.2); color: #ff8a80; }
+  .lq-st.none { background: rgba(111,134,168,.16); color: var(--text-3); }
+  .lq-sub { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
+  .lq-note { font-size: 11.5px; color: var(--text-3); margin-top: 10px; }
+  .abar-fill.lq { background: var(--tgt-hp); }
   /* ---- budget vs actual ----
      The one comparison this tab exists to make: two figures side by side and
      a single track underneath, rather than numbers the reader has to divide
@@ -2193,6 +2203,60 @@
 
   /* ================= campaigns tab ================= */
 
+  // Lead quality of the running campaigns (api/campaigns.js leadQuality):
+  // each campaign's project leads and high potential leads from Marina's
+  // sheet since it started, beside its cost per result. Best first.
+  const LQ_ORDER = { Good: 0, Watch: 1, Bad: 2 };
+  const LQ_GLYPH = { Good: '▲', Watch: '■', Bad: '▼' };
+  function lqPanel(p, rows) {
+    const run = rows.filter((c) => c.status === 'Active' && c.leadQuality);
+    if (!run.length) return '';
+    const g = p.leadQuality || {};
+    const cur = esc(p.currency || 'SAR');
+    const sorted = [...run].sort((a, b) => {
+      const qa = a.leadQuality, qb = b.leadQuality;
+      return (qa.status ? LQ_ORDER[qa.status] : 9) - (qb.status ? LQ_ORDER[qb.status] : 9)
+        || (qa.costPerHp ?? Infinity) - (qb.costPerHp ?? Infinity) || b.spend - a.spend;
+    });
+    const tip = (title, text) => `data-tip="${attr(`<div class="tt">${esc(title)}</div><div class="more">${esc(text)}</div>`)}"`;
+    const body = sorted.map((c) => {
+      const q = c.leadQuality;
+      if (!q.linked) {
+        return `<tr><td class="cname">${esc(c.name)}</td>
+          <td><span class="lq-st none" ${tip('Not linked', `${q.reason}, so its leads can't be told apart in the leads sheet.`)}>○ Not linked</span></td>
+          <td class="num">—</td><td class="num">—</td><td class="abar-cell">—</td>
+          <td class="num">${show(c.costPerResult, money)}</td><td class="num">—</td></tr>`;
+      }
+      const why = `${q.why || ''}. Leads for ${q.project} in the leads sheet since ${q.since}, from any source, not only this ad.`
+        + (q.sharedWith && q.sharedWith.length ? ` Shared with ${q.sharedWith.join(', ')}, which runs on the same project.` : '');
+      const rate = q.hpRate;
+      return `<tr>
+        <td class="cname">${esc(c.name)}<div class="lq-sub">${esc(q.project)}${q.sharedWith && q.sharedWith.length ? ' · shared' : ''}</div></td>
+        <td>${q.status ? `<span class="lq-st ${q.status.toLowerCase()}" ${tip(q.status, why)}>${LQ_GLYPH[q.status]} ${q.status}</span>` : `<span class="lq-st none" ${tip('Not judged', why)}>○ —</span>`}</td>
+        <td class="num">${int(q.leads)}</td>
+        <td class="num">${q.hp == null ? '—' : int(q.hp)}</td>
+        <td class="abar-cell">${rate == null ? '—' : `<div class="abar"><div class="abar-fill lq" style="width:${Math.min(100, rate * 100).toFixed(1)}%"></div></div><span class="abar-pct">${pct(rate)}</span>`}</td>
+        <td class="num">${show(c.costPerResult, money)}</td>
+        <td class="num">${show(q.costPerHp, money)}</td>
+      </tr>`;
+    }).join('');
+    const rule = `Good: at least 1 high potential lead and cost per high potential lead at or below the running average (${g.avgCostPerHp == null ? 'none yet' : `${p.currency || 'SAR'} ${money(g.avgCostPerHp)}`}). Watch: under ${g.minLeads || 5} leads so far, or above that average. Bad: ${g.minLeads || 5}+ leads and no high potential, or a high potential rate under ${Math.round((g.minHpRate || 0.1) * 100)}%. Leads are matched to a campaign by the project in its name (EB-ZNZ-EX -> ZNZ|EX), counted from its start, so they include the project's leads from any source.`;
+    return `<div class="panel">
+        <div class="ptitle"><span ${tip('Lead quality', rule)}>Running campaigns · lead quality</span></div>
+        ${g.error ? `<div class="msg err">Leads sheet unavailable: ${esc(g.error)}</div>` : ''}
+        <div class="tscroll">
+          <table class="ctable">
+            <thead><tr>
+              <th>Campaign</th><th>Status</th><th class="num">Leads</th><th class="num">High potential</th>
+              <th>High potential rate</th><th class="num">Cost / Result</th><th class="num">Cost / HP lead</th>
+            </tr></thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
+        <div class="lq-note">${cur} · leads and high potential from Marina's leads sheet, since each campaign started · average cost per high potential lead ${g.avgCostPerHp == null ? '—' : `${cur} ${money(g.avgCostPerHp)}`}</div>
+      </div>`;
+  }
+
   // Every 2026 campaign, each with its own budget to measure against. Budget
   // comes from Updated Budget.xlsx where the campaign ties to a plan line and
   // from a flat default where it doesn't; spend, names and status come live
@@ -2257,6 +2321,8 @@
           </div>
         </div>
       </div>
+
+      ${lqPanel(p, rows)}
 
       <div class="panel">
         <div class="ptitle">Budget vs actual by campaign · ${p.year}</div>

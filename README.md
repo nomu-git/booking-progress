@@ -37,6 +37,7 @@ env-var changes on a new deployment.
 | `CAMPAIGN_ALERT_SECRET` | Any long random string. The campaign on/off / created alerts (`api/campaign-alerts.js`) only run when the call carries `Authorization: Bearer <value>`; cron-job.org sends it every 2 minutes. |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Set automatically by connecting a free **Upstash for Redis** store to the project (Vercel → Storage). The alerts use it to remember what they already posted. `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` work too. |
 | `CPR_ALERT_LIMIT` / `CPR_ALERT_MIN_RESULTS` | Optional, default `25` / `5`. Running campaigns whose cost per result goes over the limit (in SAR, the report currency) are flagged on Campaign Ads and posted to Slack once per crossing, checked every 10 minutes from the campaign-alerts job. |
+| `LQ_MIN_LEADS` / `LQ_MIN_HP_RATE` | Optional, default `5` / `0.1`. Campaign Ads' lead-quality status for running campaigns (also reads `LEADS_SHEET_URL`). |
 | `LEADS_DAILY_TARGET` / `HP_DAILY_TARGET` | Optional, default `20` / `5`. The daily leads alert (`api/lead-alerts.js`, cron-job.org daily at 11:30 PM Muscat, same Bearer secret) posts to Slack when a day misses either. |
 | `MONDAY_API_TOKEN` | monday.com → profile picture → **Developers** → **API token**. Read by the Pending Task tab. Without it the tab says `MONDAY_API_TOKEN is not set`. |
 | `MONDAY_BOARD_IDS` | Optional. Comma-separated board IDs for Pending Task. Defaults to Operations General, Asia, Africa and Marketing & Sales General. |

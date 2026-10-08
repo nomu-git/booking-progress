@@ -181,3 +181,4 @@ module.exports = async (req, res) => {
 // Exposed so the scheduled Slack notifier can reuse this exact scan rather than
 // keeping a second, drifting copy of the same WeTravel logic.
 module.exports.build = build;
+module.exports.leadProject = leadProject;
