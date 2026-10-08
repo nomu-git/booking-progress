@@ -539,6 +539,21 @@ webhooks.
   column's tooltip says so. The Report only looks back 300 days, so leads
   weeks older than that would show 0 bookings. Checked 5 Oct 2026: 1–7 Oct
   = 4 bookings / 55 leads (7.3%), matching the Report.
+- **Overall weekly conversion** (Muatasam, 8 Oct 2026, relayed by Anton: keep
+  the per-project conversion, and add one across everything: total bookings
+  ÷ total leads, **weekly** (daily makes no sense), **target at least 10%**;
+  around 10% means lead quality needs to improve). `CONV_TARGET = 0.10` and
+  `weekConv(w)` in `index.html` use `leadBookings(w.start, w.end).all` (the
+  Report's events, charters out, same as the table's TOTAL row) over the
+  week's leads. Shown as a **Conversion** tile in the Leads hero ("▼ 9.1%",
+  "6 bookings ÷ 66 leads · target 10%", green ▲ / red ▼) and a **Weekly
+  conversion** panel between the daily chart and Weekly leads: one bar per
+  week, green (`--q-high`) at 10%+, red (`--q-low`) under, a dashed 10%
+  target line, tooltip with bookings / leads / rate. Uses the same weeks as
+  the dropdown, so Marina's report weeks keep their own dates. Spring weeks
+  read high (up to 46%) because only 5–15 leads a week were logged then;
+  that's the sheet, not a bug. Same-week, not cohort, as the tooltip says.
+  Both weekly charts scroll to the selected week on a phone.
 - **The sheet has known inconsistencies, shown as warnings, not silently
   corrected**: 14/20 July (IG 18 + WA 104 ≠ IG+WA 92; the WA 31 on ZNZ|EX
   looks like a typo for 1), 21-27 July (31 + 124 ≠ 166), 18-24 Aug and

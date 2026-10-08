@@ -689,6 +689,12 @@
   .lseg.wa { background: var(--lead-wa); }
   .lseg.ig { background: var(--lead-ig); }
   .lseg.all { background: var(--lead-all); }
+  /* Overall weekly conversion vs its 10% target (status steps, glyph in the
+     legend, tooltip and headline too, so colour never carries it alone). */
+  .lseg.cv-ok { background: var(--q-high); }
+  .lseg.cv-low { background: var(--q-low); }
+  .bv-n.cv-up { color: #5fd35f; }
+  .bv-n.cv-down { color: #ff8a80; }
   .lcol.sel .lval { color: #fff; }
   /* Daily targets (Muatasam, 6 Oct 2026: 20 leads and 10 high-potential leads
      a day): a dashed line each, in its own colour, across the plot; and each
@@ -2090,6 +2096,7 @@
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
     leadsHpWa: ['High potential · WhatsApp', 'High-potential leads Marina marked on the WhatsApp row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
     leadsHpIg: ['High potential · Instagram', 'High-potential leads Marina marked on the Instagram row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
+    leadsConvAll: ['Conversion (overall)', 'All bookings taken in the week divided by all leads that week, every project and channel together. Weekly, since a single day is too small to read. Target: at least 10%. Around 10% means lead quality needs to improve. Same week, not a cohort: a booking this week may come from an older lead.'],
     leadsHp: ['High potential', "Leads Marina marked HP (high potential) in the sheet: the Status column of the per-lead logs (to 21 Jul) and the HP column of the daily sheet (from 23 Sep). Weeks covered only by the weekly reports (late Jul to mid Sep) have no HP recorded, so they show a dash."],
     leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
     leadsConv: ['Conversion', "Bookings divided by leads, for the same project in the same week or day. They aren't necessarily the same people: someone who books this week may have messaged weeks ago, so a project can read over 100%. NA leads named no trip, so they have no rate."],
@@ -2879,6 +2886,51 @@
     return `<div class="lchart"><div class="lplot tg" style="height:${H + 20}px">${lines}${cols}</div><div class="laxis tg">${axis}</div></div>${legend}`;
   }
 
+  // Overall conversion (Muatasam, 8 Oct 2026): all bookings taken in a week
+  // divided by all leads that week, beside the per-project one. Weekly only,
+  // since a day is too small to mean anything. Target at least 10%; around
+  // 10% means lead quality needs to improve.
+  const CONV_TARGET = 0.10;
+  const weekConv = (w) => {
+    const bk = leadBookings(w.start, w.end);
+    if (!bk || !w.total) return null;
+    return { bookings: bk.all, leads: w.total, rate: bk.all / w.total };
+  };
+
+  function convChart(weeks, sel) {
+    const H = 120;
+    const rows = weeks.map((w) => ({ w, c: weekConv(w) }));
+    if (!rows.some((r) => r.c)) return '<div class="msg">Bookings are still loading.</div>';
+    const top = niceTop(Math.max(CONV_TARGET * 1.5, ...rows.map((r) => (r.c ? r.c.rate : 0))));
+    let lastMonth = -1;
+    const cols = [];
+    const axis = [];
+    for (const { w, c } of rows) {
+      const on = w.start === sel.start;
+      if (!c) {
+        cols.push(`<div class="lcol"><span class="lval"></span></div>`);
+      } else {
+        const ok = c.rate >= CONV_TARGET;
+        const tip = tipOf(w.label + (w.current ? ' · this week so far' : ''), [
+          ['Bookings', int(c.bookings)], ['Leads', int(c.leads)], ['Conversion', pct(c.rate)],
+          ['Target ' + pct(CONV_TARGET), ok ? '▲ reached' : '▼ below'],
+        ]);
+        cols.push(`<button class="lcol${on ? ' sel' : ''}" data-week="${attr(w.start)}" ${tip}><span class="lval">${on ? pct(c.rate) : ''}</span><span class="lstack thin" style="height:${Math.max(2, (c.rate / top) * H)}px"><i class="lseg ${ok ? 'cv-ok' : 'cv-low'}" style="flex:1"></i></span></button>`);
+      }
+      const m = dayOf(w.start).getUTCMonth();
+      axis.push(`<span class="${on ? 'on' : ''}">${m !== lastMonth ? PT_MONTHS_SHORT[m] : '&nbsp;'}</span>`);
+      lastMonth = m;
+    }
+    const line = `<div class="ltgt" style="--c:var(--tgt-leads);bottom:${(CONV_TARGET / top) * H}px"><span>${pct(CONV_TARGET).replace('.0', '')} TARGET</span></div>`;
+    const grid = `<div class="lgl" style="bottom:${H}px"><span>${Math.round(top * 100)}%</span></div>`;
+    return `<div class="lscroll"><div class="lchart"><div class="lplot gut tg" style="height:${H + 20}px">${grid}${line}${cols.join('')}</div><div class="laxis lweeks gut tg">${axis.join('')}</div></div></div>
+      <div class="lleg">
+        <span><i style="background:var(--q-high)"></i>▲ ${pct(CONV_TARGET).replace('.0', '')} or more</span>
+        <span><i style="background:var(--q-low)"></i>▼ Under ${pct(CONV_TARGET).replace('.0', '')}</span>
+        <span><span class="ltl" style="--c:var(--tgt-leads)"></span>Target ${pct(CONV_TARGET).replace('.0', '')}</span>
+      </div>`;
+  }
+
   function weeklyChart(weeks, sel) {
     const H = 150;
     const top = niceTop(Math.max(1, ...weeks.map((w) => w.total || 0)));
@@ -2958,6 +3010,7 @@
       : (logged.length ? sel.dailyTotal / logged.length : null);
     const split = splits(sel.total, sel.ig, sel.wa);
 
+    const selConv = weekConv(sel);
     const second = sel.current
       ? `<div class="bv-side">
           <div class="bv-lab"><span ${hlp('leadsToday')}>Today</span></div>
@@ -3057,6 +3110,11 @@
           </div>
           ${second}
           <div class="bv-side">
+            <div class="bv-lab"><span ${hlp('leadsConvAll')}>Conversion</span></div>
+            <div class="bv-n ${selConv ? (selConv.rate >= CONV_TARGET ? 'cv-up' : 'cv-down') : ''}">${selConv ? `${selConv.rate >= CONV_TARGET ? '▲' : '▼'} ${pct(selConv.rate)}` : '—'}</div>
+            <div class="bv-s">${selConv ? `${int(selConv.bookings)} bookings ÷ ${int(selConv.leads)} leads · target ${pct(CONV_TARGET).replace('.0', '')}` : 'bookings still loading'}</div>
+          </div>
+          <div class="bv-side">
             <div class="bv-lab"><span ${hlp('leadsAvg')}>Per day</span></div>
             <div class="bv-n">${perDay == null ? '—' : perDay.toFixed(1).replace(/\.0$/, '')}</div>
             <div class="bv-s">average</div>
@@ -3096,6 +3154,11 @@
       </div>
 
       <div class="panel">
+        <div class="ptitle"><span ${hlp('leadsConvAll')}>Weekly conversion · all bookings ÷ all leads</span></div>
+        ${convChart(weeks, sel)}
+      </div>
+
+      <div class="panel">
         <div class="ptitle">Weekly leads · ${esc(String(p.year))} · ${int(p.totals.leads)} so far</div>
         ${weeklyChart(weeks, sel)}
         <div class="lleg">
@@ -3109,14 +3172,16 @@
     // with the week that matters off to the right. Bring the selected week
     // into view, but only when it isn't already, so clicking a visible week
     // doesn't make the chart jump.
-    const sc = $('leadsWrap').querySelector('.lscroll');
-    const selCol = sc && sc.querySelector('.lcol.sel');
-    if (sc && selCol && sc.scrollWidth > sc.clientWidth) {
-      const x = selCol.getBoundingClientRect().left - sc.getBoundingClientRect().left;
-      if (x < 0 || x + selCol.offsetWidth > sc.clientWidth) {
-        sc.scrollLeft += x - sc.clientWidth + selCol.offsetWidth * 3;
+    // Both weekly charts (conversion and leads) scroll this way.
+    $('leadsWrap').querySelectorAll('.lscroll').forEach((sc) => {
+      const selCol = sc.querySelector('.lcol.sel');
+      if (selCol && sc.scrollWidth > sc.clientWidth) {
+        const x = selCol.getBoundingClientRect().left - sc.getBoundingClientRect().left;
+        if (x < 0 || x + selCol.offsetWidth > sc.clientWidth) {
+          sc.scrollLeft += x - sc.clientWidth + selCol.offsetWidth * 3;
+        }
       }
-    }
+    });
 
     bindHelp($('leadsWrap'));
 
