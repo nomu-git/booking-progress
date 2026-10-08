@@ -2088,6 +2088,8 @@
     leadsIg: ['Instagram', 'Leads who came in through an Instagram DM.'],
     leadsWa: ['WhatsApp', 'Leads who came in through WhatsApp.'],
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
+    leadsHpWa: ['High potential · WhatsApp', 'High-potential leads Marina marked on the WhatsApp row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
+    leadsHpIg: ['High potential · Instagram', 'High-potential leads Marina marked on the Instagram row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
     leadsHp: ['High potential', "Leads Marina marked HP (high potential) in the sheet: the Status column of the per-lead logs (to 21 Jul) and the HP column of the daily sheet (from 23 Sep). Weeks covered only by the weekly reports (late Jul to mid Sep) have no HP recorded, so they show a dash."],
     leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
     leadsConv: ['Conversion', "Bookings divided by leads, for the same project in the same week or day. They aren't necessarily the same people: someone who books this week may have messaged weeks ago, so a project can read over 100%. NA leads named no trip, so they have no rate."],
@@ -2850,7 +2852,10 @@
         ? [['WhatsApp', int(d.wa)], ['Instagram', int(d.ig)], ['Total', int(d.total)]]
         : [['IG + WA', int(d.total)]];
       rows.push(['Target ' + LEADS_DAILY_TARGET, d.total >= LEADS_DAILY_TARGET ? '✓ reached' : `${LEADS_DAILY_TARGET - d.total} short`]);
-      if (d.hp != null) rows.push(['High potential', `${int(d.hp)} of ${HP_DAILY_TARGET}`]);
+      if (d.hp != null) {
+        if (d.hpWa != null && d.hpIg != null) rows.push(['HP WhatsApp', int(d.hpWa)], ['HP Instagram', int(d.hpIg)]);
+        rows.push(['High potential', `${int(d.hp)} of ${HP_DAILY_TARGET}`]);
+      }
       const on = d.date === picked;
       const hpBar = d.hp ? `<span class="lhp1"><b class="lhpn">${int(d.hp)}</b><i class="lhpbar" style="height:${Math.max(2, (d.hp / top) * H)}px"></i></span>` : '';
       return `<button class="lcol${on ? ' sel' : ''}" data-day="${attr(d.date)}" aria-pressed="${on}" ${tipOf(name, rows, on ? 'Tap again for the whole week' : 'Tap for this day\'s breakdown')}><span class="lval">${int(d.total)}</span><span class="lpair">${leadStack(d.total, d.ig, d.wa, (d.total / top) * H)}${hpBar}</span></button>`;
@@ -2984,7 +2989,11 @@
     const srcSplit = splits(src.total, src.ig, src.wa);
     const projSplit = src.projects.length > 0 && src.projects.every((x) => x.ig != null && x.wa != null);
     const hpKnown = src.hp != null;
-    const projCols = (projSplit ? 6 : 4) + (hpKnown ? 1 : 0);
+    // High potential per channel (Anton, 8 Oct 2026) when every HP in the
+    // period names its channel; otherwise the single overall column.
+    const hpSplit = hpKnown && src.hpWa != null && src.hpIg != null;
+    const hpPill = (n) => (n ? `<span class="lhp">${int(n)}</span>` : '<span class="rv-na">0</span>');
+    const projCols = (projSplit ? 6 : 4) + (hpKnown ? (hpSplit ? 2 : 1) : 0);
     // Bookings in the same week (or the day picked) beside the leads, and the
     // conversion between them (Anton, 5 Oct 2026).
     const bk = leadBookings(day ? day.date : sel.start, day ? day.date : sel.end);
@@ -3000,7 +3009,7 @@
       <tr>
         <td class="cname">${esc(x.code === 'NA' ? 'NA (no trip given)' : x.code)}</td>
         <td class="num"><b>${int(x.total)}</b></td>
-        ${hpKnown ? `<td class="num">${x.hp ? `<span class="lhp">${int(x.hp)}</span>` : '<span class="rv-na">0</span>'}</td>` : ''}
+        ${hpSplit ? `<td class="num">${hpPill(x.hpWa)}</td><td class="num">${hpPill(x.hpIg)}</td>` : hpKnown ? `<td class="num">${hpPill(x.hp)}</td>` : ''}
         ${projSplit ? `<td class="num">${int(x.wa)}</td><td class="num">${int(x.ig)}</td>` : ''}
         <td class="num">${b == null ? '<span class="rv-na">—</span>' : int(b)}</td>
         ${convCell(b, x.total)}
@@ -3044,7 +3053,7 @@
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('leadsHp')}>High potential</span></div>
             <div class="bv-n">${sel.hp == null ? '—' : int(sel.hp)}</div>
-            <div class="bv-s">${sel.hp == null ? 'not recorded this week' : sel.total ? `${pct(sel.hp / sel.total)} of leads` : 'HP leads'}</div>
+            <div class="bv-s">${sel.hp == null ? 'not recorded this week' : sel.hpWa != null && sel.hpIg != null ? `WhatsApp ${int(sel.hpWa)} · Instagram ${int(sel.hpIg)}` : sel.total ? `${pct(sel.hp / sel.total)} of leads` : 'HP leads'}</div>
           </div>
           ${second}
           <div class="bv-side">
@@ -3066,7 +3075,7 @@
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}${hpKnown ? hcol('leadsHp', 'HP') : ''}
+              ${hcol('project', 'Project')}${hcol('leadsTotal', 'Leads')}${hpSplit ? hcol('leadsHpWa', 'HP · WhatsApp') + hcol('leadsHpIg', 'HP · Instagram') : hpKnown ? hcol('leadsHp', 'HP') : ''}
               ${projSplit ? hcol('leadsWa', 'WhatsApp') + hcol('leadsIg', 'Instagram') : ''}
               ${hcol('leadsBooked', 'Bookings')}${hcol('leadsConv', 'Conversion')}
             </tr></thead>
@@ -3074,7 +3083,7 @@
             <tfoot><tr>
               <td class="cname">TOTAL</td>
               <td class="num">${int(src.total)}</td>
-              ${hpKnown ? `<td class="num"><span class="lhp">${int(src.hp)}</span></td>` : ''}
+              ${hpSplit ? `<td class="num"><span class="lhp">${int(src.hpWa)}</span></td><td class="num"><span class="lhp">${int(src.hpIg)}</span></td>` : hpKnown ? `<td class="num"><span class="lhp">${int(src.hp)}</span></td>` : ''}
               ${projSplit ? `<td class="num">${srcSplit ? int(src.wa) : '—'}</td><td class="num">${srcSplit ? int(src.ig) : '—'}</td>` : ''}
               <td class="num">${bk ? int(bk.all) : '—'}</td>
               ${convCell(bk ? bk.all : null, src.total)}

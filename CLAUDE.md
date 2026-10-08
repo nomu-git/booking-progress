@@ -494,6 +494,20 @@ webhooks.
   and an **HP** column after Leads (yellow pill), hidden with a note when
   the period has no HP recorded. Checked 6 Oct 2026: 52 HP this year; 22–30
   Sep 10, 1–7 Oct 7. Only counts leave the API, as ever.
+- **HP by channel** (Anton, 8 Oct 2026: "separate each high potential per
+  channel like WA or IG ... rather than showing overall HP"): Marina writes a
+  day's HP in the HP column of that day's **IG row or WA row**, so
+  `readHp(..., channel)` in `lib/tabs/leads.js` credits it to that channel
+  (per-lead logs use the lead's Source). Days, weeks and projects carry
+  `hpIg` / `hpWa` beside `hp`; they're **null when any HP in the period has
+  no channel** (HP written on the combined row only), and the page then falls
+  back to the single HP column. Table: **HP · WhatsApp** and **HP · Instagram**
+  columns replace the one HP column (TOTAL row too); the HP tile keeps the
+  overall number with "WhatsApp 4 · Instagram 1" under it; the daily chart's
+  HP bar stays one yellow bar (it measures the overall 5 target) and its
+  tooltip lists HP WhatsApp / HP Instagram. Live 8 Oct 2026: this week HP 5 =
+  WhatsApp 4 + Instagram 1; since 23 Sep nearly all HP is WhatsApp. The
+  Campaign Ads lead-quality panel still uses overall HP per project.
 - The daily sheet now also has **IG and WA rows under each date** (from 23
   Sep), which the reader already handled, so days and weeks since then are
   split WhatsApp / Instagram. Its headers changed spelling ("ZNZ|MD",
