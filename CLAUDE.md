@@ -893,7 +893,8 @@ high potential leads to campaigns, beside cost per result, to see which
 running campaigns perform best. Panel between the budget hero and the
 budget table: Campaign (project under it) | Status | Leads | High potential
 | High potential rate (bar, `--tgt-hp`) | Cost / Result | Cost / HP lead,
-best first (Good, Watch, Bad, then by cost per HP lead).
+best first (Good, Watch, Bad, then by cost per HP lead). No footer line under the table (Anton asked for it
+removed, 8 Oct 2026); the average cost per HP lead is in the title's tooltip.
 
 - **Built in `api/campaigns.js` (`addLeadQuality`)**, sent as each running
   campaign's `leadQuality` plus a payload-level `leadQuality` (`avgCostPerHp`,

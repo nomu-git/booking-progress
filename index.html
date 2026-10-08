@@ -489,7 +489,6 @@
   .lq-st.bad { background: rgba(208,59,59,.2); color: #ff8a80; }
   .lq-st.none { background: rgba(111,134,168,.16); color: var(--text-3); }
   .lq-sub { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
-  .lq-note { font-size: 11.5px; color: var(--text-3); margin-top: 10px; }
   .abar-fill.lq { background: var(--tgt-hp); }
   /* ---- budget vs actual ----
      The one comparison this tab exists to make: two figures side by side and
@@ -2212,7 +2211,6 @@
     const run = rows.filter((c) => c.status === 'Active' && c.leadQuality);
     if (!run.length) return '';
     const g = p.leadQuality || {};
-    const cur = esc(p.currency || 'SAR');
     const sorted = [...run].sort((a, b) => {
       const qa = a.leadQuality, qb = b.leadQuality;
       return (qa.status ? LQ_ORDER[qa.status] : 9) - (qb.status ? LQ_ORDER[qb.status] : 9)
@@ -2253,7 +2251,6 @@
             <tbody>${body}</tbody>
           </table>
         </div>
-        <div class="lq-note">${cur} · leads and high potential from Marina's leads sheet, since each campaign started · average cost per high potential lead ${g.avgCostPerHp == null ? '—' : `${cur} ${money(g.avgCostPerHp)}`}</div>
       </div>`;
   }
 
