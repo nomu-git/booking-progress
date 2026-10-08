@@ -27,9 +27,14 @@
 // currently on"). Meta logs a creation as "Campaign created" with no status
 // in it, and a campaign created live never gets a status-change row, so the
 // current status is looked up when the message is posted.
+//
+// The same call also runs the cost-per-result alert (lib/cost-alerts.js),
+// at most every 10 minutes, so it needs no cron job or function of its own.
 
 const { graphGet, graphGetAll, AD_ACCOUNTS } = require('../lib/meta-ads');
 const kv = require('../lib/kv');
+const costAlerts = require('../lib/cost-alerts');
+const { build: buildCampaigns } = require('./campaigns');
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://bookingprogress.vercel.app';
@@ -173,7 +178,10 @@ module.exports = async (req, res) => {
 
     if (preview) {
       await withStatus(switches);
+      const cpr = await costAlerts.check({ build: buildCampaigns, dashboard: DASHBOARD_URL, preview: true })
+        .catch((err) => ({ error: err.message }));
       return res.status(200).json({
+        cpr,
         preview: true,
         lookbackMinutes: lookback,
         errors,
@@ -226,7 +234,15 @@ module.exports = async (req, res) => {
       if (ok) posted.push(s.name); else await kv.command('DEL', claimKey(s));
     }
 
-    res.status(200).json({ bootstrap: false, posted, errors: [...errors, ...failed] });
+    // Cost per result, separately, so a Meta hiccup there never blocks the
+    // on/off alerts above (they've already gone out by now).
+    let cpr = null;
+    if (SLACK_WEBHOOK_URL) {
+      cpr = await costAlerts.check({ build: buildCampaigns, webhook: SLACK_WEBHOOK_URL, dashboard: DASHBOARD_URL })
+        .catch((err) => ({ error: err.message }));
+    }
+
+    res.status(200).json({ bootstrap: false, posted, errors: [...errors, ...failed], cpr });
   } catch (err) {
     console.error('campaign-alerts failed:', err);
     res.status(500).json({ error: err.message });

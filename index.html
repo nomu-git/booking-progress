@@ -477,6 +477,10 @@
   }
   .cpill.on  { background: rgba(61,220,132,.16); color: var(--fresh); }
   .cpill.off { background: rgba(134,152,180,.14); color: var(--text-3); }
+  /* Cost per result over the limit (running campaigns only). */
+  .cpr-over { display: inline-block; padding: 1px 8px; border-radius: 999px; background: rgba(239,83,80,.16); color: #ff8a80; font-weight: 700; cursor: help; }
+  .cpr-note { font-size: 12.5px; color: var(--text-2); margin: -4px 0 12px; }
+  .cpr-note.bad { color: #ff8a80; }
   /* ---- budget vs actual ----
      The one comparison this tab exists to make: two figures side by side and
      a single track underneath, rather than numbers the reader has to divide
@@ -2204,6 +2208,9 @@
     const cur = esc(p.currency || 'SAR');
     const t = p.totals || {};
     const rows = [...(p.campaigns || [])].sort((a, b) => b.spend - a.spend || a.name.localeCompare(b.name));
+    // Cost-per-result limit for running campaigns (api/campaigns.js cprOver).
+    const lim = p.cprLimit || { usd: 20, report: 75, minResults: 5 };
+    const overCpr = rows.filter((c) => c.cprOver);
 
     const body = rows.map((c) => `
       <tr>
@@ -2213,7 +2220,9 @@
         <td class="num">${money(c.spend)}</td>
         <td class="num">${money(c.remaining)}</td>
         <td class="num">${int(c.results)}</td>
-        <td class="num">${show(c.costPerResult, money)}</td>
+        <td class="num">${c.cprOver
+          ? `<span class="cpr-over" data-tip="${attr(`<div class="tt">Over the cost limit</div><div class="more">${esc(cur)} ${esc(money(c.costPerResult))} per result, limit ${esc(cur)} ${esc(money(lim.report))} ($${esc(int(lim.usd))}). Slack was alerted when it went over.</div>`)}">▲ ${money(c.costPerResult)}</span>`
+          : show(c.costPerResult, money)}</td>
         <td class="num">${int(c.purchases)}</td>
         <td class="num">${int(c.impressions)}</td>
         <td class="abar-cell">${barFor(c.spend, c.budgetSar)}</td>
@@ -2251,6 +2260,9 @@
 
       <div class="panel">
         <div class="ptitle">Budget vs actual by campaign · ${p.year}</div>
+        <div class="cpr-note${overCpr.length ? ' bad' : ''}">${overCpr.length ? '▲' : '✓'}
+          Cost per result limit: <b>$${int(lim.usd)}</b> (${cur} ${money(lim.report)}) for running campaigns ·
+          ${overCpr.length ? `<b>${overCpr.length} over</b>: ${overCpr.map((c) => esc(c.name)).join(', ')}` : 'none over'}</div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>

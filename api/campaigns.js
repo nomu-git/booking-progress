@@ -16,6 +16,14 @@ const YEAR = Number(process.env.META_YEAR || new Date().getUTCFullYear());
 // Updated Budget.xlsx. Muatasam's rule: assume $500 rather than show a dash.
 const DEFAULT_BUDGET_USD = Number(process.env.META_DEFAULT_BUDGET_USD || 500);
 
+// Cost-per-result limit (Muatasam, 8 Oct 2026: "not more than 20 per result",
+// Anton confirmed USD). Applies to running campaigns only, and only once a
+// campaign has CPR_MIN_RESULTS results, so one early result on a fresh
+// campaign can't trip it. The board flags it and api/campaign-alerts.js posts
+// to Slack when a campaign crosses it; both read cprOver from here.
+const CPR_LIMIT_USD = Number(process.env.CPR_ALERT_LIMIT_USD || 20);
+const CPR_MIN_RESULTS = Number(process.env.CPR_ALERT_MIN_RESULTS || 5);
+
 let cache = { at: 0, payload: null };
 
 // Both the legacy objective names and the newer ODAX ones land on the same
@@ -329,6 +337,7 @@ async function build() {
     c.remaining = c.budgetSar - c.spend;
     c.usedPct = c.budgetSar ? c.spend / c.budgetSar : null;
     c.costPerResult = c.results ? c.spend / c.results : null;
+    c.cprOver = c.status === 'Active' && c.results >= CPR_MIN_RESULTS && c.costPerResult > CPR_LIMIT_USD * USD_SAR;
   }
 
   // The table foots to these, so they're summed from the same rows rather
@@ -352,6 +361,7 @@ async function build() {
     budgetSource: 'Updated Budget.xlsx',
     defaultBudgetUsd: DEFAULT_BUDGET_USD,
     usdSar: USD_SAR,
+    cprLimit: { usd: CPR_LIMIT_USD, report: CPR_LIMIT_USD * USD_SAR, minResults: CPR_MIN_RESULTS },
     campaigns,
   };
 }
