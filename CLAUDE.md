@@ -854,35 +854,37 @@ by Maryem Sayed. Please review the changes: <dashboard>/#campaigns".
 ## Cost per result alert (Slack + Campaign Ads)
 
 Muatasam, 8 Oct 2026: "Add alert for higher cost per result for campaigns
-... not more than 20 per result"; Anton confirmed **USD** (so SAR 75 at
-`META_USD_SAR` 3.75, since the board is in SAR).
+... not more than 20 per result" (Anton read it as USD, built as $20), then
+the same day: **"Alarm should be 25 SAR"**. The limit is now **SAR 25**, in
+the report currency, no USD conversion.
 
 - **Rule lives in `api/campaigns.js`**: `cprOver` = status Active **and**
   at least `CPR_ALERT_MIN_RESULTS` (5) results **and** year-to-date cost
-  per result > `CPR_ALERT_LIMIT_USD` (20) x USD_SAR. The payload carries
-  `cprLimit: { usd, report, minResults }`. Zero-result campaigns never
-  count (no cost per result; the board already flags them). Min 5 results
-  and no zero-result alert were defaults Anton accepted with the plan.
+  per result > `CPR_ALERT_LIMIT` (25, SAR). The payload carries
+  `cprLimit: { report, minResults }`. Zero-result campaigns never count
+  (no cost per result; the board already flags them). Min 5 results and no
+  zero-result alert were defaults Anton accepted with the plan.
 - **Board:** a line under "Budget vs actual by campaign" ("Cost per result
-  limit: $20 (SAR 75.00) for running campaigns · none over" / "▲ N over:
-  names") and a red `▲ 41.92` pill on the Cost / Result cell of each running
-  campaign over it, with a tooltip. Classes `cpr-over`, `cpr-note`.
+  limit: SAR 25 for running campaigns · none over" / "▲ N over: names") and
+  a red `▲ 41.98` pill on the Cost / Result cell of each running campaign
+  over it, with a tooltip. Classes `cpr-over`, `cpr-note`.
 - **Slack:** `lib/cost-alerts.js`, run from `api/campaign-alerts.js` (the
   cron-job.org 2-minute job), gated to once per 10 minutes by
-  `SET cpr-alerts:tick NX EX 600` (`CPR_ALERT_EVERY_S`). Not scheduled in the
-  sense Anton meant: it fires when a campaign crosses. One alert per
-  crossing: `cpr-alerts:over:<account>:<id>` is claimed (no expiry) when it
-  goes over, and deleted once the campaign is no longer over (back under,
-  paused, or results dropping), which re-arms it. A failed Slack post
-  releases the claim. Runs after the on/off alerts and can't block them.
-  `?preview=1` on campaign-alerts includes a `cpr` block (running campaigns,
-  their cost per result, what would post).
-- Message: "🚨 Campaign: <name> is over the cost per result limit. Cost per
-  result is $21.30 (SAR 79.88), limit $20, after 12 results on SAR 958.50
-  spent. Please review: <dashboard>/#campaigns".
+  `SET cpr-alerts:tick NX EX 600` (`CPR_ALERT_EVERY_S`). Fires when a
+  campaign crosses, not on a schedule. One alert per crossing:
+  `cpr-alerts:over:<account>:<id>` is claimed (no expiry) when it goes over
+  and deleted once the campaign is no longer over (back under, paused),
+  which re-arms it. Several crossing in one check share **one message**
+  (a list), so a limit change doesn't flood the channel. A failed Slack post
+  releases the claims. Runs after the on/off alerts and can't block them.
+  `?preview=1` on campaign-alerts includes a `cpr` block.
+- Message (one): "🚨 Campaign: <name> is over the cost per result limit.
+  Cost per result is SAR 41.98 (limit SAR 25), after 12 results on SAR
+  503.73 spent. Please review: <dashboard>/#campaigns". Several: "🚨 N
+  campaigns are over the cost per result limit SAR 25:" then one bullet each.
 - It's the **year-to-date** cost per result (what the board shows), so it
-  moves slowly; at go-live (8 Oct 2026) no running campaign was over (the
-  highest was EB-BA-TA-202612-02C at SAR 74.00, just under SAR 75).
+  moves slowly. When the limit went to SAR 25, all 5 running campaigns were
+  over (25.88 to 74.05), so the first check posted them as one list.
 
 ## Leads target alert (Slack)
 
