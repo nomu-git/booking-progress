@@ -16,6 +16,7 @@ const TABS = {
   feedback: require('../lib/tabs/feedback'),
   revenue: require('../lib/tabs/revenue'),
   pending: require('../lib/tabs/pending'),
+  'calendar-discover': require('../lib/tabs/calendar-discover'),
 };
 
 // One cache entry per tab, as each had its own before the merge.
@@ -26,6 +27,11 @@ module.exports = async (req, res) => {
   const tab = Object.prototype.hasOwnProperty.call(TABS, name) ? TABS[name] : null;
   if (!tab) return res.status(404).json({ error: `Unknown sheet "${name}"`, sheets: Object.keys(TABS) });
 
+  // A tab marked secret needs the alerts secret (discovery output only).
+  if (tab.secret) {
+    const secret = (process.env.CAMPAIGN_ALERT_SECRET || '').trim();
+    if (!secret || (req.headers.authorization || '') !== `Bearer ${secret}`) return res.status(401).json({ error: 'unauthorized' });
+  }
   const hit = cache.get(name);
   try {
     const fresh = req.query && req.query.refresh === '1';
