@@ -1043,7 +1043,10 @@ artwork that isn't ready a week before its post.
   Marketing tables (KPI + target | Status | Why | What to do), failed first.
   **The per-campaign cost rows sit in one accordion row** ("Cost per result ·
   running campaigns", Failed if any campaign fails; click to open,
-  `kpOpen`), and counts treat it as one KPI. The lead-quality and budget
+  `kpOpen`), and counts treat it as one KPI. Made obvious on 12 Oct (Anton:
+  "more visible that there is inside of it"): yellow-tinted row with a dashed
+  bottom edge, a yellow caret badge, a "5 campaigns inside" chip and a
+  "Show the 5 campaigns" button; the opened campaigns are indented with └. The lead-quality and budget
   KPIs stay separate rows, outside it (Anton).
   Rows with a list (late artwork, campaign lead quality, planned posts) show
   it on hover ("▸ See the list"). Classes `kp-`.

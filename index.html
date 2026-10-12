@@ -991,11 +991,18 @@
   .kp-why { color: var(--text-2); }
   .kp-ok { color: var(--text-3); }
   .kp-name { cursor: help; border-bottom: 1px dotted rgba(255,255,255,.35); }
+  /* The accordion row: a tinted row with a yellow caret badge, a count of
+     what's inside and a button, so it reads as something to open. */
   .kp-grp { cursor: pointer; }
-  .kp-grp:hover td { background: rgba(255,255,255,.03); }
-  .kp-caret { display: inline-block; width: 18px; font-size: 14px; color: var(--yellow); }
-  .kp-child td { background: rgba(0,0,0,.12); }
-  .kp-child td.cname { padding-left: 34px; }
+  .kp-grp td { background: rgba(242,178,51,.09); border-bottom: 1px dashed rgba(242,178,51,.45); }
+  .kp-grp:hover td { background: rgba(242,178,51,.15); }
+  .kp-caret { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-right: 9px; border-radius: 50%; background: var(--yellow); color: var(--navy); font-size: 13px; font-weight: 800; vertical-align: middle; }
+  .kp-count { display: inline-block; margin: 6px 0 0 31px; padding: 1px 9px; border-radius: 999px; background: rgba(242,178,51,.16); color: var(--yellow); font-size: 11.5px; font-weight: 700; }
+  .kp-toggle { display: block; margin-top: 8px; padding: 5px 13px; border: 1px solid var(--yellow); border-radius: 999px; background: transparent; color: var(--yellow); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .kp-grp:hover .kp-toggle { background: var(--yellow); color: var(--navy); }
+  .kp-child td { background: rgba(0,0,0,.16); }
+  .kp-child td.cname { padding-left: 40px; position: relative; }
+  .kp-child td.cname::before { content: '└'; position: absolute; left: 22px; top: 8px; color: rgba(242,178,51,.7); }
   .kp-more { display: inline-block; margin-left: 6px; color: var(--yellow); font-weight: 600; cursor: help; white-space: nowrap; }
 
   [hidden] { display: none !important; }
@@ -4465,9 +4472,9 @@
       const lim = (list[0].target || '').replace(/ or less$/, '');
       const names = bad.map((k) => k.name.replace(/^Cost per result · /, ''));
       return `<tr class="kp-grp" data-kp-toggle aria-expanded="${kpOpen}">
-          <td class="cname"><span class="kp-caret">${kpOpen ? '▾' : '▸'}</span>${nameTip('Cost per result · running campaigns', list[0].about)}<div class="kp-tgt">Target: ${esc(lim)} or less, each campaign</div></td>
+          <td class="cname"><span class="kp-caret">${kpOpen ? '▾' : '▸'}</span>${nameTip('Cost per result · running campaigns', list[0].about)}<div class="kp-tgt">Target: ${esc(lim)} or less, each campaign</div><span class="kp-count">${list.length} campaigns inside</span></td>
           <td><span class="kp-st ${cls}">${label}</span></td>
-          <td class="kp-why">${bad.length ? `${bad.length} of ${list.length} running campaigns over ${esc(lim)}: ${esc(names.join(', '))}.` : `All ${list.length} running campaigns within ${esc(lim)}.`} <span class="kp-more">${kpOpen ? 'Hide' : 'Show'} campaigns</span></td>
+          <td class="kp-why">${bad.length ? `${bad.length} of ${list.length} running campaigns over ${esc(lim)}: ${esc(names.join(', '))}.` : `All ${list.length} running campaigns within ${esc(lim)}.`} <button type="button" class="kp-toggle">${kpOpen ? 'Hide' : 'Show'} the ${list.length} campaigns ${kpOpen ? '▴' : '▾'}</button></td>
           <td class="kp-do">${bad.length ? 'Open the list: refresh the creative or narrow the audience of the ones over the limit, and pause any that stay over.' : '<span class="kp-ok">On track, keep it up.</span>'}</td>
         </tr>${kpOpen ? list.sort((x, y) => KP_ORDER[x.status] - KP_ORDER[y.status]).map((k) => row(k, true)).join('') : ''}`;
     };
