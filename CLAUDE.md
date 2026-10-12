@@ -1062,6 +1062,27 @@ artwork that isn't ready a week before its post.
 - Not built: a monday **board** for KPIs (needs write access; the tab is the
   board for now). Operations KPIs were left out as asked.
 
+## AI Adviser bubble (placeholder)
+
+Anton, 12-13 Oct 2026: a Claude-run adviser on every tab that reads the
+whole dashboard and answers questions about problems and improvements.
+**Only the bubble is built so far**: `#adv` in `index.html`, bottom-left of
+the page (beside the sidebar on a desktop, following it when collapsed;
+the screen corner at 900px and under, hidden while the phone drawer is
+open), a white thought cloud "Ask me anything!", and a panel that says
+**"Coming soon!"**. Classes `adv-`; z-index 45 (above the sidebar's 30 and the tooltip's 40,
+below the modal's 50).
+
+Agreed plan for the real thing (not built, waiting on Anton):
+`ANTHROPIC_API_KEY` from an Anthropic Console account (a Claude subscription
+can't be used for it), Sonnet 5.5 by default with an Opus 5.5 "deep
+analysis" option, a team passcode, about 20 questions a day shared (Upstash
+counter) plus a monthly spend cap set in the Console. It would use the 12th
+and last Vercel function. Each question sends the live, already-sanitised
+dashboard payloads (about 10-15k tokens summarised), cached; read-only, it
+never changes anything in Meta, monday or the sheets. Estimated cost about
+$0.02-0.06 a question on Sonnet 5.5.
+
 ## Pending Task tab (monday.com)
 
 Asked for by Anton, 5 Oct 2026: a **Corporate** sidebar category with
