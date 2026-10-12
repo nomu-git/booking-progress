@@ -211,6 +211,14 @@
   .trip.cancelled .tnum .b { color: #f0b8b3 !important; }
   .trip.cancelled .fill, .trip.cancelled .wnum { background: var(--danger) !important; color: #f0b8b3 !important; }
   .trip.cancelled .track { background: #2a1a22; }
+  /* One week closed in WeTravel (0 seats, "Unavailable") on a trip that
+     still runs: that week alone reads as cancelled. */
+  .wk.wk-cancel .wlab, .wk.wk-cancel .wdate { color: #c98d87; text-decoration: line-through; }
+  .wk.wk-cancel .wnum, .wk.wk-cancel .wnum .of { color: #f0b8b3 !important; }
+  .wk.wk-cancel .fill { background: var(--danger) !important; }
+  .wk.wk-cancel .track { background: #2a1a22; }
+  .trip.cancelled .wcancel { display: none; } /* the card already says it */
+  .wcancel { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 4px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .06em; vertical-align: 1px; }
 
   .thead { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 3px; }
   .tname { font-size: 14.5px; font-weight: 700; line-height: 1.25; flex: 1; min-width: 0; }
@@ -1582,18 +1590,20 @@
     // falls short of the marker instead of quietly rescaling to look full.
     const scale = Math.max(target, w.capacity || 0, w.booked, 1);
     const pct = Math.min(100, (w.booked / scale) * 100);
-    const soldOut = w.capacity != null && w.booked >= w.capacity && w.booked > 0;
-    const state = w.booked === 0 ? 'none' : soldOut ? 'full' : '';
+    // Sold out only when WeTravel has seats on sale and they're all taken; a
+    // week set to 0 seats is "Unavailable" there, which reads as Cancelled.
+    const soldOut = !w.unavailable && w.capacity > 0 && w.booked >= w.capacity;
+    const state = w.unavailable ? 'cancelled' : w.booked === 0 ? 'none' : soldOut ? 'full' : '';
     const tickPct = Math.min(100, (target / scale) * 100);
     const f = freshness(w);
 
     return `
-      <div class="wk ${f.count ? 'fresh' : ''}">
+      <div class="wk ${f.count && !w.unavailable ? 'fresh' : ''}${w.unavailable ? ' wk-cancel' : ''}">
         <div>
           <span class="wlab">${esc(weekName(w.label))}</span><span class="wdate">${esc(range(w.start, w.end))}</span>
-          ${f.count ? `<span class="wpill">+${f.count}</span>` : ''}
+          ${w.unavailable ? '<span class="wcancel">CANCELLED</span>' : f.count ? `<span class="wpill">+${f.count}</span>` : ''}
         </div>
-        <div class="wnum ${state}">${w.booked}<span class="of"> / ${w.capacity ?? target}</span></div>
+        <div class="wnum ${state}">${w.booked}<span class="of"> ${w.unavailable ? 'booked' : `/ ${w.capacity ?? target}`}</span></div>
         <div class="track">
           <div class="fill ${state}" style="width:${pct}%"></div>
           <div class="tick" style="left:calc(${tickPct}% - 1px)" title="Target ${target}"></div>
@@ -1603,7 +1613,10 @@
   }
 
   function tripCard(t, target) {
-    const soldOut = t.totalCapacity != null && t.totalBooked >= t.totalCapacity && t.totalBooked > 0;
+    // Sold out: every week still on sale has seats in WeTravel and all are
+    // taken. Unavailable (0-seat) weeks don't count either way.
+    const open = t.weeks.filter((w) => !w.unavailable);
+    const soldOut = !t.cancelled && open.length > 0 && open.every((w) => w.capacity > 0 && w.booked >= w.capacity);
     const newCount = t.weeks.reduce((sum, w) => sum + freshness(w).count, 0);
     const cls = [
       t.cancelled ? 'cancelled' : '',

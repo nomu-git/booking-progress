@@ -246,6 +246,10 @@ async function build() {
         end: w.end,
         booked: w.booked,
         capacity: w.capacity,
+        // 0 seats is WeTravel's "Unavailable": the week was closed. On the
+        // board that reads as Cancelled, bookings or not (Anton, 13 Oct 2026),
+        // the same rule Previous Sales uses.
+        unavailable: w.capacity === 0,
         recent: w.recent || [],
       }))
       .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
@@ -273,7 +277,9 @@ async function build() {
         ? null
         : weeks.reduce((sum, w) => sum + (w.capacity || 0), 0),
       cancelledCount: data.cancelledTotal,
-      cancelled: CANCELLED.has(String(trip.uuid)),
+      // Cancelled when listed in CANCELLED_TRIP_UUIDS or every week of it is
+      // unavailable in WeTravel.
+      cancelled: CANCELLED.has(String(trip.uuid)) || weeks.every((w) => w.capacity === 0),
       weeks,
     });
   });
