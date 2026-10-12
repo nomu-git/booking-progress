@@ -1075,8 +1075,11 @@ name, who it's assigned to and its status exactly as monday shows it.
   in `MONDAY_API_TOKEN`) gives the items directly. Cowork is not allowed to
   create or enter API tokens, so Anton sets that one himself.
 - **Boards** (`MONDAY_BOARD_IDS`, default, Anton's pick): Operations
-  General `5102303383`, Asia `5102494784`, Africa `5102494871`, Marketing &
-  Sales General `5103011662`. Not included: Management (locked in monday),
+  General `5102303383`, Asia `5102494784`, Africa `5102494871`, Marketing
+  General `5103011662` and, from 13 Oct 2026, **Sales General `5105782939`**
+  (Anton moved all sales tasks into the Sales workspace; the workspace
+  Marketing & Sales is now just "Marketing"). The Sales workspace's B2B CRM
+  and B2C Credit List boards are CRM data, not tasks, and stay out. Not included: Management (locked in monday),
   Corporate Admin / IT / Business Development, the monthly content
   calendars, CRM boards. Two boards are both named "General", so every
   board is labelled "<workspace> · <board>".
@@ -1101,10 +1104,9 @@ name, who it's assigned to and its status exactly as monday shows it.
   Anton). Title "Pending Tasks" with the count; underline text tabs
   **Marketing / Sales / Operations**, **no "All" tab** (removed at Anton's
   request, 5 Oct 2026; it opens on Marketing) (`monTab`, via
-  `monSection()`): **Sales = only the "Sales" group** on the Marketing & Sales
-  General board, **Marketing = every other group** on that board,
-  Operations = the Operations workspace; any other workspace gets its own
-  tab after these. The Board column shows the group; a **Show** dropdown on the right
+  `monSection()`): **the tabs are simply the monday workspaces** (since 13 Oct
+  2026; before that Sales was a "Sales" group on the Marketing & Sales board),
+  and any other workspace gets its own tab after these. The Board column shows the group; a **Show** dropdown on the right
   (`monWho`: Everyone, each person with their count on that tab, No one
   assigned; resets to Everyone if the person has nothing on the tab). Then a
   header row and one rounded row per task: **Task | Status | Due date |

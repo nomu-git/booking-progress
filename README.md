@@ -41,7 +41,7 @@ env-var changes on a new deployment.
 | `LQ_MIN_LEADS` / `LQ_MIN_HP_RATE` | Optional, default `5` / `0.1`. Campaign Ads' lead-quality status for running campaigns (also reads `LEADS_SHEET_URL`). |
 | `LEADS_DAILY_TARGET` / `HP_DAILY_TARGET` | Optional, default `20` / `5`. The daily leads alert (`api/lead-alerts.js`, cron-job.org daily at 11:30 PM Muscat, same Bearer secret) posts to Slack when a day misses either. |
 | `MONDAY_API_TOKEN` | monday.com → profile picture → **Developers** → **API token**. Read by the Pending Task tab. Without it the tab says `MONDAY_API_TOKEN is not set`. |
-| `MONDAY_BOARD_IDS` | Optional. Comma-separated board IDs for Pending Task. Defaults to Operations General, Asia, Africa and Marketing & Sales General. |
+| `MONDAY_BOARD_IDS` | Optional. Comma-separated board IDs for Pending Task. Defaults to Operations General, Asia, Africa, Marketing General and Sales General. |
 | `DASHBOARD_URL` | The deployment URL used in the Slack message's "Open dashboard" link. Defaults to `https://bookingprogress.vercel.app`; change it if the project's domain changed. |
 
 ### Optional — all have working defaults baked into the code
