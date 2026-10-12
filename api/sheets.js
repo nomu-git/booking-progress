@@ -17,6 +17,7 @@ const TABS = {
   revenue: require('../lib/tabs/revenue'),
   pending: require('../lib/tabs/pending'),
   kpis: require('../lib/tabs/kpis'),
+  'ws-discover': require('../lib/tabs/ws-discover'),
 };
 
 // One cache entry per tab, as each had its own before the merge.
