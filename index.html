@@ -4334,13 +4334,11 @@
   let monData = null;
   // Which workspace tab is open: 'all' or a workspace name.
   let monTab = 'Marketing';
-  // Tabs (Anton, 5 Oct 2026): Sales is the "Sales" group on the Marketing &
-  // Sales board only; Marketing is the rest of that board; Operations is the
-  // Operations workspace. Any other workspace gets a tab of its own.
+  // Tabs follow the monday workspaces (Anton, 13 Oct 2026: the sales tasks
+  // moved to the Sales workspace, its General board): Marketing, Sales and
+  // Operations. Any other workspace gets a tab of its own.
   const MON_TABS = ['Marketing', 'Sales', 'Operations'];
-  const monSection = (i) => (i.workspace === 'Marketing & Sales'
-    ? (/^sales$/i.test(String(i.group || '').trim()) ? 'Sales' : 'Marketing')
-    : i.workspace || 'Other');
+  const monSection = (i) => i.workspace || 'Other';
   const MON_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monDay = (iso) => `${Number(iso.slice(8, 10))} ${MON_MON[Number(iso.slice(5, 7)) - 1]}${iso.slice(0, 4) !== String(new Date().getFullYear()) ? ` ${iso.slice(0, 4)}` : ''}`;
   // monday's own status colour, passed through only if it's a plain hex.
