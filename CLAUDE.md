@@ -1066,10 +1066,9 @@ artwork that isn't ready a week before its post.
 
 Anton, 12-13 Oct 2026: a Claude-run adviser on every tab that reads the
 whole dashboard and answers questions about problems and improvements.
-**Only the bubble is built so far**: `#adv` in `index.html`, bottom-left of
-the page (beside the sidebar on a desktop, following it when collapsed;
-the screen corner at 900px and under, hidden while the phone drawer is
-open), a white thought cloud "Ask me anything!", and a panel that says
+**Only the bubble is built so far**: `#adv` in `index.html`, in the very
+bottom-left corner of the screen on every size (over the empty foot of the
+sidebar on a desktop, 13 Oct 2026; hidden while the phone drawer is open), a white thought cloud "Ask me anything!", and a panel that says
 **"Coming soon!"**. Classes `adv-`; z-index 45 (above the sidebar's 30 and the tooltip's 40,
 below the modal's 50).
 

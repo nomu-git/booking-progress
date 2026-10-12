@@ -1029,11 +1029,11 @@
   .kp-child td.cname::before { content: '└'; position: absolute; left: 22px; top: 8px; color: rgba(242,178,51,.7); }
   .kp-more { display: inline-block; margin-left: 6px; color: var(--yellow); font-weight: 600; cursor: help; white-space: nowrap; }
 
-  /* AI Adviser bubble: bottom-left of the page (beside the sidebar on a
-     desktop, the screen corner on a tablet or phone), with a thought-cloud
+  /* AI Adviser bubble: the bottom-left corner of the screen (over the empty
+     foot of the sidebar on a desktop; Anton, 13 Oct 2026: "the left most
+     corner"), with a thought-cloud
      "Ask me anything!" and a small panel that opens above it. */
-  .adv { position: fixed; bottom: 22px; left: calc(var(--sb-w) + 22px); z-index: 45; transition: left .18s ease; }
-  html.sb-collapsed .adv { left: calc(var(--sb-rail) + 22px); }
+  .adv { position: fixed; bottom: 18px; left: 14px; z-index: 45; }
   .adv-btn {
     width: 60px; height: 60px; border-radius: 50%; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
     color: var(--navy); background: radial-gradient(circle at 30% 25%, #ffe08a, var(--yellow) 55%, #d9901a);
@@ -1072,7 +1072,7 @@
   .adv-soon { font-size: 26px; font-weight: 800; color: var(--yellow); letter-spacing: -.01em; text-shadow: 0 0 22px rgba(242,178,51,.35); }
   .adv-body p { margin: 10px 0 0; font-size: 13px; line-height: 1.55; color: var(--text-2); }
   @media (max-width: 900px) {
-    .adv, html.sb-collapsed .adv { left: 16px; bottom: 16px; }
+    .adv { left: 16px; bottom: 16px; }
     html.sb-open .adv { display: none; }
   }
   @media (max-width: 600px) {
