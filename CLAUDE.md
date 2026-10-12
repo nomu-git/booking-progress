@@ -47,7 +47,8 @@ no framework.
     `setView('campaigns')` and `setView('history')`; the Ads sidebar button
     stays lit for both. Both views keep their own hash (`#campaigns`,
     `#history`), so old links still work.
-  - **CORPORATE**: Monday (`data-view="pending"`, added 5 Oct 2026 as
+  - **CORPORATE**: KPIs (`data-view="kpis"`, 12 Oct 2026, see "KPIs tab"
+    below) and Monday (`data-view="pending"`, added 5 Oct 2026 as
     "Pending Task", sidebar label renamed to "Monday" the same day; the page
     title inside is still "Pending Tasks"; see "Pending Task tab" below).
 
@@ -985,6 +986,64 @@ tab: https://crm.nomuhub.com/#leads".
   and most days since still miss it, so alerts stay frequent. The 10 was
   also in the Leads tab text (target line, "N of 5" tooltip, legend), all
   driven by the one constant.
+
+## KPIs tab (Corporate) + daily KPI / artwork messages
+
+Muatasam via Anton, 12 Oct 2026: one tab with every **sales and marketing**
+KPI (no operations ones for now), each just **Passed / Failed**, with **why**
+and **what to do**; he doesn't want to check every tab. Plus one short daily
+Slack message (passed / failed, no raw numbers) and an alert for marketing
+artwork that isn't ready a week before its post.
+
+- **`lib/kpis.js`** computes everything from the same builders as each tab:
+  `booking-report.js` `build()`, `lib/tabs/leads.js`, `api/campaigns.js`
+  `build()` (cost per result, lead quality, budget), `lib/tabs/engagements.js`
+  and `lib/calendar.js`. Sources load in parallel and each fails on its own
+  (row reads "Not checked"). Served as `/api/sheets?name=kpis`
+  (`lib/tabs/kpis.js`, 5 min cache); `vercel.json` gives `api/sheets.js`
+  and `api/slack-notify.js` `maxDuration: 60` since this reads every source.
+- **KPIs and targets** (`T` at the top of `lib/kpis.js`; env overrides):
+  Sales: bookings this week on pace for 12 (12 ÷ 7 × days gone, as the
+  Report), bookings last week ≥ 12, leads per day ≥ 20, HP per day ≥ 5,
+  HP rate ≥ 25% (proposed: 5 of 20), conversion ≥ 10% (bookings ÷ leads, as
+  the Leads tab), leads tagged with a trip ≥ 70% (proposed; NA share),
+  leads sheet up to date (yesterday logged). Marketing: **cost per result
+  per running campaign** ≤ SAR 25 (one row each, `cprOver`, judged from 5
+  results), no running campaign rated Bad on lead quality, no running
+  campaign over budget, engagement rate (posts, this month) ≥ 1% (proposed;
+  months ran 0.5-1.1%), story response rate ≥ 5% (proposed; 5.3% YTD), posts
+  in the last 7 days ≥ 3 (proposed, Maryam's sheet), artwork ready 7 days
+  before posting, posts planned for the next 14 days ≥ 6 (proposed).
+  "Proposed" targets are flagged in the tab until Muatasam confirms them.
+- **Lead-based KPIs use the Leads tab's weeks**: this week once it has 3+
+  logged days, otherwise last week (so a Sunday doesn't read as a fail).
+  Engagement and stories use this month, or last month if nothing is
+  recorded yet (each on its own).
+- **Marketing calendar (`lib/calendar.js`)**: monday month boards in the
+  Marketing workspace (`121351`; "July 2026" ... "December 2026" in folder
+  `3231011`), found by their **month-year name** from last month on, so a
+  new month board is picked up by itself. Columns differ by month (Oct+:
+  Posting Date + Artwork Status; Nov adds Post Status; Sep: one Status), so
+  the first date column is the post date and a post is **ready if any
+  status column says Posted / Scheduled / Approved / Done / Complete**;
+  Working on it, Pending Review, Revision Needed or blank are not. Groups
+  Hashtag Bank / Ideas / Archive aren't posts; items without a date are
+  skipped. Scope: today onwards, plus past posts still not ready. Artwork
+  is due 7 days before the post (`ARTWORK_LEAD_DAYS`); not ready on or after
+  that = **late**. Live 12 Oct: 3 late (14, 15, 18 Oct, Working on it).
+- **UI**: summary (N passed / N failed, with a bar), then Sales and
+  Marketing tables (KPI + target | Status | Why | What to do), failed first.
+  Rows with a list (late artwork, campaign lead quality, planned posts) show
+  it on hover ("▸ See the list"). Classes `kp-`.
+- **Slack**: `api/slack-notify.js` (Vercel cron, 8 AM Muscat) now also posts
+  `slackKpis()` (Failed / Passed names only, per-campaign cost rows joined
+  into one line) and `slackArtwork()` (only when something is late: name,
+  post day, status). `?preview=1` shows them as `kpiMessages`. A KPI
+  failure never blocks the bookings message.
+- A temporary secret-gated `calendar-discover` tab was used to read the
+  board layout and removed; `api/sheets.js` keeps the generic `secret` gate.
+- Not built: a monday **board** for KPIs (needs write access; the tab is the
+  board for now). Operations KPIs were left out as asked.
 
 ## Pending Task tab (monday.com)
 
