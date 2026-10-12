@@ -1,11 +1,34 @@
 {
   "crons": [
-    { "path": "/api/slack-notify", "schedule": "0 4 * * *" }
+    {
+      "path": "/api/slack-notify",
+      "schedule": "0 4 * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/api/leads", "destination": "/api/sheets?name=leads" },
-    { "source": "/api/engagements", "destination": "/api/sheets?name=engagements" },
-    { "source": "/api/trips", "destination": "/api/sheets?name=trips" },
-    { "source": "/api/feedback", "destination": "/api/sheets?name=feedback" }
-  ]
+    {
+      "source": "/api/leads",
+      "destination": "/api/sheets?name=leads"
+    },
+    {
+      "source": "/api/engagements",
+      "destination": "/api/sheets?name=engagements"
+    },
+    {
+      "source": "/api/trips",
+      "destination": "/api/sheets?name=trips"
+    },
+    {
+      "source": "/api/feedback",
+      "destination": "/api/sheets?name=feedback"
+    }
+  ],
+  "functions": {
+    "api/sheets.js": {
+      "maxDuration": 60
+    },
+    "api/slack-notify.js": {
+      "maxDuration": 60
+    }
+  }
 }

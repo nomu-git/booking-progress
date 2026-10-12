@@ -304,7 +304,7 @@
      and those tabs' panels have touched since; Previous Projects and Leads
      never had it. */
   #previousWrap > .panel, #campaignsWrap > .panel,
-  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel, #revenueWrap > .panel, #pendingWrap > .panel { margin-bottom: 12px; }
+  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel, #revenueWrap > .panel, #pendingWrap > .panel, #kpisWrap > .panel { margin-bottom: 12px; }
   .ptitle {
     font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-3); margin-bottom: 10px;
@@ -967,6 +967,31 @@
   }
   .announce-due.soon { color: #fff; background: #d64545; }
 
+  /* KPIs tab (Corporate): Passed / Failed with a glyph and the word, so
+     colour never carries it alone. */
+  .kp-sum { display: flex; gap: 28px; align-items: baseline; margin: 6px 0 12px; flex-wrap: wrap; }
+  .kp-n { font-size: 14px; color: var(--text-2); }
+  .kp-n b { font-size: 40px; font-weight: 800; margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .kp-n.pass b { color: #5fd35f; }
+  .kp-n.fail b { color: #ff8a80; }
+  .kp-n.na b { color: var(--text-3); }
+  .kp-bar { display: flex; gap: 3px; height: 12px; border-radius: 6px; overflow: hidden; background: var(--track); }
+  .kp-bar i { display: block; }
+  .kp-bar i.pass { background: var(--q-high); }
+  .kp-bar i.fail { background: var(--q-low); }
+  .kp-table td, .kp-table th { text-align: left; }
+  .kp-table td { vertical-align: top; padding: 10px; }
+  .kp-table .cname { min-width: 190px; }
+  .kp-tgt { font-size: 11.5px; color: var(--text-3); font-weight: 500; margin-top: 3px; }
+  .kp-st { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+  .kp-st.pass { background: rgba(12,163,12,.18); color: #5fd35f; }
+  .kp-st.fail { background: rgba(208,59,59,.2); color: #ff8a80; }
+  .kp-st.na { background: rgba(111,134,168,.16); color: var(--text-3); }
+  .kp-why, .kp-do { min-width: 240px; max-width: 420px; white-space: normal; line-height: 1.45; font-size: 13px; }
+  .kp-why { color: var(--text-2); }
+  .kp-ok { color: var(--text-3); }
+  .kp-more { display: inline-block; margin-left: 6px; color: var(--yellow); font-weight: 600; cursor: help; white-space: nowrap; }
+
   [hidden] { display: none !important; }
   .msg { padding: 24px 4px; color: var(--text-2); font-size: 14px; }
   .msg.err { color: #ffbfa8; }
@@ -1234,6 +1259,7 @@
       </div>
       <div class="sb-group">
         <div class="sb-cat">Corporate</div>
+        <button class="sb-item" data-view="kpis" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/><circle cx="17" cy="7" r="1.5"/></svg><span class="sb-label">KPIs</span></button>
         <button class="sb-item" data-view="pending" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11l2 2 4-4M9 17h6"/></svg><span class="sb-label">Monday</span></button>
       </div>
     </nav>
@@ -1292,6 +1318,7 @@
   <div id="tripsWrap" hidden></div>
   <div id="feedbackWrap" hidden></div>
   <div id="revenueWrap" hidden></div>
+  <div id="kpisWrap" hidden></div>
   <div id="pendingWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
@@ -1381,7 +1408,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending'].includes(s.view)) view = s.view;
+      if (['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'].includes(s.view)) view = s.view;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -4375,6 +4402,82 @@
     }
   }
 
+  /* ================= KPIs (Corporate) ================= */
+
+  // Every sales and marketing KPI as Passed or Failed, with why and what to
+  // adjust (Muatasam, 12 Oct 2026: he only wants to see what passed and what
+  // failed). Computed in lib/kpis.js from the same data as each tab.
+  let kpiData = null;
+  const KP_STATUS = { pass: ['✓ Passed', 'pass'], fail: ['✗ Failed', 'fail'], na: ['○ Not checked', 'na'] };
+  const KP_ORDER = { fail: 0, pass: 1, na: 2 };
+
+  function renderKpis() {
+    const p = kpiData;
+    if (!p) return;
+    if (p.error && !p.kpis) {
+      $('kpisWrap').innerHTML = `<div class="msg err">Could not check the KPIs: ${esc(p.error)}</div>`;
+      return;
+    }
+    const total = p.passed + p.failed;
+    const listTip = (k) => (k.details && k.details.length ? `<span class="kp-more" data-tip="${attr(
+      `<div class="tt">${esc(k.detailTitle || k.name)}</div>`
+      + k.details.map((d) => `<div class="trow"><span class="tk">${esc(d.label)}</span><b>${esc(d.value)}</b></div>`).join(''),
+    )}">▸ See the list</span>` : '');
+    const rows = (area) => p.kpis.filter((k) => k.area === area)
+      .sort((a, b) => KP_ORDER[a.status] - KP_ORDER[b.status])
+      .map((k) => {
+        const [label, cls] = KP_STATUS[k.status];
+        const camp = k.group === 'Cost per result';
+        return `<tr>
+          <td class="cname">${esc(camp ? k.name.replace(/^Cost per result · /, '') : k.name)}<div class="kp-tgt">${camp ? 'Cost per result · ' : 'Target: '}${esc(k.target)}</div></td>
+          <td><span class="kp-st ${cls}">${label}</span></td>
+          <td class="kp-why">${esc(k.why)}${listTip(k)}</td>
+          <td class="kp-do">${k.status === 'fail' ? esc(k.action) : `<span class="kp-ok">${esc(k.status === 'pass' ? k.action : k.action || '')}</span>`}</td>
+        </tr>`;
+      }).join('');
+    const area = (name) => {
+      const list = p.kpis.filter((k) => k.area === name);
+      if (!list.length) return '';
+      const ok = list.filter((k) => k.status === 'pass').length;
+      const bad = list.filter((k) => k.status === 'fail').length;
+      return `<div class="panel">
+        <div class="ptitle">${esc(name)} · ${ok} passed · ${bad} failed</div>
+        <div class="tscroll"><table class="ctable kp-table">
+          <thead><tr><th>KPI</th><th>Status</th><th>Why</th><th>What to do</th></tr></thead>
+          <tbody>${rows(name)}</tbody>
+        </table></div>
+      </div>`;
+    };
+    const day = new Date(`${p.today}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+    $('kpisWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing the last check — ${esc(p.error || 'a source was unreachable')}</div>` : ''}
+      <div class="panel">
+        <div class="ptitle">KPIs · ${esc(day)} · sales and marketing</div>
+        <div class="kp-sum">
+          <div class="kp-n pass"><b>${int(p.passed)}</b> passed</div>
+          <div class="kp-n fail"><b>${int(p.failed)}</b> failed</div>
+          ${p.unchecked ? `<div class="kp-n na"><b>${int(p.unchecked)}</b> not checked</div>` : ''}
+        </div>
+        <div class="kp-bar">${total ? `<i class="pass" style="flex:${p.passed}"></i><i class="fail" style="flex:${p.failed}"></i>` : ''}</div>
+        <div class="pnote">Failed first. Targets marked "proposed" are suggestions until Muatasam confirms them. Rows with a list show it on hover.</div>
+      </div>
+      ${area('Sales')}
+      ${area('Marketing')}`;
+    bindHelp($('kpisWrap'));
+  }
+
+  async function loadKpis(force) {
+    try {
+      const res = await fetch('/api/sheets?name=kpis' + (force ? '&refresh=1' : ''));
+      const p = await res.json();
+      if (!res.ok && !p.kpis) throw new Error(p.error || `HTTP ${res.status}`);
+      kpiData = p;
+      renderKpis();
+    } catch (err) {
+      if (!kpiData) $('kpisWrap').innerHTML = `<div class="msg err">Could not check the KPIs: ${esc(err.message)}</div>`;
+    }
+  }
+
   /* ================= view switching ================= */
 
   // Explicit target, not a toggle — Dashboard is always one click away from
@@ -4416,6 +4519,7 @@
     $('feedbackWrap').hidden = view !== 'feedback';
     $('revenueWrap').hidden = view !== 'revenue';
     $('pendingWrap').hidden = view !== 'pending';
+    $('kpisWrap').hidden = view !== 'kpis';
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -4460,6 +4564,10 @@
       if (!monData) $('pendingWrap').innerHTML = '<div class="msg">Loading pending tasks…</div>';
       loadPending(false);
     }
+    if (view === 'kpis') {
+      if (!kpiData) $('kpisWrap').innerHTML = '<div class="msg">Checking every KPI… this reads WeTravel, Meta, the sheets and monday, so it takes a few seconds.</div>';
+      loadKpis(false);
+    }
     // Keep the address bar in step, so a reload or a copied link lands on the
     // same tab. replaceState rather than the hash property: no history entry
     // per tab click, so Back still leaves the dashboard.
@@ -4490,6 +4598,7 @@
     if (feedback) loadFeedback(true);
     if (revData) loadRevenue(true);
     if (monData) loadPending(true);
+    if (kpiData) loadKpis(true);
   });
 
   /* ================= sidebar ================= */
@@ -4550,7 +4659,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending'];
+  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;
@@ -4584,6 +4693,7 @@
   setInterval(() => { if (feedback) loadFeedback(false); }, 300000);
   setInterval(() => { if (revData) loadRevenue(false); }, 300000);
   setInterval(() => { if (monData) loadPending(false); }, 300000);
+  setInterval(() => { if (kpiData) loadKpis(false); }, 300000);
   // Re-render between fetches so a highlight lapses at its own 24h mark and the
   // "3h ago" text stays honest, without waiting on the server cache.
   setInterval(() => { if (latest) render(latest); }, 20000);

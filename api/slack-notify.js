@@ -1,5 +1,6 @@
 const { build } = require('./booking-report');
 const { graphGet, AD_ACCOUNTS } = require('../lib/meta-ads');
+const kpis = require('../lib/kpis');
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'https://bookingprogress.vercel.app';
@@ -136,8 +137,22 @@ module.exports = async (req, res) => {
     const [payload, metaError] = await Promise.all([build(), metaHealth()]);
     const message = buildMessage(payload, start, end, metaError);
 
+    // The daily KPI message and the artwork alert (12 Oct 2026) go out after
+    // the bookings message, from the same 8 AM run. A failure here never
+    // blocks the bookings message.
+    let kpiMsgs = [];
+    let kpiError = null;
+    try {
+      const k = kpis.build(await kpis.load());
+      kpiMsgs = [kpis.slackKpis(k), kpis.slackArtwork(k)].filter(Boolean);
+    } catch (err) {
+      kpiError = err.message;
+    }
+
     if (preview) {
       return res.status(200).json({
+        kpiMessages: kpiMsgs.map((m) => m.text),
+        kpiError,
         preview: true,
         windowStartUTC: new Date(start).toISOString(),
         windowEndUTC: new Date(end).toISOString(),
@@ -163,7 +178,18 @@ module.exports = async (req, res) => {
       throw new Error(`Slack rejected the message (${slackRes.status}): ${detail}`);
     }
 
-    res.status(200).json({ posted: true, total: message.total, metaError: message.metaError });
+    const kpiPosted = [];
+    for (const m of kpiMsgs) {
+      await new Promise((r) => setTimeout(r, 1100)); // Slack: about one a second
+      const r = await fetch(SLACK_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: m.text, blocks: m.blocks }),
+      }).catch((err) => ({ ok: false, status: err.message }));
+      kpiPosted.push(r.ok ? 'ok' : `Slack ${r.status}`);
+    }
+
+    res.status(200).json({ posted: true, total: message.total, metaError: message.metaError, kpiPosted, kpiError });
   } catch (err) {
     // Deliberately not posting failures to Slack — a broken upstream would
     // otherwise turn into repeated noise in the channel. Surfaced in Vercel logs.
