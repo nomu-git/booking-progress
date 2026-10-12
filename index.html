@@ -1494,8 +1494,10 @@
           ${a.body ? `<div class="announce-body">${esc(a.body)}</div>` : ''}
         </div>
       </div>`;
-    }).join('') : `<div class="announce empty"><div class="announce-icon">🔕</div><div><div class="announce-title">No current announcement</div></div></div>`;
-    el.hidden = view !== 'board';
+    }).join('') : '';
+    // Nothing to announce: no banner at all (Anton, 13 Oct 2026), not the
+    // old "No current announcement" placeholder.
+    el.hidden = !announcement || view !== 'board';
   }
 
   // Which tab and which Report period the screen was on — restored on load

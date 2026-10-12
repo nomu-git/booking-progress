@@ -5,18 +5,10 @@
 // Dated reminders (Anton, 6 Oct 2026) live in REMINDERS below instead: each
 // shows on the Booking tab until the end of its due day (Muscat), then drops
 // off on its own, so a passed deadline never lingers on the wall.
-const REMINDERS = [
-  {
-    due: '2026-10-12',
-    title: 'Decision due: Thailand Wellness',
-    body: 'Reminder to decide whether Thailand Wellness will continue. Please review its bookings, leads and margin and be ready to make the call by Monday 12 October.',
-  },
-  {
-    due: '2026-10-19',
-    title: 'Decision due: South Africa Explore',
-    body: 'Reminder to decide whether South Africa Explore will continue. Please review its bookings, leads and margin and be ready to make the call by Monday 19 October.',
-  },
-];
+// Empty since 13 Oct 2026 (Anton: "remove the announcements"): the Thailand
+// Wellness and South Africa Explore decision reminders are gone. Add
+// { due: 'YYYY-MM-DD', title, body } here for the next one.
+const REMINDERS = [];
 
 module.exports = async (req, res) => {
   const title = (process.env.ANNOUNCEMENT_TITLE || '').trim();
