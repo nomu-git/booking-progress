@@ -1039,7 +1039,9 @@ artwork that isn't ready a week before its post.
   skipped. Scope: today onwards, plus past posts still not ready. Artwork
   is due 7 days before the post (`ARTWORK_LEAD_DAYS`); not ready on or after
   that = **late**. Live 12 Oct: 3 late (14, 15, 18 Oct, Working on it).
-- **UI**: summary (N passed / N failed, with a bar), then Sales and
+- **UI**: summary (a pass-rate ring, Passed / Failed boxes, Sales and Marketing
+  x / y chips, and one glowing segment per KPI with its name on hover; the
+  explanatory note under it was removed at Anton's request, 12 Oct), then Sales and
   Marketing tables (KPI + target | Status | Why | What to do), failed first.
   **The per-campaign cost rows sit in one accordion row** ("Cost per result ·
   running campaigns", Failed if any campaign fails; click to open,

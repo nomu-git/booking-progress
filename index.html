@@ -969,16 +969,40 @@
 
   /* KPIs tab (Corporate): Passed / Failed with a glyph and the word, so
      colour never carries it alone. */
-  .kp-sum { display: flex; gap: 28px; align-items: baseline; margin: 6px 0 12px; flex-wrap: wrap; }
-  .kp-n { font-size: 14px; color: var(--text-2); }
-  .kp-n b { font-size: 40px; font-weight: 800; margin-right: 6px; font-variant-numeric: tabular-nums; }
-  .kp-n.pass b { color: #5fd35f; }
-  .kp-n.fail b { color: #ff8a80; }
-  .kp-n.na b { color: var(--text-3); }
-  .kp-bar { display: flex; gap: 3px; height: 12px; border-radius: 6px; overflow: hidden; background: var(--track); }
-  .kp-bar i { display: block; }
-  .kp-bar i.pass { background: var(--q-high); }
-  .kp-bar i.fail { background: var(--q-low); }
+  /* Summary: a pass-rate ring, big counts, per-area chips and one segment
+     per KPI (hover a segment for its name). Glyphs and words, not colour
+     alone. */
+  .kp-hero { display: flex; align-items: center; gap: 34px; flex-wrap: wrap; margin: 10px 0 18px; }
+  .kp-ring { position: relative; width: 132px; height: 132px; flex: none; cursor: help; filter: drop-shadow(0 0 14px rgba(95,211,95,.22)); }
+  .kp-ring svg { width: 100%; height: 100%; }
+  .kp-ring circle { fill: none; stroke-width: 11; }
+  .kp-ring-bg { stroke: var(--q-low); opacity: .55; }
+  .kp-ring-fg { stroke: #5fd35f; stroke-linecap: round; }
+  .kp-ring-n { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .kp-ring-n b { font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .kp-ring-n b small { font-size: 16px; font-weight: 700; margin-left: 1px; color: var(--text-2); }
+  .kp-ring-n span { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); margin-top: 5px; }
+  .kp-stats { display: flex; gap: 14px; flex-wrap: wrap; }
+  .kp-stat { min-width: 118px; padding: 14px 18px; border-radius: 12px; background: rgba(8,20,42,.45); border: 1px solid rgba(134,152,180,.2); }
+  .kp-stat b { display: block; font-size: 44px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .kp-stat span { display: block; margin-top: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .kp-stat.pass { border-color: rgba(95,211,95,.45); box-shadow: 0 0 22px rgba(95,211,95,.12) inset; }
+  .kp-stat.pass b, .kp-stat.pass span { color: #5fd35f; }
+  .kp-stat.fail { border-color: rgba(255,138,128,.45); box-shadow: 0 0 22px rgba(255,138,128,.12) inset; }
+  .kp-stat.fail b, .kp-stat.fail span { color: #ff8a80; }
+  .kp-stat.na b, .kp-stat.na span { color: var(--text-3); }
+  .kp-areas { display: flex; flex-direction: column; gap: 12px; min-width: 190px; margin-left: auto; }
+  .kp-area { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: baseline; }
+  .kp-area span { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); font-weight: 700; }
+  .kp-area b { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .kp-area b small { font-size: 12px; color: var(--text-3); font-weight: 600; }
+  .kp-area i { grid-column: 1 / -1; display: block; height: 5px; border-radius: 3px; background: rgba(208,59,59,.55); overflow: hidden; }
+  .kp-area u { display: block; height: 100%; background: #5fd35f; border-radius: 3px; text-decoration: none; }
+  .kp-seg { display: flex; gap: 4px; }
+  .kp-seg i { flex: 1; height: 16px; border-radius: 4px; cursor: help; }
+  .kp-seg i.pass { background: var(--q-high); box-shadow: 0 0 10px rgba(12,163,12,.45); }
+  .kp-seg i.fail { background: var(--q-low); box-shadow: 0 0 10px rgba(208,59,59,.4); }
+  .kp-seg i.na { background: var(--q-none); }
   .kp-table td, .kp-table th { text-align: left; }
   .kp-table td { vertical-align: top; padding: 10px; }
   .kp-table .cname { min-width: 190px; }
@@ -4436,7 +4460,7 @@
     const counted = (list) => {
       const camps = list.filter((k) => k.group === 'Cost per result');
       const rest = list.filter((k) => k.group !== 'Cost per result');
-      if (camps.length) rest.push({ status: camps.some((k) => k.status === 'fail') ? 'fail' : camps.every((k) => k.status === 'na') ? 'na' : 'pass' });
+      if (camps.length) rest.push({ name: 'Cost per result · running campaigns', status: camps.some((k) => k.status === 'fail') ? 'fail' : camps.every((k) => k.status === 'na') ? 'na' : 'pass' });
       return rest;
     };
     const all = counted(p.kpis);
@@ -4444,6 +4468,14 @@
     const failed = all.filter((k) => k.status === 'fail').length;
     const unchecked = all.filter((k) => k.status === 'na').length;
     const total = passed + failed;
+    const rate = total ? passed / total : 0;
+    const ringTip = `data-tip="${attr(`<div class="tt">KPIs passing</div><div class="more">${passed} of ${total} checked KPIs passed.</div>`)}"`;
+    const areaChip = (name) => {
+      const list = counted(p.kpis.filter((k) => k.area === name));
+      const ok = list.filter((k) => k.status === 'pass').length;
+      const n = list.filter((k) => k.status !== 'na').length;
+      return `<div class="kp-area"><span>${esc(name)}</span><b>${ok}<small> / ${n}</small></b><i><u style="width:${n ? (ok / n) * 100 : 0}%"></u></i></div>`;
+    };
     const listTip = (k) => (k.details && k.details.length ? `<span class="kp-more" data-tip="${attr(
       `<div class="tt">${esc(k.detailTitle || k.name)}</div>`
       + k.details.map((d) => `<div class="trow"><span class="tk">${esc(d.label)}</span><b>${esc(d.value)}</b></div>`).join(''),
@@ -4507,13 +4539,22 @@
       ${p.stale ? `<div class="msg err">Showing the last check — ${esc(p.error || 'a source was unreachable')}</div>` : ''}
       <div class="panel">
         <div class="ptitle">KPIs · ${esc(day)} · sales and marketing</div>
-        <div class="kp-sum">
-          <div class="kp-n pass"><b>${int(passed)}</b> passed</div>
-          <div class="kp-n fail"><b>${int(failed)}</b> failed</div>
-          ${unchecked ? `<div class="kp-n na"><b>${int(unchecked)}</b> not checked</div>` : ''}
+        <div class="kp-hero">
+          <div class="kp-ring" ${ringTip}>
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="kp-ring-bg" cx="60" cy="60" r="50"/>
+              <circle class="kp-ring-fg" cx="60" cy="60" r="50" stroke-dasharray="${(rate * 314.16).toFixed(1)} 314.16" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="kp-ring-n"><b>${total ? Math.round(rate * 100) : '—'}${total ? '<small>%</small>' : ''}</b><span>passing</span></div>
+          </div>
+          <div class="kp-stats">
+            <div class="kp-stat pass"><b>${int(passed)}</b><span>✓ Passed</span></div>
+            <div class="kp-stat fail"><b>${int(failed)}</b><span>✗ Failed</span></div>
+            ${unchecked ? `<div class="kp-stat na"><b>${int(unchecked)}</b><span>○ Not checked</span></div>` : ''}
+          </div>
+          <div class="kp-areas">${areaChip('Sales')}${areaChip('Marketing')}</div>
         </div>
-        <div class="kp-bar">${total ? `<i class="pass" style="flex:${passed}"></i><i class="fail" style="flex:${failed}"></i>` : ''}</div>
-        <div class="pnote">Failed first. Targets marked "proposed" are suggestions until Muatasam confirms them. Hover a KPI's name to see what it measures; rows with a list show it on hover.</div>
+        <div class="kp-seg">${all.map((k) => `<i class="${k.status}" data-tip="${attr(`<div class="tt">${esc(k.name)}</div><div class="more">${esc(KP_STATUS[k.status][0])}</div>`)}"></i>`).join('')}</div>
       </div>
       ${area('Sales')}
       ${area('Marketing')}`;
