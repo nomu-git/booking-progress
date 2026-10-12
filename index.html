@@ -990,6 +990,12 @@
   .kp-why, .kp-do { min-width: 240px; max-width: 420px; white-space: normal; line-height: 1.45; font-size: 13px; }
   .kp-why { color: var(--text-2); }
   .kp-ok { color: var(--text-3); }
+  .kp-name { cursor: help; border-bottom: 1px dotted rgba(255,255,255,.35); }
+  .kp-grp { cursor: pointer; }
+  .kp-grp:hover td { background: rgba(255,255,255,.03); }
+  .kp-caret { display: inline-block; width: 18px; font-size: 14px; color: var(--yellow); }
+  .kp-child td { background: rgba(0,0,0,.12); }
+  .kp-child td.cname { padding-left: 34px; }
   .kp-more { display: inline-block; margin-left: 6px; color: var(--yellow); font-weight: 600; cursor: help; white-space: nowrap; }
 
   [hidden] { display: none !important; }
@@ -4408,6 +4414,7 @@
   // adjust (Muatasam, 12 Oct 2026: he only wants to see what passed and what
   // failed). Computed in lib/kpis.js from the same data as each tab.
   let kpiData = null;
+  let kpOpen = false; // the campaign cost-per-result accordion
   const KP_STATUS = { pass: ['✓ Passed', 'pass'], fail: ['✗ Failed', 'fail'], na: ['○ Not checked', 'na'] };
   const KP_ORDER = { fail: 0, pass: 1, na: 2 };
 
@@ -4418,25 +4425,65 @@
       $('kpisWrap').innerHTML = `<div class="msg err">Could not check the KPIs: ${esc(p.error)}</div>`;
       return;
     }
-    const total = p.passed + p.failed;
+    // Counts treat the campaign group as one KPI, as the table shows it.
+    const counted = (list) => {
+      const camps = list.filter((k) => k.group === 'Cost per result');
+      const rest = list.filter((k) => k.group !== 'Cost per result');
+      if (camps.length) rest.push({ status: camps.some((k) => k.status === 'fail') ? 'fail' : camps.every((k) => k.status === 'na') ? 'na' : 'pass' });
+      return rest;
+    };
+    const all = counted(p.kpis);
+    const passed = all.filter((k) => k.status === 'pass').length;
+    const failed = all.filter((k) => k.status === 'fail').length;
+    const unchecked = all.filter((k) => k.status === 'na').length;
+    const total = passed + failed;
     const listTip = (k) => (k.details && k.details.length ? `<span class="kp-more" data-tip="${attr(
       `<div class="tt">${esc(k.detailTitle || k.name)}</div>`
       + k.details.map((d) => `<div class="trow"><span class="tk">${esc(d.label)}</span><b>${esc(d.value)}</b></div>`).join(''),
     )}">▸ See the list</span>` : '');
-    const rows = (area) => p.kpis.filter((k) => k.area === area)
-      .sort((a, b) => KP_ORDER[a.status] - KP_ORDER[b.status])
-      .map((k) => {
-        const [label, cls] = KP_STATUS[k.status];
-        const camp = k.group === 'Cost per result';
-        return `<tr>
-          <td class="cname">${esc(camp ? k.name.replace(/^Cost per result · /, '') : k.name)}<div class="kp-tgt">${camp ? 'Cost per result · ' : 'Target: '}${esc(k.target)}</div></td>
+    // What a KPI is, on hover over its name (lib/kpis.js ABOUT).
+    const nameTip = (name, about) => (about
+      ? `<span class="kp-name" data-tip="${attr(`<div class="tt">${esc(name)}</div><div class="more">${esc(about)}</div>`)}">${esc(name)}</span>`
+      : esc(name));
+    const row = (k, child) => {
+      const [label, cls] = KP_STATUS[k.status];
+      const camp = k.group === 'Cost per result';
+      const name = camp ? k.name.replace(/^Cost per result · /, '') : k.name;
+      return `<tr class="${child ? 'kp-child' : ''}">
+          <td class="cname">${nameTip(name, k.about)}<div class="kp-tgt">${camp ? 'Cost per result · ' : 'Target: '}${esc(k.target)}</div></td>
           <td><span class="kp-st ${cls}">${label}</span></td>
           <td class="kp-why">${esc(k.why)}${listTip(k)}</td>
-          <td class="kp-do">${k.status === 'fail' ? esc(k.action) : `<span class="kp-ok">${esc(k.status === 'pass' ? k.action : k.action || '')}</span>`}</td>
+          <td class="kp-do">${k.status === 'fail' ? esc(k.action) : `<span class="kp-ok">${esc(k.action || '')}</span>`}</td>
         </tr>`;
-      }).join('');
+    };
+    // Every running campaign's cost per result sits in one row that opens
+    // like an accordion (Anton, 12 Oct 2026). It fails if any campaign does.
+    const groupRow = (list) => {
+      const bad = list.filter((k) => k.status === 'fail');
+      const status = bad.length ? 'fail' : list.every((k) => k.status === 'na') ? 'na' : 'pass';
+      const [label, cls] = KP_STATUS[status];
+      const lim = (list[0].target || '').replace(/ or less$/, '');
+      const names = bad.map((k) => k.name.replace(/^Cost per result · /, ''));
+      return `<tr class="kp-grp" data-kp-toggle aria-expanded="${kpOpen}">
+          <td class="cname"><span class="kp-caret">${kpOpen ? '▾' : '▸'}</span>${nameTip('Cost per result · running campaigns', list[0].about)}<div class="kp-tgt">Target: ${esc(lim)} or less, each campaign</div></td>
+          <td><span class="kp-st ${cls}">${label}</span></td>
+          <td class="kp-why">${bad.length ? `${bad.length} of ${list.length} running campaigns over ${esc(lim)}: ${esc(names.join(', '))}.` : `All ${list.length} running campaigns within ${esc(lim)}.`} <span class="kp-more">${kpOpen ? 'Hide' : 'Show'} campaigns</span></td>
+          <td class="kp-do">${bad.length ? 'Open the list: refresh the creative or narrow the audience of the ones over the limit, and pause any that stay over.' : '<span class="kp-ok">On track, keep it up.</span>'}</td>
+        </tr>${kpOpen ? list.sort((x, y) => KP_ORDER[x.status] - KP_ORDER[y.status]).map((k) => row(k, true)).join('') : ''}`;
+    };
+    const rows = (area) => {
+      const list = p.kpis.filter((k) => k.area === area);
+      const camps = list.filter((k) => k.group === 'Cost per result');
+      const items = list.filter((k) => k.group !== 'Cost per result').map((k) => ({ status: k.status, html: () => row(k) }));
+      if (camps.length) {
+        const st = camps.some((k) => k.status === 'fail') ? 'fail' : camps.every((k) => k.status === 'na') ? 'na' : 'pass';
+        // Right after the other failures it groups with, ahead of passes.
+        items.push({ status: st, html: () => groupRow(camps), first: true });
+      }
+      return items.sort((a, b) => KP_ORDER[a.status] - KP_ORDER[b.status] || (b.first ? 1 : 0) - (a.first ? 1 : 0)).map((x) => x.html()).join('');
+    };
     const area = (name) => {
-      const list = p.kpis.filter((k) => k.area === name);
+      const list = counted(p.kpis.filter((k) => k.area === name));
       if (!list.length) return '';
       const ok = list.filter((k) => k.status === 'pass').length;
       const bad = list.filter((k) => k.status === 'fail').length;
@@ -4454,16 +4501,20 @@
       <div class="panel">
         <div class="ptitle">KPIs · ${esc(day)} · sales and marketing</div>
         <div class="kp-sum">
-          <div class="kp-n pass"><b>${int(p.passed)}</b> passed</div>
-          <div class="kp-n fail"><b>${int(p.failed)}</b> failed</div>
-          ${p.unchecked ? `<div class="kp-n na"><b>${int(p.unchecked)}</b> not checked</div>` : ''}
+          <div class="kp-n pass"><b>${int(passed)}</b> passed</div>
+          <div class="kp-n fail"><b>${int(failed)}</b> failed</div>
+          ${unchecked ? `<div class="kp-n na"><b>${int(unchecked)}</b> not checked</div>` : ''}
         </div>
-        <div class="kp-bar">${total ? `<i class="pass" style="flex:${p.passed}"></i><i class="fail" style="flex:${p.failed}"></i>` : ''}</div>
-        <div class="pnote">Failed first. Targets marked "proposed" are suggestions until Muatasam confirms them. Rows with a list show it on hover.</div>
+        <div class="kp-bar">${total ? `<i class="pass" style="flex:${passed}"></i><i class="fail" style="flex:${failed}"></i>` : ''}</div>
+        <div class="pnote">Failed first. Targets marked "proposed" are suggestions until Muatasam confirms them. Hover a KPI's name to see what it measures; rows with a list show it on hover.</div>
       </div>
       ${area('Sales')}
       ${area('Marketing')}`;
     bindHelp($('kpisWrap'));
+    $('kpisWrap').querySelectorAll('[data-kp-toggle]').forEach((tr) => tr.addEventListener('click', () => {
+      kpOpen = !kpOpen;
+      renderKpis();
+    }));
   }
 
   async function loadKpis(force) {

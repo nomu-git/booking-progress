@@ -1004,17 +1004,25 @@ artwork that isn't ready a week before its post.
   and `api/slack-notify.js` `maxDuration: 60` since this reads every source.
 - **KPIs and targets** (`T` at the top of `lib/kpis.js`; env overrides):
   Sales: bookings this week on pace for 12 (12 ÷ 7 × days gone, as the
-  Report), bookings last week ≥ 12, leads per day ≥ 20, HP per day ≥ 5,
-  HP rate ≥ 25% (proposed: 5 of 20), conversion ≥ 10% (bookings ÷ leads, as
-  the Leads tab), leads tagged with a trip ≥ 70% (proposed; NA share),
-  leads sheet up to date (yesterday logged). Marketing: **cost per result
-  per running campaign** ≤ SAR 25 (one row each, `cprOver`, judged from 5
-  results), no running campaign rated Bad on lead quality, no running
-  campaign over budget, engagement rate (posts, this month) ≥ 1% (proposed;
-  months ran 0.5-1.1%), story response rate ≥ 5% (proposed; 5.3% YTD), posts
-  in the last 7 days ≥ 3 (proposed, Maryam's sheet), artwork ready 7 days
-  before posting, posts planned for the next 14 days ≥ 6 (proposed).
-  "Proposed" targets are flagged in the tab until Muatasam confirms them.
+  Report), leads per day ≥ 20, HP per day ≥ 5, conversion ≥ 10% (bookings ÷
+  leads, as the Leads tab), leads sheet up to date (yesterday logged).
+  Marketing: **cost per result per running campaign** ≤ SAR 25 (one KPI per
+  campaign, `cprOver`, judged from 5 results), no running campaign rated Bad
+  on lead quality, no running campaign over budget, engagement rate (posts,
+  this month) ≥ 1% (proposed; months ran 0.5-1.1%), posts in the last 7
+  days ≥ 3 (proposed, Maryam's sheet), artwork ready 7 days before posting,
+  posts planned for the next 14 days ≥ 6 (proposed). "Proposed" targets are
+  flagged in the tab until Muatasam confirms them.
+- **Removed (Anton, 12 Oct 2026)**: bookings last week, high potential
+  rate, leads tagged with a trip, story response rate. Don't add them back.
+- **Every KPI has a hover explanation** (`ABOUT` in `lib/kpis.js`, sent as
+  `about`, shown on the KPI name): what it measures and where from.
+- **Campaign spend within budget** = each running campaign's **year-to-date
+  spend, live from Meta**, against its **budget from the media plan**
+  (`Updated Budget.xlsx` via `media-plan.js`, matched by project), or the
+  assumed **$500** (`META_DEFAULT_BUDGET_USD`) when it has no plan line; USD
+  at 3.75. Not Meta's own ad-set budget. Live 12 Oct: SL-EX and Winter
+  Trips are on the $500 default.
 - **Lead-based KPIs use the Leads tab's weeks**: this week once it has 3+
   logged days, otherwise last week (so a Sunday doesn't read as a fail).
   Engagement and stories use this month, or last month if nothing is
@@ -1033,6 +1041,10 @@ artwork that isn't ready a week before its post.
   that = **late**. Live 12 Oct: 3 late (14, 15, 18 Oct, Working on it).
 - **UI**: summary (N passed / N failed, with a bar), then Sales and
   Marketing tables (KPI + target | Status | Why | What to do), failed first.
+  **The per-campaign cost rows sit in one accordion row** ("Cost per result ·
+  running campaigns", Failed if any campaign fails; click to open,
+  `kpOpen`), and counts treat it as one KPI. The lead-quality and budget
+  KPIs stay separate rows, outside it (Anton).
   Rows with a list (late artwork, campaign lead quality, planned posts) show
   it on hover ("▸ See the list"). Classes `kp-`.
 - **Slack**: `api/slack-notify.js` (Vercel cron, 8 AM Muscat) now also posts
