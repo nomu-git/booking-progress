@@ -144,7 +144,9 @@ module.exports = async (req, res) => {
     let kpiError = null;
     try {
       const k = kpis.build(await kpis.load());
-      kpiMsgs = [kpis.slackKpis(k), kpis.slackArtwork(k)].filter(Boolean);
+      // Only the KPI message: the separate artwork alert was dropped (Anton,
+      // 13 Oct 2026), since the KPIs tab already covers late artwork.
+      kpiMsgs = [kpis.slackKpis(k)];
     } catch (err) {
       kpiError = err.message;
     }

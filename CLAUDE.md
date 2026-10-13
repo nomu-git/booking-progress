@@ -1052,7 +1052,10 @@ artwork that isn't ready a week before its post.
   KPIs stay separate rows, outside it (Anton).
   Rows with a list (late artwork, campaign lead quality, planned posts) show
   it on hover ("▸ See the list"). Classes `kp-`.
-- **Slack**: `api/slack-notify.js` (Vercel cron, 8 AM Muscat) now also posts
+- **Slack**: the separate artwork alert is **off since 13 Oct 2026** (Anton: the
+  KPIs tab already covers it); only the KPI message posts. `slackArtwork()`
+  is still in `lib/kpis.js` if it's wanted back.
+  `api/slack-notify.js` (Vercel cron, 8 AM Muscat) now also posts
   `slackKpis()` (Failed / Passed names only, per-campaign cost rows joined
   into one line) and `slackArtwork()` (only when something is late: name,
   post day, status). `?preview=1` shows them as `kpiMessages`. A KPI
