@@ -8,7 +8,7 @@ name: Desktop app (Windows)
 on:
   push:
     branches: [main]
-    paths: ['desktop/package.json']
+    paths: ['desktop/package.json', '.github/workflows/desktop.yml']
   workflow_dispatch:
 
 permissions:
