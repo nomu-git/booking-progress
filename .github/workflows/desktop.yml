@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: 20
       - run: npm install --no-audit --no-fund
-      - run: npx electron-builder --win --x64 --publish always
+      # On failure the tail of the build output is posted as an annotation,
+      # which is public, unlike the job log of this repo.
+      - name: Build and publish installer
+        shell: bash
+        run: |
+          set -o pipefail
+          npx electron-builder --win --x64 --publish always 2>&1 | tee build.log || { echo "::error title=electron-builder::$(tail -40 build.log | tr '\n' '|' | tr -d '\r')"; exit 1; }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
