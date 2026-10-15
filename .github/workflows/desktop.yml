@@ -1,0 +1,31 @@
+# Builds the NomuHub CRM Windows installer (desktop/) and publishes it as a
+# GitHub Release, which is also where the installed app looks for app
+# updates. Runs when desktop/package.json changes on main (bump "version" to
+# ship a new installer) or by hand from the Actions tab. Dashboard changes
+# don't need this: the app loads the live site and offers a reload itself.
+name: Desktop app (Windows)
+
+on:
+  push:
+    branches: [main]
+    paths: ['desktop/package.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npx electron-builder --win --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

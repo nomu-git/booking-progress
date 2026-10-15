@@ -1120,6 +1120,40 @@ Anton's rules (15 Oct 2026): **dashboard / strategy questions only, read-only
 - **No passcode** (Anton's call, after being told anyone with the link can use
   the 10 a day).
 
+## Windows desktop app (`desktop/`)
+
+Anton, 15 Oct 2026: an `.exe` installer for Windows (no Mac for now), with
+the NomuHub logo, always up to date, and an **"Update now / Later"** pop-up
+when there's an update.
+
+- **Electron wrapper around the live site** (`desktop/main.js`): one window
+  loading `https://crm.nomuhub.com` (`NOMUHUB_URL`), so it holds no copy of
+  the dashboard and every deploy shows up in it. Links to other sites open in
+  the normal browser; no connection shows `offline.html` with a retry. Single
+  instance, opens maximised, menu: View (reload, zoom, full screen) and Help
+  (Check for updates, version).
+- **Dashboard updates**: every 5 minutes the app HEADs the site and compares
+  the **ETag** (Vercel's content hash of `index.html`, changes on every page
+  deploy) with the one on screen; if it changed, a native dialog "New update
+  available" offers **Update now** (reload ignoring cache) or **Later**
+  (asks again in an hour). Data refreshes on its own as on the website; only
+  page changes trigger the pop-up.
+- **App updates** (icon, name, window behaviour): `electron-updater` checks
+  the GitHub Releases of this (public) repo at start and every 6 hours and
+  offers the same Update now / Later; Update now downloads and reinstalls.
+- **Build**: `.github/workflows/desktop.yml` runs on `windows-latest` when
+  `desktop/package.json` changes on main (bump `version` to ship a new
+  installer) or by hand (workflow_dispatch), and publishes
+  `NomuHub-CRM-Setup-<version>.exe` + `latest.yml` to a GitHub Release
+  (`v<version>`). There's no Windows machine or npm on this Mac, so builds
+  only happen there. `.vercelignore` keeps `desktop/` and `.github/` out of the
+  Vercel deploy.
+- **Icon**: `desktop/build/icon.png` (512px, from the logo Anton sent:
+  white "NOMU HUB" in a square on teal), converted to .ico by electron-builder.
+- **Unsigned**: no code-signing certificate, so Windows SmartScreen shows
+  "Windows protected your PC" on first install (More info → Run anyway).
+  Flagged to Anton. The release download is public, like the repo.
+
 ## Pending Task tab (monday.com)
 
 Asked for by Anton, 5 Oct 2026: a **Corporate** sidebar category with
