@@ -28,6 +28,13 @@ jobs:
       - run: npm install --no-audit --no-fund
       # On failure the tail of the build output is posted as an annotation,
       # which is public, unlike the job log of this repo.
+      # GitHub only publishes a release on an existing tag: create v<version>
+      # for this commit if it isn't there yet.
+      - name: Tag this version
+        shell: bash
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null; then echo "v$v exists"; else git tag "v$v" && git push origin "v$v"; fi
       - name: Build and publish installer
         shell: bash
         run: |
