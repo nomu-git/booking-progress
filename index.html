@@ -880,6 +880,7 @@
   /* On a phone the buttons wrap as a group; a label never splits from its count. */
   .efilter .seg { flex-wrap: wrap; }
   .efilter .seg button { white-space: nowrap; }
+  .efilter.cshow { margin: 4px 0 12px; }
   .efl { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
   .ecount { font-size: 10px; opacity: .6; margin-left: 2px; font-variant-numeric: tabular-nums; }
   .seg button[aria-pressed="true"] .ecount { opacity: .75; }
@@ -2193,6 +2194,7 @@
   /* ================= Meta Ads: shared formatting ================= */
 
   let campaigns = null;
+  let campShow = 'active'; // Campaign Ads table: 'active' (running, default) or 'all'
   let adHistory = null;
   // Which year the History tab is showing. Null until the API answers, so the
   // first load takes whatever it considers current rather than guessing here.
@@ -2227,6 +2229,7 @@
     campaign: ['Campaign', 'The campaign name exactly as it stands in Meta Ads Manager. Rename it there and it changes here on the next refresh.'],
     status: ['Status', 'Active means Meta is running this campaign right now. Inactive means it is paused, finished, or switched off.'],
     months: ['Months', 'The months this campaign actually delivered in. A campaign that ran in January and again in August shows both, not the gap between them.'],
+    dailySpend: ['Daily Spend', 'How much the campaign is set to spend per day in Meta: the daily budgets of its active ad sets added up. Running campaigns only; a dash means it isn\'t running.'],
     budget: ['Budget', 'What this campaign is allowed to spend. Taken from Updated Budget.xlsx where the campaign matches a plan line, otherwise $500 is assumed.'],
     budgetAssumed: ['Budget', 'There is no budget sheet for past years, so every campaign in History is measured against the same assumed $500.'],
     spend: ['Spend', 'Money actually spent, live from Meta. Accounts billed in USD are converted to SAR so every figure on the board reads in one currency.'],
@@ -2428,7 +2431,20 @@
 
     const cur = esc(p.currency || 'SAR');
     const t = p.totals || {};
-    const rows = [...(p.campaigns || [])].sort((a, b) => b.spend - a.spend || a.name.localeCompare(b.name));
+    const allRows = [...(p.campaigns || [])].sort((a, b) => b.spend - a.spend || a.name.localeCompare(b.name));
+    // Running / All filter for the table (Anton, 15 Oct 2026), running by
+    // default. The year hero above keeps every campaign; the table's TOTAL
+    // row sums whatever the table shows.
+    const running = allRows.filter((c) => c.status === 'Active');
+    const rows = campShow === 'all' ? allRows : running;
+    const sum = (k) => rows.reduce((n, c) => n + (Number(c[k]) || 0), 0);
+    const ft = { budget: sum('budgetSar'), spend: sum('spend'), results: sum('results'), purchases: sum('purchases'), impressions: sum('impressions') };
+    ft.remaining = ft.budget - ft.spend;
+    ft.costPerResult = ft.results ? ft.spend / ft.results : null;
+    // Daily spend = the daily budget set in Meta on the campaign's active ad
+    // sets (CBO is off, so it lives there), only for campaigns running now.
+    const daily = (c) => (c.status === 'Active' && c.dailyBudget ? c.dailyBudget : null);
+    ft.daily = rows.reduce((n, c) => n + (daily(c) || 0), 0);
     // Cost-per-result limit for running campaigns (api/campaigns.js cprOver).
     const lim = p.cprLimit || { report: 25, minResults: 5 };
     const overCpr = rows.filter((c) => c.cprOver);
@@ -2437,6 +2453,7 @@
       <tr>
         <td class="cname">${esc(c.name)}</td>
         <td><span class="cpill ${c.status === 'Active' ? 'on' : 'off'}">${esc(c.status || 'Inactive')}</span></td>
+        <td class="num">${show(daily(c), money)}</td>
         <td class="num">${money(c.budgetSar)}</td>
         <td class="num">${money(c.spend)}</td>
         <td class="num">${money(c.remaining)}</td>
@@ -2486,33 +2503,42 @@
         <div class="cpr-note${overCpr.length ? ' bad' : ''}">${overCpr.length ? '▲' : '✓'}
           Cost per result limit: <b>${cur} ${int(lim.report)}</b> for running campaigns ·
           ${overCpr.length ? `<b>${overCpr.length} over</b>: ${overCpr.map((c) => esc(c.name)).join(', ')}` : 'none over'}</div>
+        <div class="efilter cshow"><span class="efl">Show</span><div class="seg" id="campShowSeg">
+          <button data-show="active" aria-pressed="${campShow !== 'all'}">Running · ${running.length}</button>
+          <button data-show="all" aria-pressed="${campShow === 'all'}">All · ${allRows.length}</button>
+        </div></div>
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>
-              ${hcol('campaign', 'Campaign')}${hcol('status', 'Status')}${hcol('budget', 'Budget')}
+              ${hcol('campaign', 'Campaign')}${hcol('status', 'Status')}${hcol('dailySpend', 'Daily Spend')}${hcol('budget', 'Budget')}
               ${hcol('spend', 'Spend')}${hcol('remaining', 'Remaining')}
               ${hcol('results', 'Results')}${hcol('costPerResult', 'Cost / Result')}
               ${hcol('purchases', 'Purchases')}${hcol('impressions', 'Impressions')}
               ${hcol('spendVsBudget', 'Spend vs Budget')}
             </tr></thead>
-            <tbody>${body || '<tr><td class="cname" colspan="10">No campaigns.</td></tr>'}</tbody>
+            <tbody>${body || `<tr><td class="cname" colspan="11">${campShow === 'all' ? 'No campaigns.' : 'No campaign is running right now.'}</td></tr>`}</tbody>
             <tfoot><tr>
               <td class="cname">TOTAL</td>
               <td></td>
-              <td class="num">${money(t.budget)}</td>
-              <td class="num">${money(t.spend)}</td>
-              <td class="num">${money(t.remaining)}</td>
-              <td class="num">${int(t.results)}</td>
-              <td class="num">${show(t.costPerResult, money)}</td>
-              <td class="num">${int(t.purchases)}</td>
-              <td class="num">${int(t.impressions)}</td>
-              <td class="abar-cell">${barFor(t.spend, t.budget)}</td>
+              <td class="num">${ft.daily ? money(ft.daily) : '—'}</td>
+              <td class="num">${money(ft.budget)}</td>
+              <td class="num">${money(ft.spend)}</td>
+              <td class="num">${money(ft.remaining)}</td>
+              <td class="num">${int(ft.results)}</td>
+              <td class="num">${show(ft.costPerResult, money)}</td>
+              <td class="num">${int(ft.purchases)}</td>
+              <td class="num">${int(ft.impressions)}</td>
+              <td class="abar-cell">${barFor(ft.spend, ft.budget)}</td>
             </tr></tfoot>
           </table>
         </div>
       </div>`;
 
     bindHelp($('campaignsWrap'));
+    $('campaignsWrap').querySelectorAll('#campShowSeg [data-show]').forEach((b) => b.addEventListener('click', () => {
+      campShow = b.dataset.show;
+      renderCampaigns();
+    }));
   }
 
   async function loadCampaigns(force) {
