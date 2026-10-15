@@ -1094,6 +1094,12 @@ Anton's rules (15 Oct 2026): **dashboard / strategy questions only, read-only
   both take the last one; every send counts, including off-topic ones; a
   technical failure `DECR`s it back. (3) Questions capped at 800 characters,
   history at the last 6 turns of 2,000 characters.
+- **Model routing (Anton, 15 Oct 2026)**: the Haiku gate answers SIMPLE /
+  COMPLEX / CHANGE / OFF. SIMPLE goes to Sonnet 5.5; COMPLEX (root causes,
+  several areas together, comparisons, forecasts, plans, full reviews) goes to
+  **Opus 5.5** (`ADVISOR_DEEP_MODEL`), at most `ADVISOR_DEEP_LIMIT` (4) a day
+  (`advisor:deep:<date>`), then Sonnet. Opus answers carry a "Deep analysis"
+  tag in the chat. Each still counts as one of the 10.
 - **Model**: Claude **Sonnet 5.5** (`ADVISOR_MODEL`), effort `medium`,
   `max_tokens` 8000, the snapshot block cached (`cache_control`) so a
   follow-up within minutes re-reads it cheaply, and server-side refusal

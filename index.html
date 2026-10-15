@@ -1096,6 +1096,7 @@
   .adv-li.num { padding-left: 0; }
   .adv-li.num::before { content: none; }
   .adv-li.num i { font-style: normal; color: var(--yellow); font-weight: 700; }
+  .adv-tag { display: inline-block; margin-bottom: 6px; padding: 1px 8px; border-radius: 999px; background: rgba(242,178,51,.18); color: var(--yellow); font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
   .adv-m.note { background: rgba(111,134,168,.16); color: var(--text-2); }
   .adv-m.error { background: rgba(208,59,59,.18); color: #ffb3ab; }
   .adv-m.wait { color: var(--text-3); display: flex; align-items: center; gap: 4px; }
@@ -4765,7 +4766,7 @@
     };
 
     const render = (pending) => {
-      const items = history.map((m) => `<div class="adv-m ${m.role === 'user' ? 'me' : 'ai'}${m.kind ? ` ${m.kind}` : ''}">${m.role === 'user' ? esc(m.content) : md(m.content)}</div>`);
+      const items = history.map((m) => `<div class="adv-m ${m.role === 'user' ? 'me' : 'ai'}${m.kind ? ` ${m.kind}` : ''}">${m.kind === 'deep' ? '<div class="adv-tag">Deep analysis</div>' : ''}${m.role === 'user' ? esc(m.content) : md(m.content)}</div>`);
       if (!history.length) {
         items.push(`<div class="adv-hi"><b>Hi! I read every tab of the dashboard.</b> Ask me what's working, what isn't, and what to improve. I can't change anything, I only advise.</div>`
           + `<div class="adv-chips">${STARTERS.map((q) => `<button type="button" data-q="${attr(q)}">${esc(q)}</button>`).join('')}</div>`);
@@ -4806,7 +4807,7 @@
         });
         const j = await r.json().catch(() => ({}));
         if (j.remaining != null) left = j.remaining;
-        if (r.ok && j.answer) history.push({ role: 'assistant', content: j.answer, kind: j.kind === 'answer' ? '' : 'note' });
+        if (r.ok && j.answer) history.push({ role: 'assistant', content: j.answer, kind: j.kind === 'answer' ? (j.deep ? 'deep' : '') : 'note' });
         else history.push({ role: 'assistant', content: j.error || 'Something went wrong. Please try again.', kind: 'error' });
       } catch (e) {
         history.push({ role: 'assistant', content: 'Could not reach the adviser. Please try again.', kind: 'error' });

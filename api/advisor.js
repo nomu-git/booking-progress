@@ -25,6 +25,10 @@ const { buildContext } = require('../lib/advisor-context');
 const Anthropic = sdk.default || sdk;
 const LIMIT = Number(process.env.ADVISOR_DAILY_LIMIT || 10);
 const MODEL = process.env.ADVISOR_MODEL || 'claude-sonnet-5-5';
+// Complex questions go to Opus 5.5 (Anton, 15 Oct 2026), at most
+// DEEP_LIMIT a day; past that they're answered by Sonnet so the credit holds.
+const DEEP_MODEL = process.env.ADVISOR_DEEP_MODEL || 'claude-opus-5-5';
+const DEEP_LIMIT = Number(process.env.ADVISOR_DEEP_LIMIT || 4);
 const GATE_MODEL = 'claude-haiku-4-5';
 const MAX_QUESTION = 800;
 const MAX_TURNS = 6;
@@ -42,7 +46,9 @@ How you work:
 - Be direct and practical: lead with the answer, then the few numbers behind it, then concrete next steps. Keep it under about 250 words unless asked for detail. Short bullet points are fine. No em dashes. Money in SAR unless the snapshot says otherwise.`;
 
 const GATE = `You sort messages sent to NomuHub's business dashboard adviser. NomuHub is a travel company running volunteering, wellness and explore trips. Reply with exactly one word:
-DATA: about NomuHub's bookings, sales, leads, conversion, marketing, ads or campaigns, social media, trips, products, pricing, feedback, revenue or margins, team tasks, performance, strategy or improvements; or a greeting or follow-up within that conversation.
+SIMPLE: a NomuHub data or strategy question with a direct answer: a figure, a status, a single-tab summary, a list, or a short follow-up.
+COMPLEX: a NomuHub question that needs deeper analysis: root causes, connecting several areas (for example campaigns, leads and bookings together), comparing periods or options, forecasting, prioritising a plan, or a full review.
+Both SIMPLE and COMPLEX cover questions about NomuHub's bookings, sales, leads, conversion, marketing, ads or campaigns, social media, trips, products, pricing, feedback, revenue or margins, team tasks, performance, strategy or improvements; or a greeting or follow-up within that conversation.
 CHANGE: asks to change, build, fix, edit, automate or code the dashboard or any system, or to send messages.
 OFF: anything else (general knowledge, personal topics, unrelated writing or coding).`;
 
@@ -108,11 +114,20 @@ module.exports = async (req, res) => {
       if (verdict.startsWith('OFF')) return res.status(200).json({ answer: OFF_TOPIC, kind: 'off-topic', remaining, limit: LIMIT });
       if (verdict.startsWith('CHANGE')) return res.status(200).json({ answer: READ_ONLY, kind: 'read-only', remaining, limit: LIMIT });
 
+      // Opus for complex questions, while today's deep allowance lasts.
+      let model = MODEL;
+      let deep = false;
+      if (verdict.startsWith('COMPLEX')) {
+        const dk = `advisor:deep:${muscatToday()}`;
+        const [dn] = await kv.pipeline([['INCR', dk], ['EXPIRE', dk, 2 * 24 * 3600]]);
+        if (Number(dn) <= DEEP_LIMIT) { model = DEEP_MODEL; deep = true; }
+      }
+
       // 2. The real answer, from the dashboard snapshot.
       const base = (process.env.DASHBOARD_URL || `https://${req.headers.host}`).replace(/\/$/, '');
       const snapshot = await buildContext(base, muscatToday());
       const msg = await client.beta.messages.create({
-        model: MODEL,
+        model,
         max_tokens: 8000,
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
@@ -128,7 +143,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({ answer: "I can't help with that one. Ask me about the dashboard's data or what to improve.", kind: 'refusal', remaining, limit: LIMIT });
       }
       const answer = textOf(msg) || 'I could not put an answer together. Please try rephrasing.';
-      return res.status(200).json({ answer, kind: 'answer', remaining, limit: LIMIT, usage: msg.usage && { in: msg.usage.input_tokens, out: msg.usage.output_tokens, cached: msg.usage.cache_read_input_tokens } });
+      return res.status(200).json({ answer, kind: 'answer', deep, model, remaining, limit: LIMIT, usage: msg.usage && { in: msg.usage.input_tokens, out: msg.usage.output_tokens, cached: msg.usage.cache_read_input_tokens } });
     } catch (err) {
       await giveBack();
       console.error('advisor failed:', err);
