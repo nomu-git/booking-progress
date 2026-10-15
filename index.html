@@ -1077,9 +1077,39 @@
   .adv-mini svg { width: 18px; height: 18px; }
   .adv-x { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: 0; background: rgba(255,255,255,.06); color: var(--text-2); font-size: 20px; line-height: 1; cursor: pointer; }
   .adv-x:hover { background: rgba(255,255,255,.12); color: #fff; }
-  .adv-body { padding: 26px 20px 24px; text-align: center; }
-  .adv-soon { font-size: 26px; font-weight: 800; color: var(--yellow); letter-spacing: -.01em; text-shadow: 0 0 22px rgba(242,178,51,.35); }
-  .adv-body p { margin: 10px 0 0; font-size: 13px; line-height: 1.55; color: var(--text-2); }
+  .adv-panel { display: flex; flex-direction: column; width: 400px; max-height: min(620px, calc(100vh - 120px)); }
+  .adv-msgs { flex: 1; min-height: 160px; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .adv-hi { font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
+  .adv-hi b { color: #fff; display: block; margin-bottom: 4px; }
+  .adv-chips { display: flex; flex-direction: column; gap: 7px; }
+  .adv-chips button { text-align: left; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(242,178,51,.35); background: rgba(242,178,51,.07); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .adv-chips button:hover { background: rgba(242,178,51,.16); }
+  .adv-m { max-width: 92%; padding: 9px 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+  .adv-m.me { align-self: flex-end; background: var(--yellow); color: var(--navy); font-weight: 600; border-bottom-right-radius: 4px; white-space: pre-wrap; }
+  .adv-m.ai { align-self: flex-start; background: rgba(255,255,255,.06); color: var(--text); border-bottom-left-radius: 4px; }
+  .adv-m.ai p { margin: 0 0 6px; }
+  .adv-m.ai p:last-child { margin-bottom: 0; }
+  .adv-m.ai b { color: #fff; }
+  .adv-h { font-weight: 800; color: var(--yellow); margin: 6px 0 4px; font-size: 13px; letter-spacing: .02em; }
+  .adv-li { position: relative; padding-left: 14px; margin: 3px 0; }
+  .adv-li::before { content: '•'; position: absolute; left: 2px; color: var(--yellow); }
+  .adv-li.num { padding-left: 0; }
+  .adv-li.num::before { content: none; }
+  .adv-li.num i { font-style: normal; color: var(--yellow); font-weight: 700; }
+  .adv-m.note { background: rgba(111,134,168,.16); color: var(--text-2); }
+  .adv-m.error { background: rgba(208,59,59,.18); color: #ffb3ab; }
+  .adv-m.wait { color: var(--text-3); display: flex; align-items: center; gap: 4px; }
+  .adv-m.wait span { width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); animation: advDot 1s infinite ease-in-out; }
+  .adv-m.wait span:nth-child(2) { animation-delay: .15s; }
+  .adv-m.wait span:nth-child(3) { animation-delay: .3s; margin-right: 6px; }
+  @keyframes advDot { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+  .adv-form { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid rgba(134,152,180,.2); }
+  .adv-form textarea { flex: 1; resize: none; border-radius: 10px; border: 1px solid rgba(134,152,180,.3); background: rgba(8,20,42,.55); color: #fff; font: inherit; font-size: 13.5px; padding: 8px 10px; }
+  .adv-form textarea:focus { outline: none; border-color: var(--yellow); }
+  .adv-form button { width: 40px; border-radius: 10px; border: 0; background: var(--yellow); color: var(--navy); font-size: 16px; cursor: pointer; }
+  .adv-form :disabled { opacity: .45; cursor: not-allowed; }
+  .adv-foot { padding: 0 12px 10px; font-size: 11px; color: var(--text-3); }
+  .adv-foot.out { color: #ffb3ab; }
   @media (max-width: 900px) {
     .adv { left: 16px; bottom: 16px; }
     html.sb-open .adv { display: none; }
@@ -1434,10 +1464,12 @@
         <div><b>AI Adviser</b><span>Your dashboard, explained by Claude</span></div>
         <button type="button" class="adv-x" id="advClose" aria-label="Close">×</button>
       </div>
-      <div class="adv-body">
-        <div class="adv-soon">Coming soon!</div>
-        <p>Ask about problems, improvements and anything on the dashboard: bookings, leads, campaigns, engagement, trips and tasks. It reads every tab before it answers.</p>
-      </div>
+      <div class="adv-msgs" id="advMsgs" aria-live="polite"></div>
+      <form class="adv-form" id="advForm">
+        <textarea id="advInput" rows="2" maxlength="800" placeholder="Ask about bookings, leads, campaigns, trips…" aria-label="Your question"></textarea>
+        <button type="submit" id="advSend" aria-label="Send">➤</button>
+      </form>
+      <div class="adv-foot" id="advFoot">Reads every tab · read-only · 10 questions a day</div>
     </div>
     <button type="button" class="adv-btn" id="advBtn" aria-expanded="false" aria-controls="advPanel" aria-label="Open the AI Adviser">
       <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z"/><path d="M19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>
@@ -4688,22 +4720,117 @@
     }
   }
 
-  /* ================= AI Adviser bubble ================= */
+  /* ================= AI Adviser ================= */
 
-  // Opens a small panel; for now it says Coming soon (Anton, 12 Oct 2026).
+  // Chat with the dashboard adviser (api/advisor.js): dashboard and strategy
+  // questions only, read-only, 10 questions a day shared (Anton, 15 Oct 2026).
   (() => {
     const wrap = $('adv');
     const panel = $('advPanel');
     const btn = $('advBtn');
+    const msgs = $('advMsgs');
+    const input = $('advInput');
+    const send = $('advSend');
+    const foot = $('advFoot');
+    const STARTERS = [
+      'What are our biggest problems right now?',
+      'Which campaign should we fix or pause, and why?',
+      'How can we get conversion above 10%?',
+      'Summarise this week in 5 bullet points.',
+    ];
+    let history = [];
+    try { history = JSON.parse(sessionStorage.getItem('nomuAdvisor') || '[]'); } catch (e) { history = []; }
+    let busy = false;
+    let left = null;
+    let limit = 10;
+
+    // A small, safe markdown subset: escape first, then **bold**, headings
+    // and bullet lines.
+    const md = (t) => esc(t).split('\n').map((line) => {
+      let l = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+      if (/^#{1,4}\s+/.test(l)) return `<div class="adv-h">${l.replace(/^#{1,4}\s+/, '')}</div>`;
+      if (/^\s*[-*•]\s+/.test(l)) return `<div class="adv-li">${l.replace(/^\s*[-*•]\s+/, '')}</div>`;
+      if (/^\s*\d+[.)]\s+/.test(l)) return `<div class="adv-li num">${l.replace(/^\s*(\d+)[.)]\s+/, '<i>$1.</i> ')}</div>`;
+      return l.trim() ? `<p>${l}</p>` : '';
+    }).join('');
+
+    const setFoot = () => {
+      foot.textContent = left == null ? 'Reads every tab · read-only'
+        : left > 0 ? `${left} of ${limit} questions left today · read-only`
+          : `Today's ${limit} questions are used up · back at midnight (Muscat)`;
+      const out = left === 0;
+      input.disabled = out || busy;
+      send.disabled = out || busy;
+      foot.classList.toggle('out', out);
+    };
+
+    const render = (pending) => {
+      const items = history.map((m) => `<div class="adv-m ${m.role === 'user' ? 'me' : 'ai'}${m.kind ? ` ${m.kind}` : ''}">${m.role === 'user' ? esc(m.content) : md(m.content)}</div>`);
+      if (!history.length) {
+        items.push(`<div class="adv-hi"><b>Hi! I read every tab of the dashboard.</b> Ask me what's working, what isn't, and what to improve. I can't change anything, I only advise.</div>`
+          + `<div class="adv-chips">${STARTERS.map((q) => `<button type="button" data-q="${attr(q)}">${esc(q)}</button>`).join('')}</div>`);
+      }
+      if (pending) items.push('<div class="adv-m ai wait"><span></span><span></span><span></span> Reading the dashboard…</div>');
+      msgs.innerHTML = items.join('');
+      msgs.querySelectorAll('[data-q]').forEach((b) => b.addEventListener('click', () => ask(b.dataset.q)));
+      msgs.scrollTop = msgs.scrollHeight;
+    };
+
+    const save = () => { try { sessionStorage.setItem('nomuAdvisor', JSON.stringify(history.slice(-12))); } catch (e) { /* private mode */ } };
+
+    async function refreshLeft() {
+      try {
+        const r = await fetch('/api/advisor');
+        const j = await r.json();
+        limit = j.limit || 10;
+        left = j.connected ? j.remaining : 0;
+        if (!j.connected) foot.textContent = 'The adviser is not connected yet.';
+        else setFoot();
+      } catch (e) { /* leave as is */ }
+    }
+
+    async function ask(q) {
+      q = String(q || '').trim();
+      if (!q || busy || left === 0) return;
+      busy = true;
+      const prior = history.filter((m) => m.kind !== 'error').slice(-6).map(({ role, content }) => ({ role, content }));
+      history.push({ role: 'user', content: q });
+      input.value = '';
+      setFoot();
+      render(true);
+      try {
+        const r = await fetch('/api/advisor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q, history: prior }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (j.remaining != null) left = j.remaining;
+        if (r.ok && j.answer) history.push({ role: 'assistant', content: j.answer, kind: j.kind === 'answer' ? '' : 'note' });
+        else history.push({ role: 'assistant', content: j.error || 'Something went wrong. Please try again.', kind: 'error' });
+      } catch (e) {
+        history.push({ role: 'assistant', content: 'Could not reach the adviser. Please try again.', kind: 'error' });
+      }
+      busy = false;
+      save();
+      setFoot();
+      render(false);
+      if (left !== 0) input.focus();
+    }
+
     const setOpen = (on) => {
       panel.hidden = !on;
       wrap.classList.toggle('open', on);
       btn.setAttribute('aria-expanded', String(on));
+      if (on) { render(false); refreshLeft(); setTimeout(() => input.focus(), 50); }
     };
     btn.addEventListener('click', () => setOpen(panel.hidden));
     $('advClose').addEventListener('click', () => { setOpen(false); btn.focus(); });
+    $('advForm').addEventListener('submit', (e) => { e.preventDefault(); ask(input.value); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input.value); } });
     addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) setOpen(false); });
-    document.addEventListener('click', (e) => { if (!panel.hidden && !wrap.contains(e.target)) setOpen(false); });
+    // A click on something a re-render just removed isn't "outside".
+    document.addEventListener('click', (e) => { if (!panel.hidden && e.target.isConnected && !wrap.contains(e.target)) setOpen(false); });
   })();
 
   /* ================= view switching ================= */

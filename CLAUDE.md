@@ -1065,25 +1065,54 @@ artwork that isn't ready a week before its post.
 - Not built: a monday **board** for KPIs (needs write access; the tab is the
   board for now). Operations KPIs were left out as asked.
 
-## AI Adviser bubble (placeholder)
+## AI Adviser (live, 15 Oct 2026)
 
-Anton, 12-13 Oct 2026: a Claude-run adviser on every tab that reads the
-whole dashboard and answers questions about problems and improvements.
-**Only the bubble is built so far**: `#adv` in `index.html`, in the very
-bottom-left corner of the screen on every size (over the empty foot of the
-sidebar on a desktop, 13 Oct 2026; hidden while the phone drawer is open), a white thought cloud "Ask me anything!", and a panel that says
-**"Coming soon!"**. Classes `adv-`; z-index 45 (above the sidebar's 30 and the tooltip's 40,
-below the modal's 50).
+A chat bubble on every tab (bottom-left corner, `#adv`, classes `adv-`) that
+answers questions about the dashboard's data and strategy, run by Claude.
+Anton's rules (15 Oct 2026): **dashboard / strategy questions only, read-only
+(an adviser, never an agent), 10 questions a day, no passcode.**
 
-Agreed plan for the real thing (not built, waiting on Anton):
-`ANTHROPIC_API_KEY` from an Anthropic Console account (a Claude subscription
-can't be used for it), Sonnet 5.5 by default with an Opus 5.5 "deep
-analysis" option, a team passcode, about 20 questions a day shared (Upstash
-counter) plus a monthly spend cap set in the Console. It would use the 12th
-and last Vercel function. Each question sends the live, already-sanitised
-dashboard payloads (about 10-15k tokens summarised), cached; read-only, it
-never changes anything in Meta, monday or the sheets. Estimated cost about
-$0.02-0.06 a question on Sonnet 5.5.
+- **`api/advisor.js`** (the **12th and last** Vercel function; there's no
+  slot left, so the next new endpoint means merging two). `GET` returns
+  `{ connected, limit, used, remaining }`; `POST { question, history }`
+  returns `{ answer, kind, remaining }`.
+- **Read-only by construction**: the model receives a text snapshot and **no
+  tools**, so it can't change anything; its system prompt also refuses code
+  and change requests.
+- **Snapshot (`lib/advisor-context.js`)**: built from the dashboard's **own
+  endpoints over HTTP** (`/api/trips-progress`, `booking-report`,
+  `previous-trips`, `campaigns`, and `sheets?name=` leads / engagements /
+  trips / feedback / revenue / pending / kpis), so it sees exactly what the
+  tabs show, already sanitised (revenue in percentages only, no lead
+  details). Summarised to about 10-11k tokens; cached 5 minutes per warm
+  instance. Base URL `DASHBOARD_URL` or the request host.
+- **Credit protection**: (1) a Claude **Haiku 4.5** gate sees only the
+  question (plus the previous one) and answers DATA / CHANGE / OFF; CHANGE and
+  OFF get a fixed reply without the snapshot ever being sent. (2) **10
+  questions a day, shared** (`ADVISOR_DAILY_LIMIT`), Upstash
+  `advisor:count:<Muscat date>`, counted before answering so two people can't
+  both take the last one; every send counts, including off-topic ones; a
+  technical failure `DECR`s it back. (3) Questions capped at 800 characters,
+  history at the last 6 turns of 2,000 characters.
+- **Model**: Claude **Sonnet 5.5** (`ADVISOR_MODEL`), effort `medium`,
+  `max_tokens` 8000, the snapshot block cached (`cache_control`) so a
+  follow-up within minutes re-reads it cheaply, and server-side refusal
+  fallbacks on (`server-side-fallback-2026-07-01`, `fallbacks: "default"`).
+  Uses the official **`@anthropic-ai/sdk`**, the project's only npm dependency
+  (`package.json`; Vercel installs it, it can't be required locally).
+- **Key**: `ANTHROPIC_API_KEY` in Vercel, created by Anton in the Claude
+  Console under the **NomuHub Dashboard** workspace (monthly limit $30), key
+  name crm-dashboard, expires 31 Dec 2027, linked to Anthony's account (it
+  stops if he leaves the org). The org ("Anthony's Individual Org") holds a
+  **$25 free credit expiring 16 Oct 2027** and **no card**, so $25 is the real
+  ceiling until someone adds funds. Expected cost about $0.03-0.07 a question.
+- **UI**: greeting + 4 starter questions, user messages in yellow on the
+  right, answers rendered from a small safe markdown subset (escape first, then
+  bold / headings / bullets / numbered), a "Reading the dashboard…" indicator,
+  and "N of 10 questions left today" under the box; at 0 the box locks until
+  midnight Muscat. History is kept in `sessionStorage` (`nomuAdvisor`).
+- **No passcode** (Anton's call, after being told anyone with the link can use
+  the 10 a day).
 
 ## Pending Task tab (monday.com)
 
@@ -1151,8 +1180,9 @@ name, who it's assigned to and its status exactly as monday shows it.
 - Due dates are sparse on these boards (Cowork: 1 of 17 on Operations
   General), so Overdue will usually read low; that's the data, not a bug.
 
-**Function budget: 11 of Vercel Hobby's 12** (sheets merged into one;
-`campaign-alerts` and `lead-alerts` added). New sheet tabs don't add to it.
+**Function budget: 12 of Vercel Hobby's 12 (FULL)** (sheets merged into one;
+`campaign-alerts`, `lead-alerts` and `advisor` added). New sheet tabs don't add
+to it; a new endpoint needs two existing ones merged first.
 
 ## Open items waiting on Muatasam
 
