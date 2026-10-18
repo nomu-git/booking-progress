@@ -1195,6 +1195,9 @@ button on the AI Adviser.
   accent `--yellow` = teal `#1a8fa1`, bars `--fill` `#2099ac`; the sidebar is a
   teal gradient with white text; status colours unchanged. **New CSS must use
   the tokens, not `#fff` / white overlays**, or it breaks in light mode.
+- **AI Adviser panel follows the theme** (18 Oct 2026): dark keeps its navy
+  panel and yellow accents; light is a white panel, teal bubble / send button /
+  your messages, pale teal answers. "New chat" doesn't wrap.
 - **AI Adviser New chat** (`#advNew`): clears the conversation; it doesn't
   give back the day's question count.
 
