@@ -1010,7 +1010,10 @@ artwork that isn't ready a week before its post.
   campaign, `cprOver`, judged from 5 results), no running campaign rated Bad
   on lead quality, no running campaign over budget, engagement rate (posts,
   this month) ≥ 1% (proposed; months ran 0.5-1.1%), posts in the last 7
-  days ≥ 3 (proposed, Maryam's sheet), artwork ready 7 days before posting,
+  days ≥ 3 (proposed; **since 18 Oct 2026 counted from the monday calendar**:
+  posts marked Posted, or Scheduled with a date already reached, in the last 7
+  days, `calendar.published`; it read Maryam's sheet before, which she updates
+  weekly, so it showed 0 posts between updates and she flagged it), artwork ready 7 days before posting,
   posts planned for the next 14 days ≥ 6 (proposed). "Proposed" targets are
   flagged in the tab until Muatasam confirms them.
 - **Removed (Anton, 12 Oct 2026)**: bookings last week, high potential
