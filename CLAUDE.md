@@ -1123,39 +1123,29 @@ Anton's rules (15 Oct 2026): **dashboard / strategy questions only, read-only
 - **No passcode** (Anton's call, after being told anyone with the link can use
   the 10 a day).
 
-## Windows desktop app (`desktop/`)
+## Install as an app (PWA), 18 Oct 2026
 
-Anton, 15 Oct 2026: an `.exe` installer for Windows (no Mac for now), with
-the NomuHub logo, always up to date, and an **"Update now / Later"** pop-up
-when there's an update.
+Anton dropped the Windows `.exe` (the `desktop/` Electron app, its GitHub
+Actions build and `.vercelignore` were deleted; the v1.0.0 GitHub Release with
+`NomuHub-CRM-Setup-1.0.0.exe` may still exist and can be deleted on GitHub).
+Instead the site installs **as an app from the browser** (a Progressive Web
+App): its own icon on the desktop / Dock / Start menu / home screen and its own
+window, on Windows and Mac (Chrome, Edge; Safari "Add to Dock") and phones.
 
-- **Electron wrapper around the live site** (`desktop/main.js`): one window
-  loading `https://crm.nomuhub.com` (`NOMUHUB_URL`), so it holds no copy of
-  the dashboard and every deploy shows up in it. Links to other sites open in
-  the normal browser; no connection shows `offline.html` with a retry. Single
-  instance, opens maximised, menu: View (reload, zoom, full screen) and Help
-  (Check for updates, version).
-- **Dashboard updates**: every 5 minutes the app HEADs the site and compares
-  the **ETag** (Vercel's content hash of `index.html`, changes on every page
-  deploy) with the one on screen; if it changed, a native dialog "New update
-  available" offers **Update now** (reload ignoring cache) or **Later**
-  (asks again in an hour). Data refreshes on its own as on the website; only
-  page changes trigger the pop-up.
-- **App updates** (icon, name, window behaviour): `electron-updater` checks
-  the GitHub Releases of this (public) repo at start and every 6 hours and
-  offers the same Update now / Later; Update now downloads and reinstalls.
-- **Build**: `.github/workflows/desktop.yml` runs on `windows-latest` when
-  `desktop/package.json` changes on main (bump `version` to ship a new
-  installer) or by hand (workflow_dispatch), and publishes
-  `NomuHub-CRM-Setup-<version>.exe` + `latest.yml` to a GitHub Release
-  (`v<version>`). There's no Windows machine or npm on this Mac, so builds
-  only happen there. `.vercelignore` keeps `desktop/` and `.github/` out of the
-  Vercel deploy.
-- **Icon**: `desktop/build/icon.png` (512px, from the logo Anton sent:
-  white "NOMU HUB" in a square on teal), converted to .ico by electron-builder.
-- **Unsigned**: no code-signing certificate, so Windows SmartScreen shows
-  "Windows protected your PC" on first install (More info → Run anyway).
-  Flagged to Anton. The release download is public, like the repo.
+- `manifest.webmanifest` (name "NomuHub CRM", standalone, theme `#2099ac`,
+  icons `brand/icon-192.png` / `brand/icon-512.png`, also maskable) and
+  `sw.js`, a service worker that **caches nothing** (the app always shows the
+  live site; navigations that fail offline get a small "You're offline"
+  page). Both are let through the login gate (they hold no data).
+- **Install buttons**: a banner on the **login page** (styled after a HASA
+  EMMS example Anton sent: "Install NomuHub CRM on this device", Install, ×;
+  × remembered in `localStorage` `nomuInstallHide`) and **Settings › Install
+  app** in the sidebar (`#installApp`; the group was "Account", renamed back
+  to Settings). Chrome / Edge get their native prompt via
+  `beforeinstallprompt`; elsewhere the steps are shown (iPhone: Share › Add to
+  Home Screen; Mac Safari: File › Add to Dock; Firefox can't install). Both
+  hide when already running installed (`display-mode: standalone`).
+- Updates need nothing: the installed app loads the live site each time.
 
 ## Login gate, light / dark mode (18 Oct 2026)
 
@@ -1179,10 +1169,11 @@ button on the AI Adviser.
   `/logout` clears it (sidebar Settings › Log out). Wrong passwords: 10 per IP
   per 15 minutes (`login-fail:<ip>` in Upstash), then "Too many tries".
 - **Let through without a login**: `/api/campaign-alerts`, `/api/lead-alerts`,
-  `/api/slack-notify` (they check their own secrets), any request with
+  `/api/slack-notify` (they check their own secrets), `/manifest.webmanifest`
+  and `/sw.js` (the app install files), any request with
   `Authorization: Bearer $CAMPAIGN_ALERT_SECRET` (the AI Adviser's snapshot
-  in `lib/advisor-context.js` sends it), `HEAD /` (the desktop app's ETag
-  update check; no body), and `/brand/*`, favicon. Unauthenticated `/api/*`
+  in `lib/advisor-context.js` sends it), `HEAD /` (was for the removed desktop
+  app's update check; harmless, no body), and `/brand/*`, favicon. Unauthenticated `/api/*`
   gets 401 JSON; the page wraps `fetch` and reloads to the login page on a
   401 from `/api/` (not the adviser).
 - **Function budget**: middleware is not one of the 12 serverless functions

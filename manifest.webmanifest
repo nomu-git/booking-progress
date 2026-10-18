@@ -1,0 +1,16 @@
+{
+  "name": "NomuHub CRM",
+  "short_name": "NomuHub CRM",
+  "description": "NomuHub's live sales, marketing and operations dashboard",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eaf4f6",
+  "theme_color": "#2099ac",
+  "icons": [
+    { "src": "/brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NomuHub CRM</title>
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#2099ac">
+<link rel="apple-touch-icon" href="/brand/icon-192.png">
 <style>
   :root {
     --navy: #1b3358;
@@ -1448,7 +1451,8 @@
         <button class="sb-item" data-view="pending" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11l2 2 4-4M9 17h6"/></svg><span class="sb-label">Monday</span></button>
       </div>
       <div class="sb-group">
-        <div class="sb-cat">Account</div>
+        <div class="sb-cat">Settings</div>
+        <button class="sb-item" id="installApp" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="sb-label">Install app</span></button>
         <a class="sb-item" href="/logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg><span class="sb-label">Log out</span></a>
       </div>
     </nav>
@@ -4820,6 +4824,43 @@
       }
       return res;
     };
+  })();
+
+  /* ================= install as an app ================= */
+
+  // Settings › Install app (Anton, 18 Oct 2026, instead of the .exe): installs
+  // the dashboard as an app (a PWA) with its own icon and window. Chrome and
+  // Edge show their install prompt; Safari and others get the steps. Hidden
+  // when the dashboard is already running as the installed app. sw.js caches
+  // nothing, so the app always shows the live site.
+  (() => {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    const btn = $('installApp');
+    const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (!installed) btn.hidden = false;
+    let deferred = null;
+    addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; });
+    addEventListener('appinstalled', () => { btn.hidden = true; });
+    const steps = () => {
+      const ua = navigator.userAgent;
+      if (/iPhone|iPad|iPod/.test(ua)) return 'On iPhone or iPad: tap the Share button, then "Add to Home Screen".';
+      if (/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) return 'In Safari on a Mac: open the File menu and choose "Add to Dock".';
+      if (/Firefox/.test(ua)) return "Firefox can't install apps. Open the dashboard in Chrome, Edge or Safari to install it.";
+      return 'Use the install icon at the right end of the address bar, or the browser menu, then "Install NomuHub CRM".';
+    };
+    btn.addEventListener('click', async () => {
+      if (deferred) {
+        deferred.prompt();
+        await deferred.userChoice.catch(() => {});
+        deferred = null;
+        return;
+      }
+      // No one-click prompt in this browser: show the steps in the page's pop-up.
+      $('modalBody').innerHTML = `<div class="mtitle">Install NomuHub CRM</div>
+        <div class="msub">An icon on your desktop or home screen, opening in its own window. It always shows the live dashboard.</div>
+        <div class="mrow"><div class="mtrip">${esc(steps())}</div></div>`;
+      $('modalBackdrop').hidden = false;
+    });
   })();
 
   /* ================= AI Adviser ================= */

@@ -14,7 +14,8 @@
 // (cron-job.org, the Vercel cron), any request carrying that secret (the AI
 // Adviser reads the dashboard's own endpoints this way), HEAD requests for
 // the page (the desktop app's update check; no content is sent), and the
-// logo the login page shows.
+// logo the login page shows, plus the app manifest and service worker that
+// let the site be installed as an app (they hold no data).
 
 import { next } from '@vercel/functions/middleware';
 
@@ -84,6 +85,9 @@ function loginPage(error, status = 200) {
 <meta name="robots" content="noindex">
 <title>NomuHub CRM · Sign in</title>
 <link rel="icon" href="/brand/logo.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#2099ac">
+<link rel="apple-touch-icon" href="/brand/icon-192.png">
 <style>
   :root { --teal: #2099ac; --teal-dark: #167a8a; --ink: #0f2f38; }
   * { box-sizing: border-box; }
@@ -105,8 +109,25 @@ function loginPage(error, status = 200) {
   button.go:hover { background: var(--teal-dark); }
   .err { margin: 14px 0 0; color: #c0352b; font-size: 14px; font-weight: 600; }
   .note { margin: 18px 0 0; color: #7d959e; font-size: 12.5px; }
+  .wrap { width: 100%; max-width: 380px; }
+  .install { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 14px; border-radius: 16px; background: rgba(255,255,255,.95); box-shadow: 0 12px 30px rgba(6,50,60,.25); text-align: left; }
+  .install[hidden] { display: none; }
+  .install .ic { width: 38px; height: 38px; flex: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #e6f4f6; color: var(--teal-dark); }
+  .install b { display: block; font-size: 14px; }
+  .install span { display: block; font-size: 12.5px; color: #557580; line-height: 1.4; margin-top: 2px; }
+  .install .txt { flex: 1; min-width: 0; }
+  .install .go2 { padding: 9px 14px; border: 0; border-radius: 10px; background: var(--teal-dark); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .install .x { border: 0; background: none; color: #7d959e; font-size: 20px; cursor: pointer; padding: 2px 4px; }
+  .howto { margin: 10px 0 0; font-size: 12.5px; color: #0f2f38; background: #e6f4f6; border-radius: 10px; padding: 9px 11px; line-height: 1.45; }
 </style></head>
 <body>
+  <div class="wrap">
+  <div class="install" id="inst" hidden>
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></div>
+    <div class="txt"><b>Install NomuHub CRM on this device</b><span>An icon on your desktop or home screen, opening in its own window.</span><div class="howto" id="howto" hidden></div></div>
+    <button type="button" class="go2" id="instBtn">Install</button>
+    <button type="button" class="x" id="instX" aria-label="Dismiss">×</button>
+  </div>
   <form class="card" method="post" action="/login">
     <img src="/brand/logo.png" alt="NomuHub">
     <h1>NomuHub CRM</h1>
@@ -121,12 +142,38 @@ function loginPage(error, status = 200) {
     ${error ? `<p class="err">${esc(error)}</p>` : ''}
     <p class="note">You'll stay signed in on this device for 30 days.</p>
   </form>
+  </div>
   <script>
     document.getElementById('to').value = location.pathname + location.search + location.hash;
     document.getElementById('eye').addEventListener('click', function () {
       var i = document.getElementById('pw'); var show = i.type === 'password';
       i.type = show ? 'text' : 'password'; this.textContent = show ? 'Hide' : 'Show';
     });
+    // Install as an app (a PWA): Chrome / Edge show their own install prompt;
+    // Safari and others get the steps instead. Hidden once installed.
+    (function () {
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
+      var box = document.getElementById('inst'), how = document.getElementById('howto'), deferred = null;
+      var installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+      var hidden = false; try { hidden = localStorage.getItem('nomuInstallHide') === '1'; } catch (e) {}
+      if (!installed && !hidden) box.hidden = false;
+      addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+      addEventListener('appinstalled', function () { box.hidden = true; });
+      function steps() {
+        var ua = navigator.userAgent;
+        if (/iPhone|iPad|iPod/.test(ua)) return 'On iPhone or iPad: tap the Share button, then "Add to Home Screen".';
+        if (/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) return 'In Safari on a Mac: open the File menu and choose "Add to Dock".';
+        if (/Firefox/.test(ua)) return "Firefox can\'t install apps. Open this page in Chrome, Edge or Safari to install it.";
+        return 'Use the install icon at the right end of the address bar, or the browser menu, then "Install NomuHub CRM".';
+      }
+      document.getElementById('instBtn').addEventListener('click', function () {
+        if (deferred) { deferred.prompt(); deferred.userChoice.then(function () { deferred = null; }); return; }
+        how.textContent = steps(); how.hidden = false;
+      });
+      document.getElementById('instX').addEventListener('click', function () {
+        box.hidden = true; try { localStorage.setItem('nomuInstallHide', '1'); } catch (e) {}
+      });
+    })();
   </script>
 </body></html>`;
   return new Response(html, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
@@ -141,7 +188,7 @@ export default async function middleware(req) {
   const secret = (process.env.CAMPAIGN_ALERT_SECRET || '').trim();
   const key = `${process.env.SESSION_SECRET || secret}|${password}`;
 
-  if (OWN_AUTH.includes(path)) return next();
+  if (OWN_AUTH.includes(path) || path === '/manifest.webmanifest' || path === '/sw.js') return next();
   if (secret && req.headers.get('authorization') === `Bearer ${secret}`) return next();
   if (req.method === 'HEAD' && (path === '/' || path === '/index.html')) return next();
 
