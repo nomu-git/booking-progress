@@ -1188,11 +1188,13 @@ button on the AI Adviser.
 - **Function budget**: middleware is not one of the 12 serverless functions
   (checked by the deploy succeeding; if a future deploy fails at 13, this is
   the first suspect).
-- **Theme**: dark is the default (`:root` tokens); light is
-  `html[data-theme="light"]`, set before first paint from `localStorage`
-  `nomuTheme`, toggled by sidebar **Settings › Light mode / Dark mode**
-  (`#themeToggle`; the sidebar loops now select `button[data-view]` only, so
-  Settings items aren't tabs). To make light possible, colours that were
+- **Theme**: **light is the default** (Anton, 18 Oct 2026); dark is the
+  `:root` tokens and applies when `localStorage` `nomuTheme` is `dark`. Light
+  is `html[data-theme="light"]`, set before first paint. The switch is the
+  sun / moon button **top right of every page** (`#themeToggle`, `.themebtn`,
+  next to Refresh; it shows the mode it switches to), not in the sidebar. The
+  sidebar loops select `button[data-view]` only, so non-tab buttons there
+  (none now but Log out is a link) aren't tabs. To make light possible, colours that were
   hard-coded for the navy look became tokens: `--strong` (was `#fff` text),
   `--good-ink`, `--bad-ink`, `--bad-soft`, `--cancel-ink(2)`,
   `--cancel-track`, `--ov` (RGB for `rgba(var(--ov),a)` overlays, was white),
