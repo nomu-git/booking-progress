@@ -1157,6 +1157,54 @@ when there's an update.
   "Windows protected your PC" on first install (More info → Run anyway).
   Flagged to Anton. The release download is public, like the repo.
 
+## Login gate, light / dark mode (18 Oct 2026)
+
+Anton: password-only login (no username), stay signed in for a month while
+the device keeps being used, a login page in the logo's teal; a light / dark
+switch (light = NomuHub brand teal, dark = the original navy); and a New chat
+button on the AI Adviser.
+
+- **`middleware.js`** (Vercel Routing Middleware, Edge; uses
+  `@vercel/functions/middleware` `next()`, pinned in `package.json`) gates
+  **every path, page and `/api/*` alike**, because the site and repo are
+  public and a page-only gate would leave the data endpoints open. The
+  password is **only in Vercel: `DASHBOARD_PASSWORD`** (never in code: the
+  repo is public). **Until it's set the gate is off**, so a deploy can't lock
+  anyone out. Login page served by the middleware itself (teal gradient,
+  white card, `/brand/logo.png`, show/hide, keeps the `#hash` you came to).
+- **Session**: cookie `nomu_session = <exp>.<HMAC-SHA256>` keyed with
+  `SESSION_SECRET` (or `CAMPAIGN_ALERT_SECRET`) **plus the password**, so
+  changing the password signs every device out. 30 days, HttpOnly, Secure,
+  Lax; a page visit with under 29 days left re-issues it (sliding 30 days).
+  `/logout` clears it (sidebar Settings › Log out). Wrong passwords: 10 per IP
+  per 15 minutes (`login-fail:<ip>` in Upstash), then "Too many tries".
+- **Let through without a login**: `/api/campaign-alerts`, `/api/lead-alerts`,
+  `/api/slack-notify` (they check their own secrets), any request with
+  `Authorization: Bearer $CAMPAIGN_ALERT_SECRET` (the AI Adviser's snapshot
+  in `lib/advisor-context.js` sends it), `HEAD /` (the desktop app's ETag
+  update check; no body), and `/brand/*`, favicon. Unauthenticated `/api/*`
+  gets 401 JSON; the page wraps `fetch` and reloads to the login page on a
+  401 from `/api/` (not the adviser).
+- **Function budget**: middleware is not one of the 12 serverless functions
+  (checked by the deploy succeeding; if a future deploy fails at 13, this is
+  the first suspect).
+- **Theme**: dark is the default (`:root` tokens); light is
+  `html[data-theme="light"]`, set before first paint from `localStorage`
+  `nomuTheme`, toggled by sidebar **Settings › Light mode / Dark mode**
+  (`#themeToggle`; the sidebar loops now select `button[data-view]` only, so
+  Settings items aren't tabs). To make light possible, colours that were
+  hard-coded for the navy look became tokens: `--strong` (was `#fff` text),
+  `--good-ink`, `--bad-ink`, `--bad-soft`, `--cancel-ink(2)`,
+  `--cancel-track`, `--ov` (RGB for `rgba(var(--ov),a)` overlays, was white),
+  `--well-rgb`, `--mix-ink`, `--tip-bg`. White text stays literal only on
+  solid coloured badges (`.tag`, `.wcancel`, `.announce-due.soon`,
+  `.trp-pill`, `.trp-strip-seg`). Light values: page `#eaf4f6`, cards white,
+  accent `--yellow` = teal `#1a8fa1`, bars `--fill` `#2099ac`; the sidebar is a
+  teal gradient with white text; status colours unchanged. **New CSS must use
+  the tokens, not `#fff` / white overlays**, or it breaks in light mode.
+- **AI Adviser New chat** (`#advNew`): clears the conversation; it doesn't
+  give back the day's question count.
+
 ## Pending Task tab (monday.com)
 
 Asked for by Anton, 5 Oct 2026: a **Corporate** sidebar category with
