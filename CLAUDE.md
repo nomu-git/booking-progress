@@ -395,6 +395,23 @@ history:
    Meta/WeTravel data shapes (typo'd campaign names, week-count edge cases,
    duplicate project codes).
 
+**Best option now (19 Oct 2026): a real WebKit browser from the command
+line**, `tools/webkit-shot.js` (JXA: an offscreen `WKWebView`, runs the
+page's real JS, `evaluateJavaScript`, then a PNG snapshot):
+
+```bash
+osascript -l JavaScript tools/webkit-shot.js <page.html> <stub.js> <out.png> <width> <height> <light|dark> <view> '<optional JS to run first>'
+```
+
+`stub.js` is a user script injected before the page: it replaces `fetch`
+with live API responses saved to disk (`curl` them with the Bearer secret)
+and sets the saved view; build it as `window.fetch = async (u) => ({ ok,
+status, json })` over a `{ '/api/...': payload }` map. It prints the page
+height, visible chip bars, "Show all" buttons and any script errors (add a
+`window.onerror` collector to the copy of the page). Width 390 gives a true
+phone layout (media queries apply, unlike Quick Look). Use this before Quick
+Look for anything interactive.
+
 After pushing, **poll the live deployment** (`curl` in a retry loop, Vercel
 deploys aren't instant) and diff its hash against the local file before
 declaring something done.
@@ -1193,10 +1210,12 @@ months, quick overview first and the detail one tap away, easy on the eyes.
   where it applies) and a line. **Daily = yesterday** (the last whole day,
   and the one Marina has logged), **Weekly = this week so far** (Sun–Sat,
   Muscat), **Monthly = this month so far**, judged on pace. Rows: Bookings
-  (12 a week → 1.7 a day / 12 / 12 × days ÷ 7, "N in the last 24 hours"
-  under the name), Leads (20 × days logged), High potential (5 × days with
-  HP), Conversion (weekly / monthly only, as Muatasam said daily makes no
-  sense; 10%). "N of M on target" in the title. **The engagement rate
+  (**2 a day** — a round 2, Anton 19 Oct 2026, not 12 ÷ 7 — / 12 a week /
+  12 × days ÷ 7 a month, "N in the last 24 hours" under the name), Leads (20
+  × days logged), High potential (5 × days with HP), Conversion (10%;
+  **daily added 19 Oct 2026** at Anton's request, though Muatasam had said
+  on 8 Oct daily makes no sense: a day's bookings rarely come from that
+  day's leads, so it swings). "N of M on target" in the title. **The engagement rate
   KPI was removed everywhere** (Anton, 19 Oct 2026): Dashboard scorecard,
   KPIs tab, daily Slack KPI message, AI Adviser targets; `lib/kpis.js` no
   longer reads the engagements sheet and `KPI_ENGAGEMENT` is gone. The
@@ -1239,6 +1258,42 @@ months, quick overview first and the detail one tap away, easy on the eyes.
 - Not done yet from the meeting: push notifications once installed.
 - Classes `ov-`. Checked in both themes, at phone width (2 cards a row, 1
   under 360px), against live data for all three periods.
+
+## Shorter pages and the phone layout (19 Oct 2026)
+
+Anton: "check each tab and make sure to avoid having long scrolls, have a
+filter if needed ... specially the mobile version ... more mobile friendly".
+Done generically, in one block at the end of the script ("shorter pages"),
+so no page's own render code changed:
+
+- **A `MutationObserver`** watches every page wrap (`pvWraps`); after any
+  render it runs `pvTidy(wrap)` on a `setTimeout(0)` (**not**
+  `requestAnimationFrame`: rAF doesn't run in a background tab, and the
+  chips never appeared in testing). Its own bars and buttons are ignored, so
+  it doesn't loop.
+- **Page chips** (`PV`, `.pv-bar`): a page made of several panels shows one
+  part at a time. **Every screen**: Leads (This week | Trends) and Previous
+  Sales (Charts | Projects). **Phones only (≤ 700px)**: Dashboard (KPIs | At
+  a glance | Bookings), Campaign Ads (Budget | Lead quality | Campaigns), and
+  `auto` on Report, History, Engagements, Trips, Feedback, Revenue, KPIs (one
+  chip per titled panel, named from the title before " · "; an untitled
+  panel joins the one before). The chosen chip is kept across re-renders
+  (`pvSel`). Sticky on phones.
+- **Long lists fold** (`CLAMP`, `.pv-more` "Show all N ▾" / "Show fewer"):
+  `table.ctable` bodies (not `.kp-table` / `.fb-matrix`) after 10 rows, the
+  monday task list after 10, Previous Sales after 3 months, Feedback comments
+  after 3 trips per programme, and **on phones only** the Booking board after
+  its first month (on a desktop the board may be a wall display, so it never
+  folds there). A list folds only if that hides more than a couple of rows;
+  a month heading left with no rows showing is hidden too. Opened lists stay
+  open (`pvOpen`).
+- **Phone layout (≤ 700px)**: an app-style **bottom bar** with the five
+  sections (`#botNav`, `.bn-item`, same `data-section` buttons as the
+  sidebar; the ☰ drawer keeps Settings); a one-row header (title, Refresh,
+  theme; the booking figures and PDF hidden); the AI Adviser bubble sits
+  above the bar, smaller, without its cloud. Section tabs scroll sideways.
+- The Adviser bubble's gradient was still the old yellow in dark mode; now
+  teal.
 
 ## Login gate, light / dark mode (18 Oct 2026)
 

@@ -273,6 +273,50 @@
     .ov-grid { grid-template-columns: repeat(3, 1fr); }
   }
 
+  /* ---------- phones: bottom bar, page chips, shorter lists ----------
+     (Anton, 19 Oct 2026: avoid long scrolls, more mobile friendly.) */
+  .botnav { display: none; }
+  @media (max-width: 700px) {
+    .botnav {
+      display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+      background: var(--card); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+      box-shadow: 0 -4px 18px rgba(0,0,0,.08);
+    }
+    .bn-item { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; padding: 4px 2px; font: inherit; font-size: 10.5px; font-weight: 600; color: var(--text-3); cursor: pointer; border-radius: 10px; }
+    .bn-item svg { width: 21px; height: 21px; }
+    .bn-item[aria-pressed="true"] { color: var(--yellow); background: rgba(var(--acc-rgb),.1); }
+    .shell { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+    html .adv { bottom: calc(78px + env(safe-area-inset-bottom)); left: 12px; }
+    html .adv-cloud { display: none; }
+    html .adv-btn { width: 48px; height: 48px; }
+    #headStats { display: none !important; }
+    .head { gap: 10px; padding-bottom: 10px; flex-wrap: nowrap; }
+    .head .titles { flex: 1; min-width: 0; }
+    .head .titles h1 { font-size: 19px; }
+    .head .asof { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .head .spacer { display: none; }
+    .headright { gap: 8px; }
+    #refreshBtn { padding: 6px 9px; }
+    .themebtn { width: 34px; height: 34px; }
+    .ov-pdf { display: none; }
+    .sec-tabs { margin-bottom: 12px; }
+    .sec-tabs button { padding: 8px 11px 9px; font-size: 13px; }
+  }
+  /* Page chips: a long page shows one part at a time. */
+  .pv-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; padding: 2px 0; }
+  .pv-bar::-webkit-scrollbar { display: none; }
+  .pv-bar button { flex: none; font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text-2); cursor: pointer; white-space: nowrap; }
+  .pv-bar button[aria-pressed="true"] { background: var(--yellow); border-color: var(--yellow); color: var(--navy); }
+  .pv-off { display: none !important; }
+  @media (max-width: 700px) {
+    .pv-bar { position: sticky; top: 0; z-index: 6; background: var(--navy); margin: 0 -16px 12px; padding: 8px 16px; }
+  }
+  /* Long lists show their first rows and a Show all button. */
+  .pv-hide { display: none !important; }
+  .pv-more { display: block; width: 100%; margin-top: 10px; padding: 9px; border-radius: 10px; border: 1px dashed var(--line); background: transparent; color: var(--yellow); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .pv-more:hover { background: rgba(var(--acc-rgb),.06); }
+  @media print { .pv-bar, .pv-more, .botnav { display: none !important; } .pv-off, .pv-hide { display: revert !important; } }
+
   * { box-sizing: border-box; }
 
   body {
@@ -1274,7 +1318,7 @@
   .adv { position: fixed; bottom: 18px; left: 14px; z-index: 45; }
   .adv-btn {
     width: 60px; height: 60px; border-radius: 50%; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
-    color: var(--navy); background: radial-gradient(circle at 30% 25%, #ffe08a, var(--yellow) 55%, #d9901a);
+    color: var(--navy); background: radial-gradient(circle at 30% 25%, #8fe3ec, var(--yellow) 55%, #1a8fa1);
     box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 6px rgba(var(--acc-rgb),.16), 0 0 28px rgba(var(--acc-rgb),.45);
     animation: advPulse 2.8s ease-in-out infinite;
   }
@@ -1619,6 +1663,15 @@
     </nav>
   </aside>
   <div class="sb-backdrop" id="sbBackdrop"></div>
+  <!-- Phones: the five sections as an app-style bar at the bottom (Anton,
+       19 Oct 2026: "more mobile friendly"). Settings stay in the ☰ menu. -->
+  <nav class="botnav" id="botNav" aria-label="Sections">
+        <button class="bn-item" data-section="overview" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.4"/><path d="M5 19h14"/></svg><span>Dashboard</span></button>
+        <button class="bn-item" data-section="sales" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Sales</span></button>
+        <button class="bn-item" data-section="marketing" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4a1 1 0 0 0 1 1h2.5L16 19.5V4.5L6.5 9H4a1 1 0 0 0-1 1z"/><path d="M19 8l2-1.5M19.5 12H22M19 16l2 1.5"/></svg><span>Marketing</span></button>
+        <button class="bn-item" data-section="operations" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg><span>Operations</span></button>
+        <button class="bn-item" data-section="corporate" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg><span>Corporate</span></button>
+        </nav>
 
   <div class="shell">
   <div class="head">
@@ -5307,16 +5360,18 @@
     const LT = LEADS_DAILY_TARGET;
     const HT = HP_DAILY_TARGET;
     const fmt1 = (x) => (Math.round(x * 10) / 10).toString();
+    const DAILY_BOOKINGS = 2;
     const rows = [];
 
     // Bookings: 12 a week, scaled to the period and judged on pace by today.
-    rows.push({ go: 'report', name: 'Bookings', target: `${W} a week`, extra: report && report.events ? `${int(last24hTotal(report.events))} in the last 24 hours` : '', cells: P.map((p) => {
+    rows.push({ go: 'report', name: 'Bookings', target: `${DAILY_BOOKINGS} a day, ${W} a week`, extra: report && report.events ? `${int(last24hTotal(report.events))} in the last 24 hours` : '', cells: P.map((p) => {
       const n = ovBooked(p.start, p.end);
       if (n == null) return null;
-      const target = (W * p.len) / 7;
-      const expected = (W * p.gone) / 7;
+      // Daily is a round 2 (Anton, 19 Oct 2026), not 12 ÷ 7.
+      const target = p.key === 'd' ? DAILY_BOOKINGS : (W * p.len) / 7;
+      const expected = p.key === 'd' ? DAILY_BOOKINGS : (W * p.gone) / 7;
       const ok = n >= expected;
-      const tShow = p.key === 'd' ? fmt1(target) : int(target);
+      const tShow = int(target);
       return { v: int(n), of: tShow, ok, bar: n / target, mark: p.key === 'd' ? null : expected / target,
         note: p.key === 'd' ? (ok ? 'Daily pace reached' : 'Under the daily pace') : `${ok ? 'On pace' : 'Behind pace'}: ${Math.ceil(expected)} by today` };
     }) });
@@ -5338,14 +5393,14 @@
       return { v: int(l.hp), of: int(t), ok: l.hp >= t, bar: l.hp / t, note: p.key === 'd' ? `${l.hp >= t ? 'Target reached' : `${int(t - l.hp)} short`}` : `${fmt1(l.hp / l.hpDays)} a day` };
     }) });
 
-    // Conversion: same-period bookings ÷ leads; weekly and monthly only
-    // (Muatasam, 8 Oct 2026: daily makes no sense).
+    // Conversion: same-period bookings ÷ leads. Daily added at Anton's
+    // request (19 Oct 2026); one day's bookings rarely come from that day's
+    // leads, so it swings far more than the weekly figure.
     rows.push({ go: 'leads', name: 'Conversion', target: `${ovPct(CONV_TARGET)} or more`, cells: P.map((p, i) => {
-      if (p.key === 'd') return { na: 'Weekly and monthly only' };
       const l = L[i];
       const lb = leadBookings(p.start, p.end);
       if (!l || !lb) return null;
-      if (!l.n) return { na: 'No leads logged yet' };
+      if (!l.n) return { na: p.key === 'd' && !l.days ? 'Not logged yet' : 'No leads logged yet' };
       const c = lb.all / l.n;
       return { v: ovPct(c, 1), of: ovPct(CONV_TARGET), ok: c >= CONV_TARGET, bar: c / (2 * CONV_TARGET), mark: 0.5, note: `${int(lb.all)} booking${lb.all === 1 ? '' : 's'} ÷ ${int(l.n)} leads` };
     }) });
@@ -5623,6 +5678,136 @@
     $('ovPdf').addEventListener('click', () => print());
   }
 
+
+  /* ================= shorter pages ================= */
+
+  // Anton, 19 Oct 2026: "make sure to avoid having long scrolls ... specially
+  // the mobile version". Two things, applied after any page renders (a
+  // MutationObserver, so no page's own code had to change):
+  //  1. Page chips: a page made of several panels shows one part at a time.
+  //     Leads and Previous Sales do this on every screen; the others on
+  //     phones only, one chip per panel, named from its title.
+  //  2. Long lists show their first rows and a "Show all" button.
+  const PHONE = matchMedia('(max-width: 700px)');
+  const PV = {
+    leadsWrap: { always: true, groups: [['This week', [0, 1]], ['Trends', [2, 3]]] },
+    previousWrap: { always: true, groups: [['Charts', [0, 1]], ['Projects', [2, 3]]] },
+    campaignsWrap: { groups: [['Budget', [0]], ['Lead quality', [1]], ['Campaigns', [2]]] },
+    overviewWrap: { sel: [['KPIs', '.ovk'], ['At a glance', '.ov-sec, .ov-grid'], ['Bookings', '.ov-low']] },
+    reportWrap: { auto: true }, historyWrap: { auto: true }, engagementsWrap: { auto: true },
+    tripsWrap: { auto: true }, feedbackWrap: { auto: true }, revenueWrap: { auto: true }, kpisWrap: { auto: true },
+  };
+  // [container selector, item selector, show, phone only]
+  const CLAMP = [
+    ['table.ctable:not(.kp-table):not(.fb-matrix) > tbody', ':scope > tr', 10],
+    ['.mon-list', ':scope > .mon-row', 10],
+    ['#previousWrap .panel', ':scope > .pt-month', 3],
+    ['.fb-prog', ':scope > .fb-trip', 3],
+    ['#board', ':scope > .month', 1, true],
+  ];
+  const pvSel = {};
+  const pvOpen = new Set();
+  const pvTitle = (el) => {
+    const t = el.querySelector(':scope > .ptitle, :scope > .lhead .ptitle, :scope > .lhead');
+    return t ? t.textContent.replace(/\s+/g, ' ').split(' · ')[0].trim().slice(0, 24) : '';
+  };
+
+  function pvGroups(wrap, cfg) {
+    const kids = [...wrap.children].filter((el) => !el.classList.contains('pv-bar') && !el.classList.contains('subtabs') && !el.classList.contains('msg'));
+    const panels = kids.filter((el) => el.classList.contains('panel'));
+    if (cfg.sel) return cfg.sel.map(([label, sel]) => [label, kids.filter((el) => el.matches(sel))]).filter(([, els]) => els.length);
+    if (cfg.groups) return cfg.groups.map(([label, idx]) => [label, idx.map((i) => panels[i]).filter(Boolean)]).filter(([, els]) => els.length);
+    // auto: one chip per titled panel; an untitled one joins the panel before it.
+    const out = [];
+    for (const el of panels) {
+      const label = pvTitle(el);
+      if (label || !out.length) out.push([label || 'Summary', [el]]);
+      else out[out.length - 1][1].push(el);
+    }
+    return out;
+  }
+
+  function pvTidy(wrap) {
+    const cfg = PV[wrap.id];
+    // 1. page chips
+    wrap.querySelectorAll(':scope > .pv-bar').forEach((b) => b.remove());
+    wrap.querySelectorAll(':scope > .pv-off').forEach((el) => el.classList.remove('pv-off'));
+    if (cfg && (cfg.always || PHONE.matches)) {
+      const groups = pvGroups(wrap, cfg);
+      if (groups.length > 1) {
+        const labels = groups.map(([l]) => l);
+        const key = wrap.id + '|' + labels.join('|');
+        const sel = labels.includes(pvSel[key]) ? pvSel[key] : labels[0];
+        for (const [label, els] of groups) if (label !== sel) els.forEach((el) => el.classList.add('pv-off'));
+        const bar = document.createElement('div');
+        bar.className = 'pv-bar';
+        bar.setAttribute('role', 'tablist');
+        bar.innerHTML = labels.map((l) => `<button type="button" aria-pressed="${l === sel}">${esc(l)}</button>`).join('');
+        bar.querySelectorAll('button').forEach((b, i) => b.addEventListener('click', () => {
+          pvSel[key] = labels[i];
+          pvTidy(wrap);
+          const top = wrap.getBoundingClientRect().top + scrollY - 70;
+          if (scrollY > top) scrollTo(0, Math.max(0, top));
+        }));
+        groups[0][1][0].before(bar);
+      }
+    }
+    // 2. long lists
+    wrap.querySelectorAll('.pv-more').forEach((b) => b.remove());
+    const scope = wrap.id === 'board' ? wrap.parentNode : wrap;
+    CLAMP.forEach(([csel, isel, show, phoneOnly], ci) => {
+      scope.querySelectorAll(csel).forEach((box, bi) => {
+        if (!wrap.contains(box) && box !== wrap) return;
+        const items = [...box.querySelectorAll(isel)];
+        items.forEach((el) => el.classList.remove('pv-hide'));
+        // Long lists only fold when it hides more than a couple of rows.
+        if ((phoneOnly && !PHONE.matches) || items.length <= show + (show >= 5 ? 2 : 0)) return;
+        const key = `${wrap.id}|${ci}|${bi}`;
+        const open = pvOpen.has(key);
+        if (!open) {
+          items.slice(show).forEach((el) => el.classList.add('pv-hide'));
+          // A month heading with none of its rows left showing goes too.
+          for (let i = show - 1; i >= 0 && /(^|\s)\S*-month(\s|$)/.test(items[i].className); i -= 1) items[i].classList.add('pv-hide');
+        }
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'pv-more';
+        more.textContent = open ? 'Show fewer ▴' : `Show all ${items.length} ▾`;
+        more.addEventListener('click', () => {
+          if (open) pvOpen.delete(key); else pvOpen.add(key);
+          pvTidy(wrap);
+        });
+        const after = box.tagName === 'TBODY' ? (box.closest('.tscroll') || box.closest('table')) : box === wrap ? null : box.lastElementChild;
+        if (box === wrap || box.id === 'board') wrap.appendChild(more);
+        else if (box.tagName === 'TBODY') after.after(more);
+        else box.appendChild(more);
+      });
+    });
+  }
+
+  const pvWraps = ['overviewWrap', 'board', 'reportWrap', 'previousWrap', 'campaignsWrap', 'historyWrap', 'leadsWrap', 'engagementsWrap', 'tripsWrap', 'feedbackWrap', 'revenueWrap', 'kpisWrap', 'pendingWrap'];
+  const pvQueue = new Set();
+  let pvFrame = 0;
+  const pvObserver = new MutationObserver((records) => {
+    for (const r of records) {
+      // Our own bars and buttons don't count as a re-render.
+      const ours = [...r.addedNodes, ...r.removedNodes].every((n) => n.nodeType === 1 && (n.classList.contains('pv-bar') || n.classList.contains('pv-more')));
+      if (ours) continue;
+      const w = r.target.closest && pvWraps.map((id) => $(id)).find((x) => x && x.contains(r.target));
+      if (w) pvQueue.add(w);
+    }
+    // A timer, not requestAnimationFrame: rAF doesn't run in a background tab.
+    if (pvQueue.size && !pvFrame) pvFrame = setTimeout(() => {
+      pvFrame = 0;
+      const list = [...pvQueue];
+      pvQueue.clear();
+      list.forEach(pvTidy);
+      pvObserver.takeRecords();
+    }, 0);
+  });
+  pvWraps.forEach((id) => pvObserver.observe($(id), { childList: true, subtree: true }));
+  PHONE.addEventListener('change', () => pvWraps.forEach((id) => pvTidy($(id))));
+
   /* ================= view switching ================= */
 
   // The sidebar is the Dashboard plus four sections; each section's pages
@@ -5643,7 +5828,7 @@
     view = next;
     const sec = sectionOf(view);
     secLast[sec.key] = view;
-    $('viewSeg').querySelectorAll('button[data-section]').forEach((b) => {
+    document.querySelectorAll('button[data-section]').forEach((b) => {
       b.setAttribute('aria-pressed', String(b.dataset.section === sec.key));
     });
     $('pageTitle').textContent = sec.name;
@@ -5743,10 +5928,11 @@
     saveViewState();
   }
 
-  $('viewSeg').querySelectorAll('button[data-section]').forEach((b) => {
+  document.querySelectorAll('button[data-section]').forEach((b) => {
     b.addEventListener('click', () => {
       const sec = SECTIONS.find((x) => x.key === b.dataset.section);
-      setView(secLast[sec.key] || sec.views[0][0]);
+      const next = secLast[sec.key] || sec.views[0][0];
+      if (next !== view) { setView(next); scrollTo(0, 0); }
     });
   });
   $('refreshBtn').addEventListener('click', () => {
