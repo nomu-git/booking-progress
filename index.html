@@ -86,6 +86,10 @@
     /* The accent and the bar fill as RGB triplets, for tints:
        rgba(var(--acc-rgb), .15). */
     --acc-rgb: 60,195,211;
+    /* Status colours when they are TEXT, not bars: readable on the cards in
+       each theme (19 Oct 2026 contrast pass; amber and orange text on white
+       read at 1.6-3:1 before). */
+    --target-ink: #f39a52; --warn-ink: #f5be45; --hp-ink: #f2b233; --fresh-ink: #3ddc84;
     --fill-rgb: 45,177,195;
   }
 
@@ -94,16 +98,17 @@
   html[data-theme="light"] {
     color-scheme: light;
     --navy: #eaf4f6; --card: #ffffff; --card-2: #f4f9fa; --line: #d3e4e9; --track: #e6f0f3;
-    --yellow: #1a8fa1; --fill: #2099ac; --fill-full: #2e9e6b; --fill-empty: #b9d3da;
+    --yellow: #137483; --fill: #2099ac; --fill-full: #2e9e6b; --fill-empty: #b9d3da;
     --target: #d9772b; --danger: #d63c32; --danger-bg: #fbe3e1; --soldout: #d36b12;
     --info: #1f7fb8; --info-bg: rgba(31,127,184,.08); --info-line: rgba(31,127,184,.35);
     --fresh: #179c53; --fresh-bright: #0e8a45; --fresh-dim: #c7ecd7; --fresh-wash: rgba(23,156,83,.12);
-    --text: #0f2f38; --text-2: #3e5d68; --text-3: #6d8792; --strong: #0b2a33;
+    --text: #0f2f38; --text-2: #3e5d68; --text-3: #527079; --strong: #0b2a33;
     --tgt-leads: #3b73c4; --tgt-hp: #e0a21f;
-    --good-ink: #12813f; --bad-ink: #c0352b; --bad-soft: #b4413a;
-    --cancel-ink: #b4413a; --cancel-ink2: #c0675f; --cancel-track: #f6dcd9;
+    --good-ink: #0f7a3a; --bad-ink: #c0352b; --bad-soft: #b4413a;
+    --cancel-ink: #b4413a; --cancel-ink2: #9a3f37; --cancel-track: #f6dcd9;
     --ov: 15,47,56; --well-rgb: 230,240,243; --mix-ink: #000; --tip-bg: #ffffff;
-    --acc-rgb: 26,143,161; --fill-rgb: 32,153,172;
+    --acc-rgb: 19,116,131; --fill-rgb: 32,153,172;
+    --target-ink: #a4500f; --warn-ink: #8a5a00; --hp-ink: #8a5a00; --fresh-ink: #0f7a3a;
     --zone-good: rgba(23,156,83,.08); --zone-watch: rgba(217,119,43,.08); --zone-act: rgba(214,60,50,.08);
   }
   /* Dark sidebar: the light theme's teal, taken down to night. */
@@ -117,7 +122,6 @@
   html[data-theme="light"] .sb-item[aria-pressed="true"] { background: #fff; color: #137483; }
   html[data-theme="light"] .sb-btn { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); color: #fff; }
   html[data-theme="light"] .panel, html[data-theme="light"] .trip { box-shadow: 0 1px 3px rgba(15,47,56,.08); }
-  html[data-theme="light"] .kp-child td { background: #f3f8f9; }
   html[data-theme="light"] .trip.cancelled .wnum, html[data-theme="light"] .trip.cancelled .wnum .of { color: #fff !important; }
   html[data-theme="light"] .adv-btn { background: radial-gradient(circle at 30% 25%, #5cc6d4, #2099ac 55%, #137483); color: #fff; }
   html[data-theme="light"] .adv-m.me, html[data-theme="light"] .adv-form button, html[data-theme="light"] .adv-mini { color: #fff; }
@@ -200,7 +204,7 @@
   .ov-num { font-size: 28px; font-weight: 800; line-height: 1; color: var(--strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .ov-num small { font-size: 13px; font-weight: 600; color: var(--text-3); }
   .ov-pct { font-size: 13px; font-weight: 800; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .ov-pct.good { color: var(--good-ink); } .ov-pct.bad { color: var(--bad-ink); } .ov-pct.warn { color: var(--target); }
+  .ov-pct.good { color: var(--good-ink); } .ov-pct.bad { color: var(--bad-ink); } .ov-pct.warn { color: var(--target-ink); }
   .ov-track { position: relative; height: 8px; border-radius: 999px; background: var(--track); overflow: visible; }
   .ov-track > i { display: block; height: 100%; border-radius: 999px; background: var(--fill); max-width: 100%; }
   .ov-track > i.good { background: var(--q-high); } .ov-track > i.bad { background: var(--q-low); } .ov-track > i.warn { background: var(--target); }
@@ -209,7 +213,7 @@
   .ov-stack > i { display: block; height: 100%; min-width: 3px; }
   .ov-note { font-size: 11.5px; line-height: 1.4; color: var(--text-3); }
   .ov-note b { color: var(--text-2); font-weight: 700; }
-  .ov-note .good { color: var(--good-ink); font-weight: 700; } .ov-note .bad { color: var(--bad-ink); font-weight: 700; } .ov-note .warn { color: var(--target); font-weight: 700; }
+  .ov-note .good { color: var(--good-ink); font-weight: 700; } .ov-note .bad { color: var(--bad-ink); font-weight: 700; } .ov-note .warn { color: var(--target-ink); font-weight: 700; }
   .ov-low { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; margin-top: 20px !important; }
   .ov-low .panel { border-radius: 14px; min-width: 0; }
   .ov-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -472,6 +476,7 @@
   .trip.cancelled .tmeta, .trip.cancelled .wlab, .trip.cancelled .wdate { color: var(--cancel-ink2); }
   .trip.cancelled .tnum .b { color: var(--cancel-ink) !important; }
   .trip.cancelled .fill, .trip.cancelled .wnum { background: var(--danger) !important; color: var(--cancel-ink) !important; }
+  .trip.cancelled .wnum, .trip.cancelled .wnum .of, .trip.cancelled .wk .wnum, .trip.cancelled .wk .wnum .of { background: #b8342b !important; color: #fff !important; }
   .trip.cancelled .track { background: var(--cancel-track); }
   /* One week closed in WeTravel (0 seats, "Unavailable") on a trip that
      still runs: that week alone reads as cancelled. */
@@ -591,7 +596,7 @@
   .hfill.hit { background: var(--fill-full); }
   .pace { font-size: 11px; margin-top: 8px; font-weight: 600; }
   .pace.ok { color: var(--fill-full); }
-  .pace.behind { color: var(--target); }
+  .pace.behind { color: var(--target-ink); }
 
   /* day strip for the current week */
   .days { display: flex; gap: 6px; }
@@ -605,7 +610,7 @@
   .dcell.ahead .dbar { background: #2c4a75; }
   .dnum { font-size: 13px; font-weight: 700; margin-top: 6px; }
   .dcell.ahead .dnum, .dcell.zero .dnum { color: var(--text-3); }
-  .dlab { font-size: 9.5px; color: var(--text-3); margin-top: 2px; }
+  .dlab { font-size: 9.5px; color: var(--text-2); margin-top: 2px; }
   .dcell.today .dlab { color: var(--fresh); font-weight: 700; }
 
   /* main report chart */
@@ -637,7 +642,7 @@
   .ctarget { position: absolute; left: 30px; right: 0; height: 2px; background: var(--target); }
   .ctflag {
     position: absolute; right: 0; top: -17px; font-size: 9px; font-weight: 700;
-    letter-spacing: .07em; color: var(--target);
+    letter-spacing: .07em; color: var(--target-ink);
   }
   .cbars { position: relative; display: flex; height: 100%; gap: 10px; }
   .cslot {
@@ -678,7 +683,7 @@
   .ps-line { margin-top: 12px; font-size: 13px; color: var(--text-2); line-height: 1.6; }
   .ps-line b { color: var(--strong); }
   .ps-line .up { color: var(--fill-full); font-weight: 700; }
-  .ps-line .down { color: #ff9b91; font-weight: 700; }
+  .ps-line .down { color: var(--bad-ink); font-weight: 700; }
   .ps-months { flex-wrap: wrap; }
 
   .rlegend { display: flex; gap: 15px; flex-wrap: wrap; font-size: 10.5px; color: var(--text-3); margin-top: 12px; }
@@ -707,7 +712,7 @@
   .skpi:last-child { border-right: 0; }
   .skpi-n { font-size: 32px; font-weight: 700; line-height: 1; color: var(--strong); }
   .skpi-l { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
-  .skpi-sub { font-size: 10px; color: #6c7f9c; margin-top: 3px; }
+  .skpi-sub { font-size: 10px; color: var(--text-3); margin-top: 3px; }
 
   /* A tile earns a colour only when a published benchmark says the number is
      out of the usual range — never for the metric merely existing. The word
@@ -728,8 +733,8 @@
     padding: 6px 10px; border-bottom: 1px solid var(--line);
   }
   .ctable th:first-child, .ctable td:first-child { text-align: left; }
-  .ctable td { text-align: right; padding: 7px 10px; border-bottom: 1px solid rgba(52,81,124,.35); color: var(--text-2); }
-  .ctable tbody tr:hover td { background: rgba(52,81,124,.18); }
+  .ctable td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); color: var(--text-2); }
+  .ctable tbody tr:hover td { background: rgba(var(--acc-rgb),.05); }
   .ctable td.cname { color: var(--strong); font-weight: 600; white-space: normal; min-width: 190px; }
   .ctable tfoot td {
     border-top: 1px solid var(--line); border-bottom: 0;
@@ -745,7 +750,7 @@
     display: inline-block; padding: 2px 8px; border-radius: 999px;
     font-size: 10px; font-weight: 600; letter-spacing: .02em;
   }
-  .cpill.on  { background: rgba(61,220,132,.16); color: var(--fresh); }
+  .cpill.on  { background: rgba(61,220,132,.16); color: var(--fresh-ink); }
   .cpill.off { background: rgba(134,152,180,.14); color: var(--text-3); }
   /* Cost per result over the limit (running campaigns only). */
   .cpr-over { display: inline-block; padding: 1px 8px; border-radius: 999px; background: rgba(239,83,80,.16); color: var(--bad-ink); font-weight: 700; cursor: help; }
@@ -755,9 +760,9 @@
      with a glyph, HP rate bar in the HP target's yellow (as on Leads). */
   .lq-st { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: help; white-space: nowrap; }
   .lq-st.good { background: rgba(12,163,12,.18); color: var(--good-ink); }
-  .lq-st.watch { background: rgba(250,178,25,.16); color: var(--q-med); }
+  .lq-st.watch { background: rgba(250,178,25,.16); color: var(--warn-ink); }
   .lq-st.bad { background: rgba(208,59,59,.2); color: var(--bad-ink); }
-  .lq-st.none { background: rgba(111,134,168,.16); color: var(--text-3); }
+  .lq-st.none { background: rgba(111,134,168,.16); color: var(--text-2); }
   .lq-sub { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
   .abar-fill.lq { background: var(--tgt-hp); }
   /* ---- budget vs actual ----
@@ -846,13 +851,13 @@
   .pt-mmeta { font-size: 11.5px; color: var(--text-2); }
   .pt-mnums { margin-left: auto; display: flex; gap: 16px; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-2); }
   .pt-mnums b { color: var(--strong); font-weight: 700; }
-  .pt-mnums .cancel b { color: var(--danger); }
+  .pt-mnums .cancel b { color: var(--bad-ink); }
 
   .pt-row {
     display: grid; grid-template-columns: minmax(0,1.2fr) 158px 74px 74px 74px;
     gap: 10px; align-items: center; padding: 9px 2px; font-size: 12.5px;
   }
-  .pt-row + .pt-row { border-top: 1px solid rgba(52,81,124,.3); }
+  .pt-row + .pt-row { border-top: 1px solid var(--line); }
   .pt-name { color: var(--strong); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* A project code is an identifier, not prose — monospaced and letter-spaced
      so ZNZ-BL-202607-02C can be read off and compared at a glance. Trips the
@@ -867,7 +872,7 @@
   .pt-dates { color: var(--text-2); font-size: 11.5px; text-align: right; line-height: 1.35; }
   .pt-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); }
   .pt-num b { color: var(--strong); font-weight: 700; }
-  .pt-num.pt-cancel b { color: var(--danger); }
+  .pt-num.pt-cancel b { color: var(--bad-ink); }
   .pt-charter {
     display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
     background: rgba(77,157,224,.14); color: var(--info);
@@ -940,7 +945,7 @@
   .lscroll { overflow-x: auto; }
   .lscroll .lchart { min-width: 620px; }
   .lplot { position: relative; display: flex; align-items: flex-end; gap: 2px; }
-  .lgl { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(134,152,180,.14); pointer-events: none; }
+  .lgl { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); pointer-events: none; }
   .lgl span { position: absolute; left: -26px; top: -7px; width: 22px; text-align: right; font-size: 9.5px; color: var(--text-3); }
   .lplot.gut, .laxis.gut { margin-left: 26px; }
   .lcol {
@@ -972,7 +977,7 @@
   .lpair { display: flex; align-items: flex-end; justify-content: center; gap: 3px; width: 100%; }
   .lpair .lstack { flex: 0 1 24px; width: auto; }
   .lhp1 { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 0 0 10px; }
-  .lhpn { font-size: 9.5px; font-weight: 700; color: var(--tgt-hp); line-height: 1; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+  .lhpn { font-size: 9.5px; font-weight: 700; color: var(--hp-ink); line-height: 1; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
   .lhpbar {
     display: block; width: 8px; min-height: 3px; border-radius: 4px 4px 0 0;
     background: linear-gradient(180deg, color-mix(in srgb, var(--tgt-hp) 70%, #fff), var(--tgt-hp));
@@ -995,7 +1000,7 @@
   .ltgt span {
     position: absolute; left: calc(100% + 14px); top: -9px; padding: 3px 10px; border-radius: 999px;
     background: color-mix(in srgb, var(--c) 16%, var(--track)); border: 1px solid color-mix(in srgb, var(--c) 50%, transparent);
-    font-size: 9.5px; font-weight: 700; letter-spacing: .07em; line-height: 1; color: var(--c); white-space: nowrap;
+    font-size: 9.5px; font-weight: 700; letter-spacing: .07em; line-height: 1; color: color-mix(in srgb, var(--c) 50%, var(--strong)); white-space: nowrap;
   }
   .lleg .ltl {
     display: inline-block; width: 22px; height: 3px; margin-right: 7px; vertical-align: 2px; border-radius: 2px;
@@ -1058,7 +1063,7 @@
   .trp-mini { display: flex; gap: 2px; height: 10px; width: 140px; border-radius: 5px; overflow: hidden; background: var(--track); }
   .trp-pill {
     display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px;
-    font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap;
+    font-size: 11px; font-weight: 600; color: var(--strong); white-space: nowrap;
   }
   .trp-pill i { font-style: normal; font-size: 9px; }
   .trp-sub { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 500; color: var(--text-3); white-space: normal; }
@@ -1080,7 +1085,7 @@
   .trp-strip { flex: 1; min-width: 200px; display: flex; gap: 2px; height: 22px; border-radius: 6px; overflow: hidden; background: var(--track); }
   .trp-strip-seg {
     display: flex; align-items: center; justify-content: center; min-width: 22px;
-    font-size: 11px; font-weight: 700; color: #fff; background: rgba(var(--fill-rgb),.35);
+    font-size: 11px; font-weight: 700; color: var(--strong); background: rgba(var(--fill-rgb),.35);
   }
   .trp-strip-seg.idle { background: rgba(134,152,180,.28); }
   .trp-strip-seg.done { background: var(--fill); color: #0b1a2e; }
@@ -1122,16 +1127,16 @@
     background: rgba(77,157,224,.22); color: var(--strong); font-size: 10.5px;
   }
   .trp-owner em { color: var(--text-3); font-style: italic; }
-  .trp-next { font-size: 11.5px; line-height: 1.45; color: var(--text-2); border-top: 1px solid rgba(52,81,124,.45); padding-top: 7px; }
+  .trp-next { font-size: 11.5px; line-height: 1.45; color: var(--text-2); border-top: 1px solid var(--line); padding-top: 7px; }
   .trp-next span { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 2px; }
   @media (max-width: 1100px) { .trp-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 600px) { .trp-board { grid-template-columns: 1fr; } }
-  .ctable tr.trp-detail td { background: rgba(22,41,74,.55); text-align: left; white-space: normal; padding: 12px 16px 14px; }
+  .ctable tr.trp-detail td, .ctable tbody tr.trp-detail:hover td { background: var(--card-2); box-shadow: inset 3px 0 0 var(--yellow); text-align: left; white-space: normal; padding: 12px 16px 14px; }
   .trp-dl {
     display: grid; grid-template-columns: 150px 1fr; gap: 8px 16px; font-size: 12px; line-height: 1.55; color: var(--text-2);
     position: sticky; left: 16px; max-width: 900px;
   }
-  .trp-dl dt { color: var(--text-3); font-weight: 700; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+  .trp-dl dt { color: var(--text-2); font-weight: 700; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
   .trp-dl dd { margin: 0; }
   @media (max-width: 600px) {
     /* 100vw less the page gutter (40), panel (34), cell padding (16) and the
@@ -1165,7 +1170,7 @@
   /* Top performing: three ranked rows, each with a bar scaled to the best. */
   .et-list { display: grid; gap: 8px; }
   .et-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) 140px 56px; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 10px; background: var(--track); }
-  .et-rank { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--yellow); color: #0b1a2e; font-size: 12px; font-weight: 800; }
+  .et-rank { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--yellow); color: var(--navy); font-size: 12px; font-weight: 800; }
   .et-row:nth-child(n+2) .et-rank { background: var(--card); color: var(--text-2); border: 1px solid var(--line); }
   .et-name { font-size: 13.5px; font-weight: 700; color: var(--strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .et-sub { margin-top: 2px; font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1198,7 +1203,7 @@
   /* ---------- notes ---------- */
 
   .notes { margin-top: 6px; font-size: 11.5px; color: var(--text-3); line-height: 1.6; }
-  .notes b { color: var(--target); font-weight: 600; }
+  .notes b { color: var(--target-ink); font-weight: 600; }
   .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--text-3); margin-bottom: 16px; }
   .legend i { display: inline-block; width: 20px; height: 8px; border-radius: 4px; vertical-align: -1px; margin-right: 5px; }
 
@@ -1254,62 +1259,60 @@
   /* Summary: a pass-rate ring, big counts, per-area chips and one segment
      per KPI (hover a segment for its name). Glyphs and words, not colour
      alone. */
-  .kp-hero { display: flex; align-items: center; gap: 34px; flex-wrap: wrap; margin: 10px 0 18px; }
-  .kp-ring { position: relative; width: 132px; height: 132px; flex: none; cursor: help; filter: drop-shadow(0 0 14px rgba(95,211,95,.22)); }
+  .kp-hero { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin: 6px 0 2px; }
+  .kp-ring { position: relative; width: 92px; height: 92px; flex: none; }
   .kp-ring svg { width: 100%; height: 100%; }
-  .kp-ring circle { fill: none; stroke-width: 11; }
-  .kp-ring-bg { stroke: var(--q-low); opacity: .55; }
-  .kp-ring-fg { stroke: var(--good-ink); stroke-linecap: round; }
+  .kp-ring circle { fill: none; stroke-width: 9; }
+  .kp-ring-bg { stroke: var(--track); }
+  .kp-ring-fg { stroke: var(--q-high); stroke-linecap: round; }
   .kp-ring-n { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .kp-ring-n b { font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .kp-ring-n b small { font-size: 16px; font-weight: 700; margin-left: 1px; color: var(--text-2); }
-  .kp-ring-n span { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); margin-top: 5px; }
-  .kp-stats { display: flex; gap: 14px; flex-wrap: wrap; }
-  .kp-stat { min-width: 118px; padding: 14px 18px; border-radius: 12px; background: rgba(var(--well-rgb),.45); border: 1px solid rgba(134,152,180,.2); }
-  .kp-stat b { display: block; font-size: 44px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-  .kp-stat span { display: block; margin-top: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-  .kp-stat.pass { border-color: rgba(95,211,95,.45); box-shadow: 0 0 22px rgba(95,211,95,.12) inset; }
-  .kp-stat.pass b, .kp-stat.pass span { color: var(--good-ink); }
-  .kp-stat.fail { border-color: rgba(255,138,128,.45); box-shadow: 0 0 22px rgba(255,138,128,.12) inset; }
-  .kp-stat.fail b, .kp-stat.fail span { color: var(--bad-ink); }
-  .kp-stat.na b, .kp-stat.na span { color: var(--text-3); }
-  .kp-areas { display: flex; flex-direction: column; gap: 12px; min-width: 190px; margin-left: auto; }
-  .kp-area { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: baseline; }
-  .kp-area span { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); font-weight: 700; }
-  .kp-area b { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .kp-area b small { font-size: 12px; color: var(--text-3); font-weight: 600; }
-  .kp-area i { grid-column: 1 / -1; display: block; height: 5px; border-radius: 3px; background: rgba(208,59,59,.55); overflow: hidden; }
-  .kp-area u { display: block; height: 100%; background: var(--good-ink); border-radius: 3px; text-decoration: none; }
-  .kp-seg { display: flex; gap: 4px; }
-  .kp-seg i { flex: 1; height: 16px; border-radius: 4px; cursor: help; }
-  .kp-seg i.pass { background: var(--q-high); box-shadow: 0 0 10px rgba(12,163,12,.45); }
-  .kp-seg i.fail { background: var(--q-low); box-shadow: 0 0 10px rgba(208,59,59,.4); }
-  .kp-seg i.na { background: var(--q-none); }
-  .kp-table td, .kp-table th { text-align: left; }
-  .kp-table td { vertical-align: top; padding: 10px; }
-  .kp-table .cname { min-width: 190px; }
-  .kp-tgt { font-size: 11.5px; color: var(--text-3); font-weight: 500; margin-top: 3px; }
-  .kp-st { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
-  .kp-st.pass { background: rgba(12,163,12,.18); color: var(--good-ink); }
-  .kp-st.fail { background: rgba(208,59,59,.2); color: var(--bad-ink); }
-  .kp-st.na { background: rgba(111,134,168,.16); color: var(--text-3); }
-  .kp-why, .kp-do { min-width: 240px; max-width: 420px; white-space: normal; line-height: 1.45; font-size: 13px; }
-  .kp-why { color: var(--text-2); }
-  .kp-ok { color: var(--text-3); }
-  .kp-name { cursor: help; border-bottom: 1px dotted rgba(var(--ov),.35); }
-  /* The accordion row: a tinted row with a yellow caret badge, a count of
-     what's inside and a button, so it reads as something to open. */
-  .kp-grp { cursor: pointer; }
-  .kp-grp td { background: rgba(var(--acc-rgb),.09); border-bottom: 1px dashed rgba(var(--acc-rgb),.45); }
-  .kp-grp:hover td { background: rgba(var(--acc-rgb),.15); }
-  .kp-caret { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-right: 9px; border-radius: 50%; background: var(--yellow); color: var(--navy); font-size: 13px; font-weight: 800; vertical-align: middle; }
-  .kp-count { display: inline-block; margin: 6px 0 0 31px; padding: 1px 9px; border-radius: 999px; background: rgba(var(--acc-rgb),.16); color: var(--yellow); font-size: 11.5px; font-weight: 700; }
-  .kp-toggle { display: block; margin-top: 8px; padding: 5px 13px; border: 1px solid var(--yellow); border-radius: 999px; background: transparent; color: var(--yellow); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
-  .kp-grp:hover .kp-toggle { background: var(--yellow); color: var(--navy); }
-  .kp-child td { background: rgba(0,0,0,.16); }
-  .kp-child td.cname { padding-left: 40px; position: relative; }
-  .kp-child td.cname::before { content: '└'; position: absolute; left: 22px; top: 8px; color: rgba(var(--acc-rgb),.7); }
-  .kp-more { display: inline-block; margin-left: 6px; color: var(--yellow); font-weight: 600; cursor: help; white-space: nowrap; }
+  .kp-ring-n b { font-size: 28px; font-weight: 800; line-height: 1; color: var(--strong); font-variant-numeric: tabular-nums; }
+  .kp-ring-n span { margin-top: 3px; font-size: 11px; color: var(--text-3); }
+  .kp-sum { display: flex; flex-direction: column; gap: 8px; }
+  .kp-big { font-size: 18px; font-weight: 700; color: var(--strong); }
+  .kp-counts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .kp-c { padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; }
+  .kp-c.pass { background: rgba(12,163,12,.1); color: var(--good-ink); }
+  .kp-c.fail { background: rgba(208,59,59,.1); color: var(--bad-ink); }
+  .kp-c.na { background: rgba(var(--ov),.06); color: var(--text-3); }
+  .kp-areas { display: flex; flex-direction: column; gap: 12px; min-width: 200px; margin-left: auto; }
+  .kp-area { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; align-items: baseline; }
+  .kp-area span { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+  .kp-area b { font-size: 15px; font-weight: 800; color: var(--strong); font-variant-numeric: tabular-nums; }
+  .kp-area b small { font-size: 12px; font-weight: 500; color: var(--text-3); }
+  .kp-area i { grid-column: 1 / -1; display: block; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+  .kp-area u { display: block; height: 100%; border-radius: 3px; background: var(--q-high); text-decoration: none; }
+  .kp-filter { margin: 2px 0 12px; }
+  .kp-ah { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .kp-ah .ptitle { margin-bottom: 6px; }
+  .kp-ac { font-size: 12.5px; color: var(--text-3); }
+  .kp-list { display: flex; flex-direction: column; }
+  .kp-row { display: grid; grid-template-columns: 26px minmax(170px, 1fr) minmax(0, 2.2fr); gap: 4px 14px; padding: 13px 4px; border-top: 1px solid var(--line); align-items: start; }
+  .kp-list > .kp-row:first-child { border-top: 0; }
+  .kp-ic { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; margin-top: 1px; }
+  .kp-ic.pass { background: rgba(12,163,12,.12); color: var(--good-ink); }
+  .kp-ic.fail { background: rgba(208,59,59,.12); color: var(--bad-ink); }
+  .kp-ic.na { background: rgba(var(--ov),.07); color: var(--text-3); }
+  .kp-n { font-size: 14px; font-weight: 700; color: var(--strong); line-height: 1.3; }
+  .kp-tgt { margin-top: 3px; font-size: 12px; color: var(--text-3); }
+  .kp-why { font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  .kp-do { margin-top: 6px; font-size: 13px; line-height: 1.5; color: var(--text-2); }
+  .kp-do b { display: inline-block; margin-right: 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .kp-row.pass .kp-why { color: var(--text-2); }
+  .kp-name { cursor: help; border-bottom: 1px dotted rgba(var(--ov),.3); }
+  .kp-more { color: var(--yellow); font-weight: 600; cursor: help; white-space: nowrap; }
+  .kp-row.grp { cursor: pointer; border-radius: 10px; }
+  .kp-row.grp:hover, .kp-row.grp:focus-visible { background: rgba(var(--acc-rgb),.05); outline: none; }
+  .kp-open { display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--yellow); }
+  .kp-sub { margin: 0 0 6px 40px; padding-left: 12px; border-left: 2px solid var(--line); }
+  .kp-row.child { padding: 10px 4px; }
+  .kp-row.child .kp-n { font-size: 13px; font-weight: 600; }
+  @media (max-width: 700px) {
+    .kp-areas { margin-left: 0; width: 100%; }
+    .kp-row { grid-template-columns: 26px minmax(0, 1fr); }
+    .kp-body { grid-column: 2; }
+    .kp-sub { margin-left: 14px; }
+  }
 
   /* AI Adviser bubble: the bottom-left corner of the screen (over the empty
      foot of the sidebar on a desktop; Anton, 13 Oct 2026: "the left most
@@ -1343,7 +1346,7 @@
     border-radius: 16px; overflow: hidden; background: var(--card-2); border: 1px solid rgba(var(--acc-rgb),.35);
     box-shadow: 0 18px 50px rgba(0,0,0,.5), 0 0 30px rgba(var(--acc-rgb),.12);
   }
-  .adv-head { display: flex; align-items: center; gap: 11px; padding: 14px 14px 12px; border-bottom: 1px solid rgba(134,152,180,.2); }
+  .adv-head { display: flex; align-items: center; gap: 11px; padding: 14px 14px 12px; border-bottom: 1px solid var(--line); }
   .adv-head div b { display: block; font-size: 15px; }
   .adv-head div span { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
   .adv-mini { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--navy); background: var(--yellow); flex: none; }
@@ -1379,8 +1382,8 @@
   .adv-m.wait span:nth-child(2) { animation-delay: .15s; }
   .adv-m.wait span:nth-child(3) { animation-delay: .3s; margin-right: 6px; }
   @keyframes advDot { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
-  .adv-form { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid rgba(134,152,180,.2); }
-  .adv-form textarea { flex: 1; resize: none; border-radius: 10px; border: 1px solid rgba(134,152,180,.3); background: rgba(var(--well-rgb),.55); color: var(--strong); font: inherit; font-size: 13.5px; padding: 8px 10px; }
+  .adv-form { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); }
+  .adv-form textarea { flex: 1; resize: none; border-radius: 10px; border: 1px solid var(--line); background: rgba(var(--well-rgb),.55); color: var(--strong); font: inherit; font-size: 13.5px; padding: 8px 10px; }
   .adv-form textarea:focus { outline: none; border-color: var(--yellow); }
   .adv-form button { width: 40px; border-radius: 10px; border: 0; background: var(--yellow); color: var(--navy); font-size: 16px; cursor: pointer; }
   .adv-form :disabled { opacity: .45; cursor: not-allowed; }
@@ -1404,10 +1407,10 @@
     border: 1px solid rgba(239,139,60,.35); border-radius: 8px;
     padding: 10px 13px; font-size: 12px; line-height: 1.55; margin-bottom: 12px;
   }
-  .msg.warn b { color: var(--target); }
+  .msg.warn b { color: var(--target-ink); }
   .flag {
     display: inline-block; min-width: 15px; padding: 0 4px; border-radius: 4px;
-    background: rgba(239,139,60,.20); color: var(--target);
+    background: rgba(239,139,60,.20); color: var(--target-ink);
     font-size: 10px; font-weight: 700; text-align: center; cursor: help;
   }
 
@@ -1466,7 +1469,7 @@
   .mcount.charter { color: #8fb3e0; }
   .mwhen { font-size: 11px; color: var(--text-3); margin-top: 3px; }
   .mempty { color: var(--text-3); font-size: 13px; padding: 12px 0; }
-  .mcancel { color: var(--danger); font-size: 11px; margin-top: 2px; }
+  .mcancel { color: var(--bad-ink); font-size: 11px; margin-top: 2px; }
   /* ---------- feedback (trip survey sheet) ----------
      Scores are coloured by the sheet's own bands (4.0+, 3.0-3.9, under 3.0)
      with the Trips tab's status steps, and the number always sits beside
@@ -1479,7 +1482,7 @@
   }
   .fb-hbar { display: block; width: 140px; margin-top: 8px; }
   .fb-na { color: var(--text-3); }
-  .fb-flag { margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--q-low); white-space: nowrap; }
+  .fb-flag { margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--bad-ink); white-space: nowrap; }
   .fb-alert {
     margin-top: 16px; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--q-low);
     background: color-mix(in srgb, var(--q-low) 12%, transparent); font-size: 12.5px; line-height: 1.55; color: var(--text-2);
@@ -1487,7 +1490,11 @@
   .fb-alert b { color: var(--strong); }
   /* The opened trip: sticky inside the scroll box, like the Trips details. */
   .fb-detail { position: sticky; left: 16px; max-width: 900px; }
-  .fb-dh { margin: 4px 0 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .fb-filters { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .fb-fl { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .fb-fl select { font: inherit; font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); min-width: 140px; max-width: 260px; }
+  .fb-dc .fb-c { background: var(--card); border: 1px solid var(--line); }
+  .fb-dh { margin: 4px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
   .fb-dh:not(:first-child) { margin-top: 16px; }
   .fb-scores { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 7px 28px; }
   .fb-score { display: grid; grid-template-columns: minmax(0, 1fr) 90px 30px; align-items: center; gap: 10px; font-size: 12px; color: var(--text-2); }
@@ -1496,7 +1503,7 @@
   .fb-score small { display: block; font-size: 10.5px; color: var(--text-3); }
   .fb-detail .trp-dl { position: static; margin-top: 16px; }
   .fb-detail .pnote { margin-top: 12px; }
-  .fb-low .fb-score { grid-template-columns: minmax(0, 1fr) 120px 30px; padding: 5px 0; border-bottom: 1px solid rgba(52,81,124,.35); }
+  .fb-low .fb-score { grid-template-columns: minmax(0, 1fr) 120px 30px; padding: 5px 0; border-bottom: 1px solid var(--line); }
   .fb-low .fb-score .abar { width: 120px; }
   /* What people wrote: one card per comment, grouped programme > trip. */
   .fb-prog + .fb-prog { margin-top: 22px; }
@@ -1583,7 +1590,7 @@
   .mon-st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: color-mix(in srgb, var(--st) 72%, var(--mix-ink)); white-space: nowrap; }
   .mon-st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--st); }
   .mon-where { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mon-late { color: #ff9b91; font-weight: 700; }
+  .mon-late { color: var(--bad-ink); font-weight: 700; }
   .mon-av { display: flex; align-items: center; justify-content: flex-end; }
   .mon-av i {
     width: 28px; height: 28px; margin-left: -3px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
@@ -4073,7 +4080,9 @@
     'R&D': { c: 'var(--q-rd)', g: '◆' },
   };
   const qStyle = (q) => Q_STYLE[q] || { c: 'var(--q-none)', g: '○' };
-  const qGlyph = (q) => `<i style="color:${qStyle(q).c}">${qStyle(q).g}</i>`;
+  // A status colour as text is blended with the strongest ink so it reads in
+  // both themes (amber on white was 1.8:1).
+  const qGlyph = (q) => `<i style="color:color-mix(in srgb, ${qStyle(q).c} 50%, var(--strong))">${qStyle(q).g}</i>`;
   const qPill = (q) => (q ? `<span class="trp-pill" style="background:color-mix(in srgb, ${qStyle(q).c} 22%, transparent)">${qGlyph(q)}${esc(q)}</span>` : '—');
   const usd = (n) => (n == null ? '—' : `$${int(n)}`);
 
@@ -4331,6 +4340,8 @@
   let feedback = null;
   // Which sub-tab of Feedback is open: 'overview', 'ratings' or 'comments'.
   let fbSub = 'overview';
+  // Year / month / programme / trip, shared by Overview, Ratings and Comments.
+  const fbF = { year: 'all', month: 'all', prog: 'all', trip: 'all' };
   const fbFilter = { prog: 'all', kind: 'all' };
   // Trips whose scores are open, by id, so they survive the 5-minute refresh.
   const fbOpen = new Set();
@@ -4366,30 +4377,90 @@
       $('feedbackWrap').innerHTML = `<div class="msg err">Could not load feedback: ${esc(p.error)}</div>`;
       return;
     }
+    // ---- filters: year, month, programme, trip (Anton, 19 Oct 2026) ----
+    // Shared by all three views. Options come from the trips in the sheet,
+    // each counted given the other filters, so nothing empty is offered.
+    const progName = (x) => fbGroupName(x.template || x.programme);
+    const ym = (x) => String(x.month || '');
+    const fbPass = (x, skip) => (skip === 'year' || fbF.year === 'all' || ym(x).slice(0, 4) === fbF.year)
+      && (skip === 'month' || fbF.month === 'all' || ym(x) === fbF.month)
+      && (skip === 'prog' || fbF.prog === 'all' || progName(x) === fbF.prog)
+      && (skip === 'trip' || fbF.trip === 'all' || x.id === fbF.trip);
+    const optsFor = (key, valOf, labelOf, order) => {
+      const seen = new Map();
+      for (const x of p.trips) {
+        if (!fbPass(x, key)) continue;
+        const v = valOf(x);
+        if (v) seen.set(v, (seen.get(v) || 0) + 1);
+      }
+      if (fbF[key] !== 'all' && !seen.has(fbF[key])) fbF[key] = 'all';
+      return [...seen].sort(order).map(([v, n]) => `<option value="${attr(v)}"${fbF[key] === v ? ' selected' : ''}>${esc(labelOf(v))} (${n})</option>`).join('');
+    };
+    const desc = (a, b) => b[0].localeCompare(a[0]);
+    const tripLabel = new Map(p.trips.map((x) => [x.id, `${x.name} · ${fbMonth(x.month)}`]));
+    const fbSelect = (key, label, all, opts) => `<label class="fb-fl"><span>${label}</span><select data-fb-sel="${key}">
+      <option value="all"${fbF[key] === 'all' ? ' selected' : ''}>${all}</option>${opts}</select></label>`;
+    // Each select is built after the ones it depends on have dropped any
+    // value that no longer exists.
+    const yearOpts = optsFor('year', (x) => ym(x).slice(0, 4), (v) => v, desc);
+    const monthOpts = optsFor('month', ym, (v) => fbMonth(v), desc);
+    const progOpts = optsFor('prog', progName, (v) => v, (a, b) => FB_GROUPS.indexOf(a[0]) - FB_GROUPS.indexOf(b[0]));
+    const tripOpts = optsFor('trip', (x) => x.id, (v) => tripLabel.get(v) || v, () => 0);
+    const filtered = Object.values(fbF).some((v) => v !== 'all');
+    const fbFilterBar = `<div class="fb-filters">
+      ${fbSelect('year', 'Year', 'All years', yearOpts)}
+      ${fbSelect('month', 'Month', 'All months', monthOpts)}
+      ${fbSelect('prog', 'Programme', 'All programmes', progOpts)}
+      ${fbSelect('trip', 'Trip', 'All trips', tripOpts)}
+      ${filtered ? '<button class="btn" type="button" data-fb-clear>Clear</button>' : ''}
+    </div>`;
+    const trips = p.trips.filter((x) => fbPass(x));
+    const tripIds = new Set(trips.map((x) => x.id));
+
     const t = p.totals;
-    const escTrips = p.trips.filter((x) => x.escalations > 0);
+    const escTrips = trips.filter((x) => x.escalations > 0);
     const ofMatch = (v) => /^(\d+) of (\d+)$/.exec(String(v || ''));
 
     // ---- overview: tiles ----
-    const reported = ofMatch(t.tripsReported);
-    const counted = ofMatch(t.responsesCounted);
+    // Unfiltered: the sheet's own figures. Filtered: recomputed from the
+    // trips shown, satisfaction weighted by responses (which is how the
+    // sheet's year-to-date figure is made: it matches it exactly).
+    let sat = t.satisfaction;
+    let reported = ofMatch(t.tripsReported);
+    let counted = ofMatch(t.responsesCounted);
+    let escN = t.escalations;
+    if (filtered) {
+      const rated = trips.filter((x) => x.satisfaction != null && x.responses);
+      const resp = rated.reduce((a, x) => a + x.responses, 0);
+      sat = resp ? rated.reduce((a, x) => a + x.satisfaction * x.responses, 0) / resp : null;
+      reported = [null, trips.filter((x) => x.overall != null).length, trips.length];
+      const r = trips.reduce((a, x) => a + (x.responses || 0), 0);
+      counted = [null, r, r];
+      escN = trips.reduce((a, x) => a + (x.escalations || 0), 0);
+    }
     const tiles = `
       <div class="bvhero trp-tiles">
-        <div class="bv-side"><div class="bv-lab"><span ${hlp('fbSat')}>Satisfaction</span></div><div class="bv-n bv-act">${t.satisfaction == null ? '—' : pct(t.satisfaction)}</div>
-          ${t.satisfaction == null ? '' : `<div class="abar fb-hbar"><div class="abar-fill" style="width:${(t.satisfaction * 100).toFixed(1)}%;background:${fbBand(t.satisfaction * 5)}"></div></div>`}<div class="bv-s">year to date</div></div>
+        <div class="bv-side"><div class="bv-lab"><span ${hlp('fbSat')}>Satisfaction</span></div><div class="bv-n bv-act">${sat == null ? '—' : pct(sat)}</div>
+          ${sat == null ? '' : `<div class="abar fb-hbar"><div class="abar-fill" style="width:${(sat * 100).toFixed(1)}%;background:${fbBand(sat * 5)}"></div></div>`}<div class="bv-s">${filtered ? 'for the trips shown' : 'year to date'}</div></div>
         <div class="bv-side"><div class="bv-lab"><span ${hlp('fbTrips')}>Trips reported</span></div><div class="bv-n">${reported ? int(reported[1]) : esc(t.tripsReported || '—')}</div><div class="bv-s">${reported ? `of ${int(reported[2])} surveyed` : ''}</div></div>
         <div class="bv-side"><div class="bv-lab"><span ${hlp('fbResp')}>Responses</span></div><div class="bv-n">${counted ? int(counted[1]) : esc(t.responsesCounted || '—')}</div><div class="bv-s">${counted ? `of ${int(counted[2])} counted` : ''}</div></div>
       </div>
-      ${t.escalations ? `<div class="fb-alert"><b>⚑ ${int(t.escalations)} comment${t.escalations === 1 ? '' : 's'} flagged to escalate</b> · ${escTrips.map((x) => esc(`${x.name}, ${fbMonth(x.month)}`)).join('; ')} <button class="trp-toggle" data-fb-sub="comments">Read ${t.escalations === 1 ? 'it' : 'them'}</button></div>` : ''}`;
+      ${escN ? `<div class="fb-alert"><b>⚑ ${int(escN)} comment${escN === 1 ? '' : 's'} flagged to escalate</b> · ${escTrips.map((x) => esc(`${x.name}, ${fbMonth(x.month)}`)).join('; ')} <button class="trp-toggle" data-fb-sub="comments">Read ${escN === 1 ? 'it' : 'them'}</button></div>` : ''}`;
 
     // ---- overview: trips by month ----
     // Overall comes straight after the name so it's on screen on a phone.
     // Response rate is a neutral slate, not the brand fill: amber on this tab
     // already means a 3.0-3.9 score.
+    const commentCard = (c) => `
+      <div class="fb-c${c.escalate ? ' fb-c-esc' : ''}">
+        <div class="fb-c-head"><span class="fb-kind fb-k-${attr(String(c.kind).toLowerCase())}">${esc(c.kind)}</span>${c.source ? `<span>${esc(c.source)}</span>` : ''}${c.escalate ? '<span class="fb-flag">⚑ Escalate</span>' : ''}</div>
+        <div dir="auto">${esc(c.text || '')}</div>
+      </div>`;
     const COLS = 5;
     let lastMonth = null;
-    const tripRows = p.trips.map((x) => {
-      const hasDetail = x.scores.length || x.items.length || x.facts.length || x.noComments;
+    const tripRows = trips.map((x) => {
+      const said = p.comments.filter((c) => c.trip === x.id);
+      const hasDetail = x.scores.length || x.items.length || x.facts.length || x.noComments || said.length;
       const open = hasDetail && fbOpen.has(x.id);
       const monthRow = x.month !== lastMonth ? `<tr class="fb-month"><td colspan="${COLS}">${esc(fbMonth(x.month))}</td></tr>` : '';
       lastMonth = x.month;
@@ -4398,11 +4469,12 @@
           ${x.scores.length ? `<div class="fb-dh">Scores · 1 to 5${x.template ? ` · ${esc(fbGroupName(x.template))} survey` : ''}</div><div class="fb-scores">${x.scores.map((s) => fbScore(s.q, null, s.v)).join('')}</div>` : ''}
           ${x.items.length ? `<div class="fb-dh">Hotels and activities</div><div class="fb-scores">${x.items.filter((s) => s.score != null).map((s) => fbScore(s.item, s.type, s.score)).join('')}</div>` : ''}
           ${x.facts.length ? `<dl class="trp-dl">${x.facts.map((f) => `<dt>${esc(f.q)}</dt><dd>${esc(f.text)}</dd>`).join('')}</dl>` : ''}
+          ${said.length ? `<div class="fb-dh">What people wrote · ${said.length}</div><div class="fb-dc">${said.map(commentCard).join('')}</div>` : ''}
           ${x.noComments ? `<div class="pnote">${esc(x.noComments)}</div>` : ''}
         </div></td></tr>` : '';
       return `${monthRow}
       <tr>
-        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc(fbGroupName(x.template || x.programme))}</span>${hasDetail ? `<button class="trp-toggle" data-fb-open="${attr(x.id)}" aria-expanded="${!!open}">${open ? 'Hide scores' : 'Details'}</button>` : ''}</td>
+        <td class="cname">${esc(x.name)}<span class="trp-sub">${esc(fbGroupName(x.template || x.programme))}</span>${hasDetail ? `<button class="trp-toggle" data-fb-open="${attr(x.id)}" aria-expanded="${!!open}">${open ? 'Hide details' : 'Details'}</button>` : ''}</td>
         <td class="abar-cell">${x.overall == null ? '<span class="fb-na">no answers</span>' : `${fbBar(x.overall, fbBand(x.overall))}<span class="abar-pct">${fbNum(x.overall)}</span>`}</td>
         <td class="num">${esc(x.responsesText || '—')}</td>
         <td class="abar-cell">${x.responseRate == null ? '<span class="fb-na">N/A</span>' : `${fbBar(x.responseRate, 'var(--text-3)', 1)}<span class="abar-pct">${pct(x.responseRate)}</span>`}</td>
@@ -4412,7 +4484,7 @@
 
     // ---- overview: lowest scores ----
     const lows = [];
-    for (const x of p.trips) {
+    for (const x of trips) {
       const where = `${x.name} · ${fbMonth(x.month)}`;
       for (const s of x.scores) if (s.v < 4) lows.push({ label: s.q, where, v: s.v });
       for (const s of x.items) if (s.score != null && s.score < 4) lows.push({ label: `${s.item}${s.type ? ` (${s.type.toLowerCase()})` : ''}`, where, v: s.score });
@@ -4421,7 +4493,7 @@
 
     const overviewHtml = `
       <div class="panel">
-        <div class="ptitle">Trip feedback · ${esc(String(p.trips[0]?.month || p.asOf).slice(0, 4))}</div>
+        <div class="ptitle">Trip feedback · ${filtered ? `${int(trips.length)} trip${trips.length === 1 ? '' : 's'} shown` : esc(String(p.trips[0]?.month || p.asOf).slice(0, 4))}</div>
         ${tiles}
       </div>
 
@@ -4432,7 +4504,7 @@
             <thead><tr>
               ${hcol('fbTrip', 'Trip')}${hcol('fbOverall', 'Overall (1–5)')}${hcol('fbResponses', 'Responses')}${hcol('fbRate', 'Response rate')}${hcol('fbComments', 'Comments')}
             </tr></thead>
-            <tbody>${tripRows || `<tr><td class="cname" colspan="${COLS}">No surveys in the sheet yet.</td></tr>`}</tbody>
+            <tbody>${tripRows || `<tr><td class="cname" colspan="${COLS}">${filtered ? 'No trips match these filters.' : 'No surveys in the sheet yet.'}</td></tr>`}</tbody>
           </table>
         </div>
       </div>
@@ -4460,9 +4532,10 @@
       .filter((g) => p.programmes.some((m) => fbGroupName(m.name) === g.name));
     const ratingsHtml = groups.map((g) => {
       const answered = (x) => x.scores.length || x.facts.length;
-      const trips = p.trips.filter((x) => fbGroupName(x.template || x.programme) === g.name && answered(x));
-      const silent = p.trips.filter((x) => fbGroupName(x.template || x.programme) === g.name && !answered(x));
-      if (!trips.length && !silent.length) return '';
+      const shown = trips;
+      const trips2 = shown.filter((x) => fbGroupName(x.template || x.programme) === g.name && answered(x));
+      const silent = shown.filter((x) => fbGroupName(x.template || x.programme) === g.name && !answered(x));
+      if (!trips2.length && !silent.length) return '';
       const cell = (x, q) => {
         const sc = x.scores.find((a) => a.q === q);
         if (sc) return `<td class="fb-cell">${fbBar(sc.v, fbBand(sc.v))}<b>${fbNum(sc.v)}</b></td>`;
@@ -4474,27 +4547,27 @@
         const own = (p.programmes.find((m) => m.name === x.template) || {}).questions;
         return `<td class="fb-cell fb-na">${x.notAsked.includes(q) || (own && !own.includes(q)) ? 'Not asked' : '—'}</td>`;
       };
-      // A question none of these trips was asked is left out, not shown as
+      // A question none of these trips2 was asked is left out, not shown as
       // a row of "Not asked".
-      const qs = (g.questions || []).filter((q) => trips.some((x) => x.scores.some((a) => a.q === q) || x.facts.some((a) => a.q === q)));
-      const overall = `<tr class="fb-overall"><td class="fb-q">Overall satisfaction</td>${trips.map((x) => (x.overall == null ? '<td class="fb-cell fb-na">—</td>' : `<td class="fb-cell">${fbBar(x.overall, fbBand(x.overall))}<b>${fbNum(x.overall)}</b></td>`)).join('')}</tr>`;
-      const rows = qs.map((q) => `<tr><td class="fb-q">${esc(q)}</td>${trips.map((x) => cell(x, q)).join('')}</tr>`).join('');
+      const qs = (g.questions || []).filter((q) => trips2.some((x) => x.scores.some((a) => a.q === q) || x.facts.some((a) => a.q === q)));
+      const overall = `<tr class="fb-overall"><td class="fb-q">Overall satisfaction</td>${trips2.map((x) => (x.overall == null ? '<td class="fb-cell fb-na">—</td>' : `<td class="fb-cell">${fbBar(x.overall, fbBand(x.overall))}<b>${fbNum(x.overall)}</b></td>`)).join('')}</tr>`;
+      const rows = qs.map((q) => `<tr><td class="fb-q">${esc(q)}</td>${trips2.map((x) => cell(x, q)).join('')}</tr>`).join('');
       return `
       <div class="panel">
-        <div class="ptitle">${esc(g.name)} · ${int(trips.length)} trip${trips.length === 1 ? '' : 's'}</div>
-        ${trips.length ? `
+        <div class="ptitle">${esc(g.name)} · ${int(trips2.length)} trip${trips2.length === 1 ? '' : 's'}</div>
+        ${trips2.length ? `
         <div class="tscroll">
           <table class="ctable fb-matrix">
             <thead><tr>
               <th class="fb-l"><span ${hlp('fbQuestion')}>Question</span></th>
-              ${trips.map((x) => `<th class="fb-trip-h">${esc(x.name)}<small>${esc(fbMonth(x.month))} · ${esc(x.responsesText || '')}</small></th>`).join('')}
+              ${trips2.map((x) => `<th class="fb-trip-h">${esc(x.name)}<small>${esc(fbMonth(x.month))} · ${esc(x.responsesText || '')}</small></th>`).join('')}
             </tr></thead>
             <tbody>${overall}${rows}</tbody>
           </table>
         </div>` : ''}
         ${silent.length ? `<div class="pnote">No answers yet: ${silent.map((x) => esc(`${x.name}, ${fbMonth(x.month)}`)).join('; ')}.</div>` : ''}
       </div>`;
-    }).join('') || '<div class="msg">No ratings in the sheet yet.</div>';
+    }).join('') || `<div class="msg">${filtered ? 'No ratings for these filters.' : 'No ratings in the sheet yet.'}</div>`;
 
     // ---- what people wrote ----
     const progOf = new Map(p.trips.map((x) => [x.id, fbGroupName(x.template || x.programme)]));
@@ -4502,7 +4575,7 @@
     const kinds = [...FB_KINDS.filter((k) => p.comments.some((c) => c.kind === k)), ...new Set(p.comments.map((c) => c.kind).filter((k) => !FB_KINDS.includes(k)))];
     if (fbFilter.prog !== 'all' && !progs.includes(fbFilter.prog)) fbFilter.prog = 'all';
     if (fbFilter.kind !== 'all' && !kinds.includes(fbFilter.kind)) fbFilter.kind = 'all';
-    const passes = (c, skip) => (skip === 'prog' || fbFilter.prog === 'all' || progOf.get(c.trip) === fbFilter.prog)
+    const passes = (c, skip) => tripIds.has(c.trip)
       && (skip === 'kind' || fbFilter.kind === 'all' || c.kind === fbFilter.kind);
     // Each button counts what it would show given the other filter.
     const pills = (key, list) => ['all', ...list].map((v) => {
@@ -4510,11 +4583,6 @@
       return `<button data-fb-f="${key}" data-fb-v="${attr(v)}" aria-pressed="${fbFilter[key] === v}">${v === 'all' ? 'All' : esc(v)} <span class="ecount">${n}</span></button>`;
     }).join('');
     const shownComments = p.comments.filter((c) => passes(c));
-    const commentCard = (c) => `
-      <div class="fb-c${c.escalate ? ' fb-c-esc' : ''}">
-        <div class="fb-c-head"><span class="fb-kind fb-k-${attr(String(c.kind).toLowerCase())}">${esc(c.kind)}</span>${c.source ? `<span>${esc(c.source)}</span>` : ''}${c.escalate ? '<span class="fb-flag">⚑ Escalate</span>' : ''}</div>
-        <div dir="auto">${esc(c.text || '')}</div>
-      </div>`;
     const progBlocks = progs.map((name) => {
       const list = shownComments.filter((c) => progOf.get(c.trip) === name);
       if (!list.length) return '';
@@ -4534,7 +4602,6 @@
       <div class="panel">
         <div class="ptitle">What people wrote · ${int(shownComments.length)} of ${int(p.comments.length)}</div>
         <div class="efilters">
-          <div class="efilter"><span class="efl">Type of trip</span><div class="seg">${pills('prog', progs)}</div></div>
           <div class="efilter"><span class="efl">Type</span><div class="seg">${pills('kind', kinds)}</div></div>
         </div>
         ${progBlocks || '<div class="pnote">No comments match these filters.</div>'}
@@ -4550,6 +4617,7 @@
     $('feedbackWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
       ${subtabs}
+      ${fbFilterBar}
       ${fbSub === 'comments' ? commentsHtml : fbSub === 'ratings' ? ratingsHtml : overviewHtml}`;
 
     bindHelp($('feedbackWrap'));
@@ -4562,6 +4630,11 @@
         if (bar && bar.getBoundingClientRect().top < 0 && typeof bar.scrollIntoView === 'function') bar.scrollIntoView({ block: 'start' });
       });
     });
+    $('feedbackWrap').querySelectorAll('[data-fb-sel]').forEach((el) => {
+      el.addEventListener('change', () => { fbF[el.dataset.fbSel] = el.value; renderFeedback(); });
+    });
+    const clr = $('feedbackWrap').querySelector('[data-fb-clear]');
+    if (clr) clr.addEventListener('click', () => { Object.keys(fbF).forEach((k) => { fbF[k] = 'all'; }); renderFeedback(); });
     $('feedbackWrap').querySelectorAll('[data-fb-f]').forEach((b) => {
       b.addEventListener('click', () => { fbFilter[b.dataset.fbF] = b.dataset.fbV; renderFeedback(); });
     });
@@ -4623,7 +4696,7 @@
   const rvResult = (r) => {
     if (!r) return '<span class="rv-na">—</span>';
     const st = RV_RESULT[r];
-    return st ? `<span class="rv-res"><i style="color:${st.c}">${st.g}</i>${esc(r)}</span>` : `<span class="rv-res rv-na">○ ${esc(r)}</span>`;
+    return st ? `<span class="rv-res"><i style="color:color-mix(in srgb, ${st.c} 50%, var(--strong))">${st.g}</i>${esc(r)}</span>` : `<span class="rv-res rv-na">○ ${esc(r)}</span>`;
   };
 
   // The row's own revenue as a full bar, split by its margin: expenses
@@ -4703,7 +4776,7 @@
         <div class="ptitle"><span ${hlp('rvSuggest')}>Suggestions</span> · what to improve</div>
         <div class="rv-sug">${p.suggestions.map((x) => {
           const st = RV_SUG[x.level] || RV_SUG.note;
-          return `<div class="rv-s" style="border-left-color:${st.c}"><div class="rv-s-head"><span class="rv-s-tag" style="color:${st.c}"><i>${st.g}</i> ${st.l}</span><b>${esc(x.title)}</b></div><div class="rv-s-text">${esc(x.text)}</div></div>`;
+          return `<div class="rv-s" style="border-left-color:${st.c}"><div class="rv-s-head"><span class="rv-s-tag" style="color:color-mix(in srgb, ${st.c} 50%, var(--strong))"><i>${st.g}</i> ${st.l}</span><b>${esc(x.title)}</b></div><div class="rv-s-text">${esc(x.text)}</div></div>`;
         }).join('')}</div>
       </div>` : ''}
       ${groupTable('By month', 'rvMonth', 'Month', p.byMonth, (g) => rvMonth(g.key))}
@@ -4918,6 +4991,11 @@
   const KP_STATUS = { pass: ['✓ Passed', 'pass'], fail: ['✗ Failed', 'fail'], na: ['○ Not checked', 'na'] };
   const KP_ORDER = { fail: 0, pass: 1, na: 2 };
 
+  // Laid out calmly (Anton, 19 Oct 2026: "more clean and clear and not too
+  // hurting to the eye"): a quiet summary, then one list, failed first, each
+  // row its status, the KPI and target, why, and for a failure the next step.
+  // No glowing boxes, no red/green strip; colour only on the small status.
+  let kpShow = 'all'; // 'all' | 'fail' | 'pass'
   function renderKpis() {
     const p = kpiData;
     if (!p) return;
@@ -4925,113 +5003,113 @@
       $('kpisWrap').innerHTML = `<div class="msg err">Could not check the KPIs: ${esc(p.error)}</div>`;
       return;
     }
-    // Counts treat the campaign group as one KPI, as the table shows it.
-    const counted = (list) => {
-      const camps = list.filter((k) => k.group === 'Cost per result');
-      const rest = list.filter((k) => k.group !== 'Cost per result');
-      if (camps.length) rest.push({ name: 'Cost per result · running campaigns', status: camps.some((k) => k.status === 'fail') ? 'fail' : camps.every((k) => k.status === 'na') ? 'na' : 'pass' });
-      return rest;
+    const CPR = 'Cost per result';
+    const statusOf = (list) => (list.some((k) => k.status === 'fail') ? 'fail' : list.every((k) => k.status === 'na') ? 'na' : 'pass');
+    // The per-campaign cost rows count as one KPI, as the list shows them.
+    const items = (area) => {
+      const list = p.kpis.filter((k) => !area || k.area === area);
+      const camps = list.filter((k) => k.group === CPR);
+      const out = list.filter((k) => k.group !== CPR).map((k) => ({ k, status: k.status }));
+      if (camps.length) out.push({ group: camps, status: statusOf(camps) });
+      return out;
     };
-    const all = counted(p.kpis);
-    const passed = all.filter((k) => k.status === 'pass').length;
-    const failed = all.filter((k) => k.status === 'fail').length;
-    const unchecked = all.filter((k) => k.status === 'na').length;
+    const all = items();
+    const passed = all.filter((x) => x.status === 'pass').length;
+    const failed = all.filter((x) => x.status === 'fail').length;
+    const unchecked = all.filter((x) => x.status === 'na').length;
     const total = passed + failed;
     const rate = total ? passed / total : 0;
-    const ringTip = `data-tip="${attr(`<div class="tt">KPIs passing</div><div class="more">${passed} of ${total} checked KPIs passed.</div>`)}"`;
-    const areaChip = (name) => {
-      const list = counted(p.kpis.filter((k) => k.area === name));
-      const ok = list.filter((k) => k.status === 'pass').length;
-      const n = list.filter((k) => k.status !== 'na').length;
-      return `<div class="kp-area"><span>${esc(name)}</span><b>${ok}<small> / ${n}</small></b><i><u style="width:${n ? (ok / n) * 100 : 0}%"></u></i></div>`;
-    };
-    const listTip = (k) => (k.details && k.details.length ? `<span class="kp-more" data-tip="${attr(
+
+    const listTip = (k) => (k.details && k.details.length ? ` <span class="kp-more" data-tip="${attr(
       `<div class="tt">${esc(k.detailTitle || k.name)}</div>`
       + k.details.map((d) => `<div class="trow"><span class="tk">${esc(d.label)}</span><b>${esc(d.value)}</b></div>`).join(''),
-    )}">▸ See the list</span>` : '');
-    // What a KPI is, on hover over its name (lib/kpis.js ABOUT).
+    )}">See the list</span>` : '');
     const nameTip = (name, about) => (about
       ? `<span class="kp-name" data-tip="${attr(`<div class="tt">${esc(name)}</div><div class="more">${esc(about)}</div>`)}">${esc(name)}</span>`
       : esc(name));
-    const row = (k, child) => {
-      const [label, cls] = KP_STATUS[k.status];
-      const camp = k.group === 'Cost per result';
+    const ICON = { pass: '✓', fail: '✗', na: '○' };
+    const WORD = { pass: 'Passed', fail: 'Failed', na: 'Not checked' };
+    const rowHtml = (k, child) => {
+      const camp = k.group === CPR;
       const name = camp ? k.name.replace(/^Cost per result · /, '') : k.name;
-      return `<tr class="${child ? 'kp-child' : ''}">
-          <td class="cname">${nameTip(name, k.about)}<div class="kp-tgt">${camp ? 'Cost per result · ' : 'Target: '}${esc(k.target)}</div></td>
-          <td><span class="kp-st ${cls}">${label}</span></td>
-          <td class="kp-why">${esc(k.why)}${listTip(k)}</td>
-          <td class="kp-do">${k.status === 'fail' ? esc(k.action) : `<span class="kp-ok">${esc(k.action || '')}</span>`}</td>
-        </tr>`;
+      return `<div class="kp-row ${k.status}${child ? ' child' : ''}">
+        <span class="kp-ic ${k.status}" title="${WORD[k.status]}">${ICON[k.status]}</span>
+        <div class="kp-main">
+          <div class="kp-n">${nameTip(name, k.about)}</div>
+          <div class="kp-tgt">${camp ? '' : 'Target: '}${esc(k.target)}</div>
+        </div>
+        <div class="kp-body">
+          <div class="kp-why">${esc(k.why)}${listTip(k)}</div>
+          ${k.status === 'fail' && k.action ? `<div class="kp-do"><b>Next step</b> ${esc(k.action)}</div>` : ''}
+        </div>
+      </div>`;
     };
-    // Every running campaign's cost per result sits in one row that opens
-    // like an accordion (Anton, 12 Oct 2026). It fails if any campaign does.
-    const groupRow = (list) => {
+    const groupHtml = (list, st) => {
       const bad = list.filter((k) => k.status === 'fail');
-      const status = bad.length ? 'fail' : list.every((k) => k.status === 'na') ? 'na' : 'pass';
-      const [label, cls] = KP_STATUS[status];
       const lim = (list[0].target || '').replace(/ or less$/, '');
       const names = bad.map((k) => k.name.replace(/^Cost per result · /, ''));
-      return `<tr class="kp-grp" data-kp-toggle aria-expanded="${kpOpen}">
-          <td class="cname"><span class="kp-caret">${kpOpen ? '▾' : '▸'}</span>${nameTip('Cost per result · running campaigns', list[0].about)}<div class="kp-tgt">Target: ${esc(lim)} or less, each campaign</div><span class="kp-count">${list.length} campaign${list.length === 1 ? '' : 's'} inside</span></td>
-          <td><span class="kp-st ${cls}">${label}</span></td>
-          <td class="kp-why">${bad.length ? `${bad.length} of ${list.length} running campaigns over ${esc(lim)}: ${esc(names.join(', '))}.` : `All ${list.length} running campaigns within ${esc(lim)}.`} <button type="button" class="kp-toggle">${kpOpen ? 'Hide' : 'Show'} ${list.length === 1 ? 'the campaign' : `the ${list.length} campaigns`} ${kpOpen ? '▴' : '▾'}</button></td>
-          <td class="kp-do">${bad.length ? 'Open the list: refresh the creative or narrow the audience of the ones over the limit, and pause any that stay over.' : '<span class="kp-ok">On track, keep it up.</span>'}</td>
-        </tr>${kpOpen ? list.sort((x, y) => KP_ORDER[x.status] - KP_ORDER[y.status]).map((k) => row(k, true)).join('') : ''}`;
-    };
-    const rows = (area) => {
-      const list = p.kpis.filter((k) => k.area === area);
-      const camps = list.filter((k) => k.group === 'Cost per result');
-      const items = list.filter((k) => k.group !== 'Cost per result').map((k) => ({ status: k.status, html: () => row(k) }));
-      if (camps.length) {
-        const st = camps.some((k) => k.status === 'fail') ? 'fail' : camps.every((k) => k.status === 'na') ? 'na' : 'pass';
-        // Right after the other failures it groups with, ahead of passes.
-        items.push({ status: st, html: () => groupRow(camps), first: true });
-      }
-      return items.sort((a, b) => KP_ORDER[a.status] - KP_ORDER[b.status] || (b.first ? 1 : 0) - (a.first ? 1 : 0)).map((x) => x.html()).join('');
+      return `<div class="kp-row ${st} grp" data-kp-toggle role="button" tabindex="0" aria-expanded="${kpOpen}">
+        <span class="kp-ic ${st}" title="${WORD[st]}">${ICON[st]}</span>
+        <div class="kp-main">
+          <div class="kp-n">${nameTip('Cost per result · running campaigns', list[0].about)}</div>
+          <div class="kp-tgt">Target: ${esc(lim)} or less, each campaign</div>
+        </div>
+        <div class="kp-body">
+          <div class="kp-why">${bad.length ? `${bad.length} of ${list.length} running campaigns over ${esc(lim)}: ${esc(names.join(', '))}.` : `All ${list.length} running campaigns within ${esc(lim)}.`}</div>
+          ${bad.length ? '<div class="kp-do"><b>Next step</b> Refresh the creative or narrow the audience of the ones over the limit, and pause any that stay over.</div>' : ''}
+          <span class="kp-open">${kpOpen ? 'Hide' : 'Show'} the ${list.length} campaign${list.length === 1 ? '' : 's'} ${kpOpen ? '▴' : '▾'}</span>
+        </div>
+      </div>
+      ${kpOpen ? `<div class="kp-sub">${list.slice().sort((x, y) => KP_ORDER[x.status] - KP_ORDER[y.status]).map((k) => rowHtml(k, true)).join('')}</div>` : ''}`;
     };
     const area = (name) => {
-      const list = counted(p.kpis.filter((k) => k.area === name));
-      if (!list.length) return '';
-      const ok = list.filter((k) => k.status === 'pass').length;
-      const bad = list.filter((k) => k.status === 'fail').length;
+      const list = items(name).filter((x) => kpShow === 'all' || x.status === kpShow)
+        .sort((x, y) => KP_ORDER[x.status] - KP_ORDER[y.status]);
+      const mine = items(name);
+      const ok = mine.filter((x) => x.status === 'pass').length;
+      const n = mine.filter((x) => x.status !== 'na').length;
       return `<div class="panel">
-        <div class="ptitle">${esc(name)} · ${ok} passed · ${bad} failed</div>
-        <div class="tscroll"><table class="ctable kp-table">
-          <thead><tr><th>KPI</th><th>Status</th><th>Why</th><th>What to do</th></tr></thead>
-          <tbody>${rows(name)}</tbody>
-        </table></div>
+        <div class="kp-ah"><div class="ptitle">${esc(name)}</div><span class="kp-ac">${ok} of ${n} passed</span></div>
+        <div class="kp-list">${list.map((x) => (x.group ? groupHtml(x.group, x.status) : rowHtml(x.k))).join('') || '<div class="pnote">Nothing here with this filter.</div>'}</div>
       </div>`;
     };
     const day = new Date(`${p.today}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const bar = (name) => {
+      const mine = items(name);
+      const ok = mine.filter((x) => x.status === 'pass').length;
+      const n = mine.filter((x) => x.status !== 'na').length;
+      return `<div class="kp-area"><span>${esc(name)}</span><b>${ok}<small> of ${n}</small></b><i><u style="width:${n ? (ok / n) * 100 : 0}%"></u></i></div>`;
+    };
+    const chip = (v, label, n) => `<button data-kp-show="${v}" aria-pressed="${kpShow === v}">${label} <span class="ecount">${n}</span></button>`;
     $('kpisWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last check — ${esc(p.error || 'a source was unreachable')}</div>` : ''}
       <div class="panel">
         <div class="ptitle">KPIs · ${esc(day)} · sales and marketing</div>
         <div class="kp-hero">
-          <div class="kp-ring" ${ringTip}>
+          <div class="kp-ring">
             <svg viewBox="0 0 120 120" aria-hidden="true">
-              <circle class="kp-ring-bg" cx="60" cy="60" r="50"/>
-              <circle class="kp-ring-fg" cx="60" cy="60" r="50" stroke-dasharray="${(rate * 314.16).toFixed(1)} 314.16" transform="rotate(-90 60 60)"/>
+              <circle class="kp-ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="kp-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="${(rate * 326.7).toFixed(1)} 326.7" transform="rotate(-90 60 60)"/>
             </svg>
-            <div class="kp-ring-n"><b>${total ? Math.round(rate * 100) : '—'}${total ? '<small>%</small>' : ''}</b><span>passing</span></div>
+            <div class="kp-ring-n"><b>${int(passed)}</b><span>of ${int(total)}</span></div>
           </div>
-          <div class="kp-stats">
-            <div class="kp-stat pass"><b>${int(passed)}</b><span>✓ Passed</span></div>
-            <div class="kp-stat fail"><b>${int(failed)}</b><span>✗ Failed</span></div>
-            ${unchecked ? `<div class="kp-stat na"><b>${int(unchecked)}</b><span>○ Not checked</span></div>` : ''}
+          <div class="kp-sum">
+            <div class="kp-big">${total ? `${int(passed)} of ${int(total)} KPIs passed` : 'No KPI checked yet'}</div>
+            <div class="kp-counts"><span class="kp-c pass">✓ ${int(passed)} passed</span><span class="kp-c fail">✗ ${int(failed)} failed</span>${unchecked ? `<span class="kp-c na">○ ${int(unchecked)} not checked</span>` : ''}</div>
           </div>
-          <div class="kp-areas">${areaChip('Sales')}${areaChip('Marketing')}</div>
+          <div class="kp-areas">${bar('Sales')}${bar('Marketing')}</div>
         </div>
-        <div class="kp-seg">${all.map((k) => `<i class="${k.status}" data-tip="${attr(`<div class="tt">${esc(k.name)}</div><div class="more">${esc(KP_STATUS[k.status][0])}</div>`)}"></i>`).join('')}</div>
       </div>
+      <div class="kp-filter seg">${chip('all', 'All', all.length)}${chip('fail', 'Failed', failed)}${chip('pass', 'Passed', passed)}</div>
       ${area('Sales')}
       ${area('Marketing')}`;
     bindHelp($('kpisWrap'));
-    $('kpisWrap').querySelectorAll('[data-kp-toggle]').forEach((tr) => tr.addEventListener('click', () => {
-      kpOpen = !kpOpen;
-      renderKpis();
-    }));
+    $('kpisWrap').querySelectorAll('[data-kp-show]').forEach((b) => b.addEventListener('click', () => { kpShow = b.dataset.kpShow; renderKpis(); }));
+    $('kpisWrap').querySelectorAll('[data-kp-toggle]').forEach((el) => {
+      const go = () => { kpOpen = !kpOpen; renderKpis(); };
+      el.addEventListener('click', (e) => { if (!e.target.closest('.kp-name, .kp-more')) go(); });
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
   }
 
   async function loadKpis(force) {
@@ -5699,7 +5777,7 @@
   };
   // [container selector, item selector, show, phone only]
   const CLAMP = [
-    ['table.ctable:not(.kp-table):not(.fb-matrix) > tbody', ':scope > tr', 10],
+    ['table.ctable:not(.kp-table):not(.fb-matrix) > tbody', ':scope > tr:not(.trp-detail)', 10],
     ['.mon-list', ':scope > .mon-row', 10],
     ['#previousWrap .panel', ':scope > .pt-month', 3],
     ['.fb-prog', ':scope > .fb-trip', 3],
@@ -5708,7 +5786,7 @@
   const pvSel = {};
   const pvOpen = new Set();
   const pvTitle = (el) => {
-    const t = el.querySelector(':scope > .ptitle, :scope > .lhead .ptitle, :scope > .lhead');
+    const t = el.querySelector('.ptitle') || el.querySelector(':scope > .lhead');
     return t ? t.textContent.replace(/\s+/g, ' ').split(' · ')[0].trim().slice(0, 24) : '';
   };
 
@@ -5764,15 +5842,19 @@
         if ((phoneOnly && !PHONE.matches) || items.length <= show + (show >= 5 ? 2 : 0)) return;
         const key = `${wrap.id}|${ci}|${bi}`;
         const open = pvOpen.has(key);
+        // An opened "Details" row goes with its own row.
+        box.querySelectorAll(':scope > tr.trp-detail').forEach((el) => el.classList.remove('pv-hide'));
+        const real = items.filter((el) => !/(^|\s)\S*-month(\s|$)/.test(el.className)).length;
         if (!open) {
           items.slice(show).forEach((el) => el.classList.add('pv-hide'));
+          box.querySelectorAll(':scope > tr.trp-detail').forEach((el) => { if (el.previousElementSibling && el.previousElementSibling.classList.contains('pv-hide')) el.classList.add('pv-hide'); });
           // A month heading with none of its rows left showing goes too.
           for (let i = show - 1; i >= 0 && /(^|\s)\S*-month(\s|$)/.test(items[i].className); i -= 1) items[i].classList.add('pv-hide');
         }
         const more = document.createElement('button');
         more.type = 'button';
         more.className = 'pv-more';
-        more.textContent = open ? 'Show fewer ▴' : `Show all ${items.length} ▾`;
+        more.textContent = open ? 'Show fewer ▴' : `Show all ${real} ▾`;
         more.addEventListener('click', () => {
           if (open) pvOpen.delete(key); else pvOpen.add(key);
           pvTidy(wrap);

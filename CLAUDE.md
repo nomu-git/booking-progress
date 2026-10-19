@@ -780,6 +780,21 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
   trip name so it's on screen on a phone.
 - Classes are prefixed `fb-`; `.flag` already exists elsewhere, hence
   `fb-flag`.
+- **Filters (Anton, 19 Oct 2026)**: Year / Month / Programme / Trip
+  dropdowns under the sub-tabs (`fbF`, `.fb-filters`), shared by Overview,
+  Ratings and What people wrote; each lists only what exists given the
+  others, with counts, plus Clear. The comments view's "Type of trip" pills
+  went (Programme does that); its Type pills stay. Filtered, the Overview
+  tiles are **recomputed from the trips shown**: satisfaction weighted by
+  responses, which reproduces the sheet's own 93.9% exactly when nothing is
+  filtered (checked), "N of M trips", responses, escalations.
+- **Details now include the trip's comments** ("What people wrote · N",
+  verbatim cards) under its scores, hotels and facts; the button reads
+  Details / Hide details.
+- **The open Details panel was a dark navy slab in light mode**
+  (`rgba(22,41,74,.55)`, a leftover from the navy theme) with its headings
+  nearly invisible. Now `var(--card-2)` with a teal edge, headings in
+  `--text-2`.
 - **This tab puts verbatim customer comments, including the escalated
   KUMSA complaint, and staff names (Salim, Surti, Maria, Roy) on a public
   URL with no login.** No traveller names are in the sheet. Flagged to
@@ -1103,6 +1118,15 @@ artwork that isn't ready a week before its post.
   failure never blocks the bookings message.
 - A temporary secret-gated `calendar-discover` tab was used to read the
   board layout and removed; `api/sheets.js` keeps the generic `secret` gate.
+- **Redesigned 19 Oct 2026** (Anton: "more clean and clear and not too
+  hurting to the eye"): a quiet summary (small ring "4 of 11", "N of M KPIs
+  passed", two soft chips, Sales / Marketing bars on a neutral track); then
+  an **All / Failed / Passed** filter (`kpShow`); then one list per area,
+  failed first, each row a small ✓ / ✗ icon, the KPI and its target, why,
+  and for a failure "Next step" (the action). No tables, no glowing boxes,
+  no 11-block red/green strip. The cost-per-result campaigns are still one
+  row that opens (`kpOpen`, "Show the 4 campaigns"), indented when open.
+  Classes `kp-`; the old `kp-table` / `kp-seg` / `kp-stat` styles are gone.
 - Not built: a monday **board** for KPIs (needs write access; the tab is the
   board for now). Operations KPIs were left out as asked.
 
@@ -1294,6 +1318,37 @@ so no page's own render code changed:
   above the bar, smaller, without its cloud. Section tabs scroll sideways.
 - The Adviser bubble's gradient was still the old yellow in dark mode; now
   teal.
+
+## Colour and contrast pass (19 Oct 2026)
+
+Anton: "make sure to always check the color so everything is visible and
+not hurting the eye". **`tools/contrast-audit.js`** is run inside the real
+page (pass it as the 8th argument to `tools/webkit-shot.js`): it walks every
+visible text node, blends its colour over the real background stack, and
+lists anything under WCAG 4.5:1 (3:1 for large/bold text) as
+`window.__out`. **Run it on every page in both themes after any colour or
+layout change.** Known false positives: chart axis numbers and the Report's
+"TARGET 12/WEEK" flag sit on a 1–2px line element, so the audit reads the
+line's colour as their background.
+
+What it found and what changed:
+- Light `--text-3` (#6d8792, 3.8:1 on white) → **#527079**; light accent
+  `--yellow` (#1a8fa1, 3.8:1) → **#137483** (`--acc-rgb` follows; bars keep
+  `--fill` #2099ac); light `--good-ink` → #0f7a3a.
+- **Status colours as text** now use ink tokens per theme: `--target-ink`,
+  `--warn-ink`, `--hp-ink`, `--fresh-ink` (amber on white was 1.6–1.9:1:
+  "■ Watch", "Improve", "5 HP"); `--bad-ink` for late dates, "▼ −8%",
+  cancellations. Inline status colours set in JS (Trips' quality glyphs,
+  Revenue's result / suggestion tags) are mixed with the strongest ink:
+  `color-mix(in srgb, <status> 50%, var(--strong))`, which darkens in light
+  and lightens in dark. The Leads target-line labels do the same.
+- Trips' quality pills and R&D strip had **white text on a pale tint** in
+  light mode (invisible): now `var(--strong)`.
+- Leftover navy literals: table borders and row hover
+  (`rgba(52,81,124,…)`) → `var(--line)` / an accent tint; a few dividers.
+- Cancelled week numbers: white on #b8342b in both themes.
+- Rule for new CSS: **text never takes a status or chart colour directly**;
+  use an ink token or the colour-mix above, and run the audit.
 
 ## Login gate, light / dark mode (18 Oct 2026)
 

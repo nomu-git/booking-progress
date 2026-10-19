@@ -17,7 +17,7 @@ function run(argv) {
   const js = (code) => { res = undefined; wv.evaluateJavaScriptCompletionHandler(code, (r, e) => { res = e && !e.isNil() ? 'ERR ' + e.localizedDescription.js : (r && !r.isNil() ? ObjC.unwrap(r) : null); }); for (let i = 0; i < 50 && res === undefined; i++) spin(0.1); return res; };
   if (pre) { js(pre); spin(1.5); }
   const h = js('document.documentElement.scrollHeight');
-  const info = js('JSON.stringify({h: document.documentElement.scrollHeight, view: typeof view, bars: [...document.querySelectorAll(".pv-bar")].filter(b=>b.offsetParent).map(b=>b.textContent), more: [...document.querySelectorAll(".pv-more")].filter(b=>b.offsetParent).map(b=>b.textContent), err: window.__err||null})');
+  const info = js('JSON.stringify({h: document.documentElement.scrollHeight, view: typeof view, bars: [...document.querySelectorAll(".pv-bar")].filter(b=>b.offsetParent).map(b=>b.textContent), more: [...document.querySelectorAll(".pv-more")].filter(b=>b.offsetParent).map(b=>b.textContent), err: window.__err||null, out: window.__out||null})');
   const fullH = Math.min(Number(h) || Number(H), 6000);
   win.setContentSize($.NSMakeSize(Number(W), fullH)); wv.setFrame($.NSMakeRect(0, 0, Number(W), fullH)); spin(1);
   let done = false;
