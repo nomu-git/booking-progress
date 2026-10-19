@@ -1,4 +1,5 @@
 const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
+const { leadProject } = require('./booking-report');
 
 // No cut-off by default: every departure WeTravel has open shows, however far
 // out. It was 2026-12-31 until 5 Oct 2026, which hid the five January 2027
@@ -270,6 +271,9 @@ async function build() {
       title: trip.title,
       url: trip.url,
       destination: trip.destination || '',
+      // Destination / programme codes ("TH" / "WL"), for the Booking tab's
+      // trip filter (Shakir's suggestion, Oct 2026).
+      ...leadProject(trip),
       start: weeks[0].start,
       end: weeks[weeks.length - 1].end,
       totalBooked: weeks.reduce((sum, w) => sum + w.booked, 0),

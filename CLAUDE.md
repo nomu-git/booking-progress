@@ -30,9 +30,26 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~340,000 characters. Thirteen views in five sidebar
-  categories (`<aside class="sidebar">`, its `<nav id="viewSeg">` holds the
-  `data-view` buttons `setView()` drives). Regrouped by Anton, 4 Oct 2026:
+  `<script>`, no bundler. ~350,000 characters. Thirteen views.
+  **Sidebar restructured 19 Oct 2026** (Muatasam: "so much information
+  scattered in the website but not as focused. Please restructure on a way
+  that can be executive and clear focused"; Shakir's advice: overview first,
+  details in tabs): the sidebar (`<nav id="viewSeg">`) has **five entries,
+  `data-section` buttons: Dashboard, Sales, Marketing, Operations,
+  Corporate** (+ Settings). Each section's pages are **underlined tabs
+  across the top** (`#secTabs`, `.sec-tabs`), built by `setView()` from the
+  `SECTIONS` array in `index.html`: Sales = Booking / Previous Sales / Report
+  / Leads; Marketing = Campaign Ads / Campaign History / Engagements;
+  Operations = Trips & R&D / Feedback / Trip Revenue; Corporate = KPIs /
+  Monday Tasks. A section reopens on the page it last showed (`secLast`).
+  The old `#bookSub` / `#adsSub` bars are gone (the section tabs replace
+  them); pages with their own pill sub-tabs inside (Trips, Feedback,
+  Revenue, Engagements) keep them. **The header title is the section name**
+  (`#pageTitle`); the booking date range shows only on Booking
+  (`#rangeWrap`), and the New in 24h / Last Week / Weekly Target figures only
+  on Booking, Previous Sales and Report (`#headStats`). Every `data-view`
+  value and `#hash` is unchanged. The grouping before that (4 Oct 2026),
+  kept for history:
   - **OVERVIEW**: Dashboard (`data-view="overview"`, 19 Oct 2026), the
     executive overview and **the first screen** for a device with nothing
     saved. See "Dashboard tab (executive overview)" below. Not to be confused
@@ -1170,27 +1187,28 @@ months, quick overview first and the detail one tap away, easy on the eyes.
   `kpiData`); opening the tab loads whatever's missing, and every loader
   calls `ovSoon()` so cards fill in as their source arrives ("Loading …"
   until then). A card and its tab can't disagree.
-- **Reporting period** (`ovPeriod`, saved with the view state): This week
-  (Sun–Sat, Muscat, as the Report) / This month / This year. **PDF** button
-  = `print()`, with an `@media print` block that prints only the page.
-- **Cards** (`ovCard()`: icon, name, period pill, number "of target", % on
-  the right, a bar with an optional mark, one line under it; the whole card
-  is a link to its tab). Four per row:
-  - Sales: **Bookings** (period; target 12 a week scaled to the period's
-    length, the mark = where pace says it should be by today; the year uses
-    `previousTrips.sales`, a week or month the Report's events), **Bookings ·
-    last 24 hours** (with the last 14 days as small bars), **Leads** (target
-    20 × days logged), **Conversion** (bookings ÷ leads, same period, 10%,
-    `leadBookings()`; leads data starts 1 Jul, said on the card).
-  - Marketing: **High potential leads** (5 × days with HP recorded), **Cost
-    per result** (running campaigns within SAR 25, `cprOver`), **Ad budget
-    used** (YTD spend ÷ media-plan budget, mark = share of the year gone),
-    **Engagement rate** (posts in the period, 1% proposed).
-  - Operations & team: **Guest satisfaction** (YTD + latest surveyed month,
-    escalations), **Trip margin** (**percentage only**, Muatasam's rule;
-    30%+ healthy mark), **KPIs passed** (cost-per-result rows count as one,
-    as on the KPIs tab), **Pending tasks** (monday statuses as a stacked bar
-    in monday's colours, overdue count).
+- **KPI scorecard first** (Muatasam, 19 Oct 2026: "Also pls in dashboard.
+  Add daily, weekly, monthly KPIs"; `ovScore()`): one row per KPI, three
+  columns, each cell the value "of target", ✓ / ✗, a bar (with the pace mark
+  where it applies) and a line. **Daily = yesterday** (the last whole day,
+  and the one Marina has logged), **Weekly = this week so far** (Sun–Sat,
+  Muscat), **Monthly = this month so far**, judged on pace. Rows: Bookings
+  (12 a week → 1.7 a day / 12 / 12 × days ÷ 7, "N in the last 24 hours"
+  under the name), Leads (20 × days logged), High potential (5 × days with
+  HP), Conversion (weekly / monthly only, as Muatasam said daily makes no
+  sense; 10%), Engagement rate (weekly / monthly; 1% proposed). "N of M on
+  target" in the title. The earlier This week / month / year toggle was
+  removed: the three columns replace it. Rows link to their page. On a phone
+  the name sits above the three cells.
+- **At a glance** (`ovGlance()`, `ovCard()`: icon, name, pill, number "of
+  N", bar, one line; whole card links to its page), three per row: **Cost
+  per result** (running campaigns within SAR 25, `cprOver`), **Ad budget
+  used** (YTD spend ÷ media-plan budget, mark = share of the year gone),
+  **Guest satisfaction** (YTD + latest surveyed month, escalations), **Trip
+  margin** (**percentage only**, Muatasam's rule; 30%+ healthy mark), **All
+  KPI checks** (the KPIs tab's pass count, cost-per-result rows as one),
+  **Pending tasks** (monday statuses as a stacked bar in monday's colours,
+  overdue count). **PDF** button = `print()`, with an `@media print` block.
 - **Bookings by month** (`ovChart()`): `previousTrips.sales.months`, 6 / 12
   / 24 months (`ovMonths`), category filter (`ovCat`: All, a destination, a
   programme, or a destination + programme). Needs **`cats`** per month, added
@@ -1205,8 +1223,17 @@ months, quick overview first and the detail one tap away, easy on the eyes.
   percentages only until Muatasam says otherwise. And with the 12-a-week
   target the year reads 116 of 626 (19%), so the bookings cards will be red
   most of the time; that's the agreed target, not a bug.
-- Not done yet from the meeting: category / month filters on the Booking tab,
-  moving its detail into Report sub-tabs, push notifications once installed.
+- **Booking filters** (Shakir: filter by month and by trip, "so only
+  existing items populate"; 19 Oct 2026): above the board, **month pills**
+  (All months / Nov 2026 / Dec 2026 …, each with its count) and a **Trip**
+  dropdown (All trips, then Destination / Programme / Trip groups, each with
+  its count), built from the departures on the board, so an option with
+  nothing in it is never offered and counts follow the other filter. A
+  Clear button when filtered. `bkMonth` / `bkCat` / `bkFilterBar()` in
+  `index.html`; needs **`pd` / `pg` per trip, added to
+  `api/trips-progress.js`** the same day (via `booking-report.js`
+  `leadProject()`); without them the Trip dropdown just doesn't show.
+- Not done yet from the meeting: push notifications once installed.
 - Classes `ov-`. Checked in both themes, at phone width (2 cards a row, 1
   under 360px), against live data for all three periods.
 

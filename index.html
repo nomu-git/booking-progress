@@ -138,17 +138,50 @@
      on the eyes: white cards, one accent, colour only where it means
      on / off target. Classes prefixed ov-. */
   #overviewWrap > * + * { margin-top: 14px; }
-  .ov-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
-  .ov-h1 { font-size: 22px; font-weight: 800; color: var(--strong); letter-spacing: -.01em; }
-  .ov-sub { font-size: 12.5px; color: var(--text-3); margin-top: 3px; }
-  .ov-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .ov-ctrl .lbl { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
-  .ov-ctrl .seg button { font-size: 12.5px; padding: 6px 13px; }
+  .ov-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .ov-sub { font-size: 12.5px; color: var(--text-3); }
+  /* KPI scorecard: one row per KPI, judged daily (yesterday), weekly and
+     monthly. On a phone the KPI name sits above its three cells. */
+  .ovk { border-radius: 14px; }
+  .ovk-sum { font-size: 12.5px; color: var(--text-2); }
+  .ovk-sum b { color: var(--strong); font-size: 15px; }
+  .ovk-head, .ovk-row { display: grid; grid-template-columns: minmax(170px, 1.1fr) repeat(3, minmax(0, 1fr)); gap: 16px; align-items: center; }
+  .ovk-head { padding: 0 10px 9px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+  .ovk-head span { display: flex; flex-direction: column; gap: 2px; }
+  .ovk-head b { color: var(--text); }
+  .ovk-head small { font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .ovk-row { padding: 13px 10px; border-bottom: 1px solid var(--line); border-radius: 10px; color: inherit; text-decoration: none; }
+  .ovk-row:last-child { border-bottom: 0; }
+  .ovk-row:hover, .ovk-row:focus-visible { background: rgba(var(--acc-rgb),.06); outline: none; }
+  .ovk-name b { display: block; font-size: 14px; color: var(--strong); }
+  .ovk-name small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--text-3); }
+  .ovk-wrap { min-width: 0; }
+  .ovk-mob { display: none; }
+  .ovk-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ovk-v { display: flex; align-items: baseline; gap: 4px; }
+  .ovk-v b { font-size: 20px; font-weight: 800; color: var(--strong); font-variant-numeric: tabular-nums; }
+  .ovk-v small { font-size: 12px; font-weight: 600; color: var(--text-3); }
+  .ovk-st { margin-left: auto; align-self: center; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; }
+  .ovk-cell.good .ovk-st { color: var(--good-ink); background: rgba(12,163,12,.13); }
+  .ovk-cell.bad .ovk-st { color: var(--bad-ink); background: rgba(208,59,59,.13); }
+  .ovk-cell.na .ovk-v b, .ovk-cell.wait .ovk-v b { color: var(--text-3); font-weight: 600; }
+  .ovk-n { font-size: 11.5px; line-height: 1.35; color: var(--text-3); }
+  @media (max-width: 760px) {
+    .ovk-head { display: none; }
+    .ovk-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px 4px; align-items: start; }
+    .ovk-v { white-space: nowrap; }
+    .ovk-v small { font-size: 10.5px; }
+    .ovk-name { grid-column: 1 / -1; }
+    .ovk-mob { display: block; margin-bottom: 4px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+    .ovk-v b { font-size: 17px; }
+    .ovk-st { width: 17px; height: 17px; font-size: 10px; }
+  }
   .ov-pdf { display: inline-flex; align-items: center; gap: 6px; }
   .ov-pdf svg { width: 15px; height: 15px; }
   .ov-sec { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--text-3); margin-top: 20px !important; }
   .ov-sec::after { content: ''; flex: 1; height: 1px; background: var(--line); }
-  .ov-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px; margin-top: 10px !important; }
+  .ov-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 10px !important; }
+  @media (max-width: 1100px) { .ov-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .ov-card {
     display: flex; flex-direction: column; gap: 10px; min-width: 0;
     background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 15px 16px 14px;
@@ -174,9 +207,6 @@
   .ov-track > b { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--text-2); }
   .ov-stack { display: flex; gap: 2px; height: 8px; border-radius: 999px; overflow: hidden; background: var(--track); }
   .ov-stack > i { display: block; height: 100%; min-width: 3px; }
-  .ov-spark { display: flex; align-items: flex-end; gap: 3px; height: 30px; }
-  .ov-spark > i { flex: 1; min-width: 0; border-radius: 3px 3px 0 0; background: rgba(var(--fill-rgb),.35); min-height: 2px; }
-  .ov-spark > i.on { background: var(--fill); }
   .ov-note { font-size: 11.5px; line-height: 1.4; color: var(--text-3); }
   .ov-note b { color: var(--text-2); font-weight: 700; }
   .ov-note .good { color: var(--good-ink); font-weight: 700; } .ov-note .bad { color: var(--bad-ink); font-weight: 700; } .ov-note .warn { color: var(--target); font-weight: 700; }
@@ -232,16 +262,15 @@
     .ov-num { font-size: 22px; white-space: normal; }
     .ov-note { font-size: 11px; }
     .ov-pill { display: none; }
-    .ov-ctrl { width: 100%; }
   }
   @media (max-width: 360px) { .ov-grid { grid-template-columns: minmax(0, 1fr); } }
   /* Download PDF prints the page: just the overview, on white. */
   @media print {
-    .sidebar, .sb-backdrop, .head .headright, .sb-menu, #adv, .ov-ctrl, .ov-filters, .ov-more { display: none !important; }
+    .sidebar, .sb-backdrop, .head .headright, .sb-menu, #adv, .sec-tabs, .ov-pdf, .ov-filters, .ov-more { display: none !important; }
     .shell { margin-left: 0 !important; padding: 0 !important; }
     body { background: #fff; }
     .ov-card, .ov-low .panel { break-inside: avoid; box-shadow: none !important; }
-    .ov-grid { grid-template-columns: repeat(4, 1fr); }
+    .ov-grid { grid-template-columns: repeat(3, 1fr); }
   }
 
   * { box-sizing: border-box; }
@@ -351,7 +380,7 @@
 
   /* ---------- header ---------- */
   .head { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding-bottom: 16px; }
-  .titles h1 { margin: 0; font-size: 16px; font-weight: 700; }
+  .titles h1 { margin: 0; font-size: 20px; font-weight: 800; color: var(--strong); letter-spacing: -.01em; }
   .asof { margin-top: 2px; font-size: 11.5px; color: var(--text-2); }
   .asof b { color: var(--yellow); font-weight: 600; }
   .spacer { flex: 1; }
@@ -959,6 +988,17 @@
   /* In-page sub-tabs: the same pill switch as the pickers, a size up, so it
      reads as navigation for the tab rather than a filter. */
   .seg.subtabs { margin-bottom: 12px; padding: 3px; }
+  /* Section tabs: the pages of the open sidebar section, as underlined text
+     so they don't look like the pill sub-tabs some pages have inside. */
+  .bk-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .bk-filters .seg { flex-wrap: wrap; }
+  .bk-filters .seg button { font-size: 12.5px; padding: 6px 12px; }
+  .bk-filters select { font: inherit; font-size: 12.5px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); max-width: 240px; }
+  .sec-tabs { display: flex; gap: 2px; margin: -6px 0 18px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+  .sec-tabs::-webkit-scrollbar { display: none; }
+  .sec-tabs button { flex: none; background: none; border: 0; border-bottom: 2.5px solid transparent; margin-bottom: -1px; padding: 9px 14px 10px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--text-3); cursor: pointer; white-space: nowrap; }
+  .sec-tabs button:hover { color: var(--text); }
+  .sec-tabs button[aria-selected="true"] { color: var(--yellow); border-bottom-color: var(--yellow); }
   .seg.subtabs button { font-size: 13px; font-weight: 600; padding: 7px 16px; }
   /* Top-aligned: the quality tiles carry a "trips" line the first two don't, and
      bottom alignment left their labels on different lines. */
@@ -1560,32 +1600,16 @@
       <div class="sb-brand"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16,13c1.66,0,2.99-1.34,2.99-3S17.66,7,16,7c-1.66,0-3,1.34-3,3S14.34,13,16,13z M8,13c1.66,0,2.99-1.34,2.99-3S9.66,7,8,7C6.34,7,5,8.34,5,10S6.34,13,8,13z M8,14.9c-2.03,0-6,1.02-6,3.05L2,20h6h2v-1.83c0-1.94,2.09-3.28,4-3.28c0.13,0,0.26,0.01,0.39,0.02C12.15,15.62,9.28,14.9,8,14.9z M16,14.9c-0.31,0-0.59,0.02-0.85,0.05C15.7,15.53,16,16.62,16,17.17V20h6v-2.05C22,15.92,18.03,14.9,16,14.9z"/></svg><span>NomuHub CRM</span></div>
       <button class="sb-btn sb-toggle" id="sbToggle" aria-controls="sidebar" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     </div>
+    <!-- Five entries, not eleven (Muatasam, 19 Oct 2026: "so much
+         information scattered ... restructure ... executive and clear
+         focused"). Each section's pages are tabs across its top (#secTabs). -->
     <nav class="sb-nav" id="viewSeg">
       <div class="sb-group">
-        <div class="sb-cat">Overview</div>
-        <button class="sb-item" data-view="overview" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.4"/><path d="M5 19h14"/></svg><span class="sb-label">Dashboard</span></button>
-      </div>
-      <div class="sb-group">
-        <div class="sb-cat">Sales</div>
-        <button class="sb-item" data-view="board" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="sb-label">Booking</span></button>
-        <button class="sb-item" data-view="report" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-8M12 20V5M18 20v-11M3 20h18"/></svg><span class="sb-label">Report</span></button>
-        <button class="sb-item" data-view="leads" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg><span class="sb-label">Leads</span></button>
-      </div>
-      <div class="sb-group">
-        <div class="sb-cat">Operations</div>
-        <button class="sb-item" data-view="trips" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg><span class="sb-label">Trips &amp; R&amp;D</span></button>
-        <button class="sb-item" data-view="feedback" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="sb-label">Feedback</span></button>
-        <button class="sb-item" data-view="revenue" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg><span class="sb-label">Trip Revenue</span></button>
-      </div>
-      <div class="sb-group">
-        <div class="sb-cat">Marketing</div>
-        <button class="sb-item" data-view="campaigns" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4a1 1 0 0 0 1 1h2.5L16 19.5V4.5L6.5 9H4a1 1 0 0 0-1 1z"/><path d="M7 15.2l1.6 4.4a1 1 0 0 0 .94.66h1.1a1 1 0 0 0 .92-1.38L10.4 16.8"/><path d="M19 8l2-1.5M19.5 12H22M19 16l2 1.5"/></svg><span class="sb-label">Campaign Ads</span></button>
-        <button class="sb-item" data-view="engagements" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="sb-label">Engagements</span></button>
-      </div>
-      <div class="sb-group">
-        <div class="sb-cat">Corporate</div>
-        <button class="sb-item" data-view="kpis" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/><circle cx="17" cy="7" r="1.5"/></svg><span class="sb-label">KPIs</span></button>
-        <button class="sb-item" data-view="pending" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11l2 2 4-4M9 17h6"/></svg><span class="sb-label">Monday</span></button>
+        <button class="sb-item" data-section="overview" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.4"/><path d="M5 19h14"/></svg><span class="sb-label">Dashboard</span></button>
+        <button class="sb-item" data-section="sales" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="sb-label">Sales</span></button>
+        <button class="sb-item" data-section="marketing" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4a1 1 0 0 0 1 1h2.5L16 19.5V4.5L6.5 9H4a1 1 0 0 0-1 1z"/><path d="M19 8l2-1.5M19.5 12H22M19 16l2 1.5"/></svg><span class="sb-label">Marketing</span></button>
+        <button class="sb-item" data-section="operations" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z"/><path d="M9 4v13M15 7v13"/></svg><span class="sb-label">Operations</span></button>
+        <button class="sb-item" data-section="corporate" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg><span class="sb-label">Corporate</span></button>
       </div>
       <div class="sb-group">
         <div class="sb-cat">Settings</div>
@@ -1600,12 +1624,12 @@
   <div class="head">
     <button class="sb-btn sb-menu" id="sbMenu" aria-controls="sidebar" aria-expanded="false" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="titles">
-      <h1 id="range">Booking Data</h1>
-      <div class="asof">As of <b id="asof">—</b></div>
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="asof"><span id="rangeWrap" hidden>Departures <span id="range">—</span> · </span>As of <b id="asof">—</b></div>
     </div>
     <div class="spacer"></div>
     <div class="headright">
-      <div class="stats">
+      <div class="stats" id="headStats">
         <div class="stat" id="sNewWrap"><div class="n" id="sNew">—</div><div class="l">New in 24h</div></div>
         <div class="stat"><div class="n" id="sLastWeek">—</div><div class="l">Last Week</div></div>
         <div class="stat"><div class="n" id="sWeeklyTarget">—</div><div class="l">Weekly Target</div></div>
@@ -1616,12 +1640,7 @@
     </div>
   </div>
 
-  <!-- Previous Sales is the Booking tab's second sub-tab (Muatasam, 5 Oct
-       2026). Both keep their own view (#board / #previous). -->
-  <div class="seg subtabs" id="bookSub" role="tablist" aria-label="Booking sections" hidden>
-    <button role="tab" data-book-sub="board">Upcoming</button>
-    <button role="tab" data-book-sub="previous">Previous Sales</button>
-  </div>
+  <div class="sec-tabs" id="secTabs" role="tablist" aria-label="Pages in this section" hidden></div>
 
   <div class="announce-list" id="announce" hidden></div>
 
@@ -1637,12 +1656,6 @@
   <div id="board"></div>
   <div id="reportWrap" hidden></div>
   <div id="previousWrap" hidden></div>
-  <!-- History Campaign sits inside Ads as its second sub-tab. Both keep
-       their own view (#campaigns / #history), so old links still land. -->
-  <div class="seg subtabs" id="adsSub" role="tablist" aria-label="Ads sections" hidden>
-    <button role="tab" data-ads-sub="campaigns">Campaigns</button>
-    <button role="tab" data-ads-sub="history">History</button>
-  </div>
   <div id="campaignsWrap" hidden></div>
   <div id="historyWrap" hidden></div>
   <div id="leadsWrap" hidden></div>
@@ -1703,8 +1716,6 @@
   // The executive Dashboard is the first screen (Anton, 19 Oct 2026); a
   // device that was on another tab goes back to it.
   let view = 'overview';
-  // The Dashboard's reporting period: 'week' | 'month' | 'year'.
-  let ovPeriod = 'week';
   let latest = null;
 
   // Banner content comes from Vercel env vars via /api/announcement, so it can
@@ -1758,7 +1769,7 @@
   function saveViewState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        view, rGran, rCount, selectedWeekStart, selectedMonthStart, ptYear, ptMonth, ovPeriod,
+        view, rGran, rCount, selectedWeekStart, selectedMonthStart, ptYear, ptMonth,
       }));
     } catch (e) { /* storage unavailable (private mode, etc.) — just skip persisting */ }
   }
@@ -1771,7 +1782,6 @@
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
       if (['overview', 'board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'].includes(s.view)) view = s.view;
-      if (['week', 'month', 'year'].includes(s.ovPeriod)) ovPeriod = s.ovPeriod;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -1890,9 +1900,46 @@
       </div>`;
   }
 
+  // Booking filters (Shakir, Oct 2026: filter by month and by trip, like
+  // Thai Wellness or Bali Teaching, so only what exists shows). Options are
+  // built from the departures on the board, so nothing empty is offered.
+  let bkMonth = 'all';
+  let bkCat = 'all';
+  const bkCatMatch = (t) => (bkCat === 'all' ? true
+    : bkCat.startsWith('d:') ? t.pd === bkCat.slice(2)
+      : bkCat.startsWith('p:') ? t.pg === bkCat.slice(2)
+        : `${t.pd}|${t.pg}` === bkCat.slice(2));
+  function bkFilterBar(all) {
+    const monthsSeen = [...new Set(all.map((t) => monthKey(t.start)))];
+    if (bkMonth !== 'all' && !monthsSeen.includes(bkMonth)) bkMonth = 'all';
+    const count = (fn) => all.filter((t) => (bkMonth === 'all' || monthKey(t.start) === bkMonth) && fn(t)).length;
+    const dests = [...new Set(all.filter((t) => t.pd).map((t) => t.pd))];
+    const progs = [...new Set(all.filter((t) => t.pg).map((t) => t.pg))];
+    const pairs = [...new Set(all.filter((t) => t.pd && t.pg).map((t) => `${t.pd}|${t.pg}`))];
+    if (bkCat !== 'all' && !count(bkCatMatch)) bkCat = 'all';
+    const opt = (v, label, n) => (n || v === bkCat ? `<option value="${attr(v)}"${v === bkCat ? ' selected' : ''}>${esc(label)} (${n})</option>` : '');
+    const byName = (lab) => (a, b) => lab(a).localeCompare(lab(b));
+    const dl = (d) => OV_DEST[d] || d;
+    const pl = (g) => OV_PROG[g] || g;
+    const save = bkCat;
+    const cnt = (v) => { bkCat = v; const n = count(bkCatMatch); bkCat = save; return n; };
+    const monthBtn = (k, label) => `<button data-bk-month="${k}" aria-pressed="${bkMonth === k}">${esc(label)} · ${all.filter((t) => (k === 'all' || monthKey(t.start) === k) && bkCatMatch(t)).length}</button>`;
+    return `<div class="bk-filters">
+      <div class="seg">${monthBtn('all', 'All months')}${monthsSeen.map((k) => monthBtn(k, D(k + '-01').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }))).join('')}</div>
+      ${dests.length ? `<select id="bkCat" aria-label="Trip">
+        <option value="all"${bkCat === 'all' ? ' selected' : ''}>All trips (${count(() => true)})</option>
+        <optgroup label="Destination">${dests.sort(byName(dl)).map((d) => opt('d:' + d, dl(d), cnt('d:' + d))).join('')}</optgroup>
+        <optgroup label="Programme">${progs.sort(byName(pl)).map((g) => opt('p:' + g, pl(g), cnt('p:' + g))).join('')}</optgroup>
+        <optgroup label="Trip">${pairs.sort(byName((c) => dl(c.split('|')[0]) + pl(c.split('|')[1]))).map((c) => opt('c:' + c, `${dl(c.split('|')[0])} · ${pl(c.split('|')[1])}`, cnt('c:' + c))).join('')}</optgroup>
+      </select>` : ''}
+      ${bkMonth !== 'all' || bkCat !== 'all' ? '<button class="btn" id="bkClear" type="button">Clear</button>' : ''}
+    </div>`;
+  }
+
   function render(p) {
-    const trips = p.trips || [];
-    if (!trips.length) {
+    const all = p.trips || [];
+    const trips = all.filter((t) => (bkMonth === 'all' || monthKey(t.start) === bkMonth) && bkCatMatch(t));
+    if (!all.length) {
       $('msg').textContent = 'No departures between today and ' + p.seasonEnd + '.';
       $('msg').hidden = view !== 'board'; $('board').hidden = true; $('legend').hidden = true; $('announce').hidden = true;
       return;
@@ -1913,7 +1960,7 @@
       else months.push({ key, label: monthName(t.start), trips: [t] });
     }
 
-    $('board').innerHTML = months.map((m) => {
+    $('board').innerHTML = bkFilterBar(all) + (trips.length ? '' : '<div class="msg">No departures match these filters.</div>') + months.map((m) => {
       const booked = m.trips.reduce((s, t) => s + t.totalBooked, 0);
       return `<section class="month">
         <div class="mhead">${esc(m.label)}
@@ -1927,6 +1974,12 @@
     // from the Report data (see applyHeaderStats), so it's identical whether
     // you're looking at the Dashboard or the Report tab — not a second,
     // slightly-different count computed from the board's own data.
+
+    $('board').querySelectorAll('[data-bk-month]').forEach((b) => b.addEventListener('click', () => { bkMonth = b.dataset.bkMonth; render(p); }));
+    const sel = $('bkCat');
+    if (sel) sel.addEventListener('change', () => { bkCat = sel.value; render(p); });
+    const clr = $('bkClear');
+    if (clr) clr.addEventListener('click', () => { bkMonth = 'all'; bkCat = 'all'; render(p); });
 
     $('notes').innerHTML = (p.warnings || []).length
       ? '<b>Needs attention in WeTravel:</b> ' + p.warnings.map((w) => esc(w.title) + ' — ' + esc(w.issue)).join(' · ')
@@ -5140,12 +5193,14 @@
   /* ================= Dashboard (executive overview) ================= */
 
   // What the executives check first (Anton, 19 Oct 2026, from his meeting
-  // with Shakir, who built HASA's EMMS): bookings in the last 24 hours, this
-  // week and this month against target, then one card per area, and a tap
-  // on any card opens the tab with the details. Nothing is fetched just for
-  // this page: every card reads the data its own tab already loads, so a
-  // card and its tab can never disagree. Trip Revenue stays percentages only
-  // (Muatasam, 4 Oct 2026), so the margin card has no amount on it.
+  // with Shakir, who built HASA's EMMS; Muatasam the same day: "Add daily,
+  // weekly, monthly KPIs" and make it "executive and clear focused"). The
+  // KPI scorecard comes first: each KPI judged for yesterday, this week and
+  // this month. Then one card per area, then bookings by month and the next
+  // departures. Every row and card opens the page with the details. Nothing
+  // is fetched just for this page: it reads the data each page already
+  // loads, so the two can never disagree. Trip Revenue stays percentages
+  // only (Muatasam, 4 Oct 2026), so the margin card has no amount.
   let ovCat = 'all';
   let ovMonths = 12;
   let ovTimer = null;
@@ -5164,15 +5219,8 @@
   };
 
   const OV_ICON = {
-    bookings: '<path d="M4 6h16v14H4z"/><path d="M8 3v5M16 3v5M4 10h16"/><path d="M9 15l2 2 4-4"/>',
-    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
-    leads: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/>',
-    star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
-    funnel: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
     target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
     wallet: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12.5h2M3 9h18"/>',
-    heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/>',
-    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/>',
     smile: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14a4 4 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',
     percent: '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.3"/><circle cx="17" cy="17" r="2.3"/>',
     gauge: '<path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/><circle cx="17" cy="7" r="1.5"/>',
@@ -5185,42 +5233,22 @@
   const ovDiff = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
   const ovMon = (ym, long) => new Date(ym + '-01T00:00:00Z').toLocaleDateString('en-GB', { month: long ? 'long' : 'short', timeZone: 'UTC' });
   const ovDate = (day) => new Date(day + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const ovWeekday = (day) => new Date(day + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   const ovPct = (x, dp) => (Number.isFinite(x) ? (x * 100).toFixed(dp == null ? 0 : dp) + '%' : '—');
 
-  // The reporting period: Sunday to Saturday (the Report's week), the
-  // calendar month, or the calendar year, all in Muscat time.
-  function ovRange(today) {
-    if (ovPeriod === 'month') {
-      const start = today.slice(0, 7) + '-01';
-      return { start, end: ovAdd(ovAdd(start, 32).slice(0, 7) + '-01', -1), pill: 'Month', label: 'this month' };
-    }
-    if (ovPeriod === 'year') return { start: today.slice(0, 4) + '-01-01', end: today.slice(0, 4) + '-12-31', pill: 'Year', label: 'this year' };
-    const start = ovAdd(today, -new Date(today + 'T00:00:00Z').getUTCDay());
-    return { start, end: ovAdd(start, 6), pill: 'Week', label: 'this week' };
-  }
-
-  // Bookings taken between two days (charters out, as on the Report). The
-  // year comes from the monthly sales series, which reaches back further
-  // than the Report's 300 days; a week or month from the Report's events.
+  // Bookings taken between two days, charters out, as the Report counts them.
   function ovBooked(start, end) {
-    const z = end < ovToday() ? end : ovToday();
-    const months = previousTrips && previousTrips.sales && previousTrips.sales.months;
-    if (ovPeriod === 'year' && months) {
-      let n = 0;
-      for (const [k, v] of Object.entries(months)) if (k >= start.slice(0, 7) && k <= z.slice(0, 7)) n += v.n;
-      return n;
-    }
     if (!report || !report.events) return null;
     let n = 0;
     for (const e of report.events) {
       if (e.x || !e.n) continue;
       const d = omanDay(e.at);
-      if (d >= start && d <= z) n += e.n;
+      if (d >= start && d <= end) n += e.n;
     }
     return n;
   }
 
-  // Leads and high potential leads Marina logged in the period. Days come
+  // Leads and high potential leads Marina logged between two days. Days come
   // from the daily sheet; weeks only her weekly report covers (late July to
   // mid September) count whole, by their first day.
   function ovLeads(start, end) {
@@ -5239,11 +5267,118 @@
         if (w.hp != null) { hp += w.hp; hpDays += len; }
       }
     }
-    return { n, hp, days, hpDays, first: leads.weeks.length ? leads.weeks[0].start : null };
+    return { n, hp, days, hpDays };
   }
 
-  // One card: icon, name, period pill, the number against its target, a bar,
-  // and one line on what it means. The whole card opens its tab.
+  /* ---- KPI scorecard: daily, weekly, monthly ---- */
+
+  // Daily is yesterday, the last whole day (and the one Marina has logged);
+  // weekly and monthly are this week (Sunday to Saturday, as the Report) and
+  // this month so far, judged on pace.
+  function ovPeriods(today) {
+    const y = ovAdd(today, -1);
+    const ws = ovAdd(today, -new Date(today + 'T00:00:00Z').getUTCDay());
+    const ms = today.slice(0, 7) + '-01';
+    const me = ovAdd(ovAdd(ms, 32).slice(0, 7) + '-01', -1);
+    return [
+      { key: 'd', head: 'Daily', sub: `Yesterday · ${ovWeekday(y)}`, start: y, end: y, len: 1, gone: 1 },
+      { key: 'w', head: 'Weekly', sub: `This week · ${ovDate(ws)} – ${ovDate(ovAdd(ws, 6))}`, start: ws, end: today, len: 7, gone: ovDiff(ws, today) + 1 },
+      { key: 'm', head: 'Monthly', sub: `This month · ${ovMon(ms.slice(0, 7), true)}`, start: ms, end: today, len: ovDiff(ms, me) + 1, gone: ovDiff(ms, today) + 1 },
+    ];
+  }
+
+  // One cell: { v, of, ok, bar, mark, note } or { na: 'why' } or null while loading.
+  function ovCell(c) {
+    if (c == null) return '<div class="ovk-cell wait"><div class="ovk-v"><b>…</b></div><div class="ovk-n">Loading</div></div>';
+    if (c.na) return `<div class="ovk-cell na"><div class="ovk-v"><b>—</b></div><div class="ovk-n">${esc(c.na)}</div></div>`;
+    const st = c.ok ? 'good' : 'bad';
+    const w = Math.max(0, Math.min(1, c.bar || 0)) * 100;
+    const mark = c.mark != null && c.mark > 0 && c.mark < 1 ? `<b style="left:${(c.mark * 100).toFixed(1)}%"></b>` : '';
+    return `<div class="ovk-cell ${st}">
+      <div class="ovk-v"><b>${c.v}</b>${c.of != null ? `<small> of ${c.of}</small>` : ''}<span class="ovk-st">${c.ok ? '✓' : '✗'}</span></div>
+      <div class="ov-track"><i class="${st}" style="width:${w.toFixed(1)}%"></i>${mark}</div>
+      <div class="ovk-n">${c.note || ''}</div>
+    </div>`;
+  }
+
+  function ovScore(today) {
+    const P = ovPeriods(today);
+    const W = (report && report.weeklyTarget) || 12;
+    const LT = LEADS_DAILY_TARGET;
+    const HT = HP_DAILY_TARGET;
+    const fmt1 = (x) => (Math.round(x * 10) / 10).toString();
+    const rows = [];
+
+    // Bookings: 12 a week, scaled to the period and judged on pace by today.
+    rows.push({ go: 'report', name: 'Bookings', target: `${W} a week`, extra: report && report.events ? `${int(last24hTotal(report.events))} in the last 24 hours` : '', cells: P.map((p) => {
+      const n = ovBooked(p.start, p.end);
+      if (n == null) return null;
+      const target = (W * p.len) / 7;
+      const expected = (W * p.gone) / 7;
+      const ok = n >= expected;
+      const tShow = p.key === 'd' ? fmt1(target) : int(target);
+      return { v: int(n), of: tShow, ok, bar: n / target, mark: p.key === 'd' ? null : expected / target,
+        note: p.key === 'd' ? (ok ? 'Daily pace reached' : 'Under the daily pace') : `${ok ? 'On pace' : 'Behind pace'}: ${Math.ceil(expected)} by today` };
+    }) });
+
+    // Leads and high potential: the daily target times the days logged.
+    const L = P.map((p) => ovLeads(p.start, p.end));
+    rows.push({ go: 'leads', name: 'Leads', target: `${LT} a day`, cells: P.map((p, i) => {
+      const l = L[i];
+      if (!l) return null;
+      if (!l.days) return { na: p.key === 'd' ? 'Not logged yet' : 'Nothing logged yet' };
+      const t = LT * l.days;
+      return { v: int(l.n), of: int(t), ok: l.n >= t, bar: l.n / t, note: p.key === 'd' ? `${l.n >= t ? 'Target reached' : `${int(t - l.n)} short`}` : `${fmt1(l.n / l.days)} a day · ${l.days} day${l.days === 1 ? '' : 's'} logged` };
+    }) });
+    rows.push({ go: 'leads', name: 'High potential leads', target: `${HT} a day`, cells: P.map((p, i) => {
+      const l = L[i];
+      if (!l) return null;
+      if (!l.hpDays) return { na: l.days ? 'Not recorded' : (p.key === 'd' ? 'Not logged yet' : 'Nothing logged yet') };
+      const t = HT * l.hpDays;
+      return { v: int(l.hp), of: int(t), ok: l.hp >= t, bar: l.hp / t, note: p.key === 'd' ? `${l.hp >= t ? 'Target reached' : `${int(t - l.hp)} short`}` : `${fmt1(l.hp / l.hpDays)} a day` };
+    }) });
+
+    // Conversion: same-period bookings ÷ leads; weekly and monthly only
+    // (Muatasam, 8 Oct 2026: daily makes no sense).
+    rows.push({ go: 'leads', name: 'Conversion', target: `${ovPct(CONV_TARGET)} or more`, cells: P.map((p, i) => {
+      if (p.key === 'd') return { na: 'Weekly and monthly only' };
+      const l = L[i];
+      const lb = leadBookings(p.start, p.end);
+      if (!l || !lb) return null;
+      if (!l.n) return { na: 'No leads logged yet' };
+      const c = lb.all / l.n;
+      return { v: ovPct(c, 1), of: ovPct(CONV_TARGET), ok: c >= CONV_TARGET, bar: c / (2 * CONV_TARGET), mark: 0.5, note: `${int(lb.all)} booking${lb.all === 1 ? '' : 's'} ÷ ${int(l.n)} leads` };
+    }) });
+
+    // Engagement on posts: interactions ÷ views, as Maryam's sheet.
+    const ET = 0.01;
+    rows.push({ go: 'engagements', name: 'Engagement rate', target: '1% or more (proposed)', cells: P.map((p) => {
+      if (p.key === 'd') return { na: 'Weekly and monthly only' };
+      if (!engagements || !engagements.posts) return null;
+      const posts = engagements.posts.filter((x) => x.date && x.date >= p.start && x.date <= p.end && x.views);
+      if (!posts.length) return { na: 'No posts recorded yet' };
+      const views = posts.reduce((a, x) => a + (x.views || 0), 0);
+      const acts = posts.reduce((a, x) => a + (x.interactions || 0), 0);
+      const e = acts / views;
+      return { v: ovPct(e, 2), of: '1%', ok: e >= ET, bar: e / (2 * ET), mark: 0.5, note: `${posts.length} post${posts.length === 1 ? '' : 's'} · ${int(views)} views` };
+    }) });
+
+    const judged = rows.flatMap((r) => r.cells).filter((c) => c && !c.na);
+    const good = judged.filter((c) => c.ok).length;
+    return `<div class="panel ovk">
+      <div class="ov-ph"><div class="ptitle">KPIs · daily, weekly, monthly</div>${judged.length ? `<span class="ovk-sum"><b>${good}</b> of ${judged.length} on target</span>` : ''}</div>
+      <div class="ovk-grid">
+        <div class="ovk-head"><span>KPI</span>${P.map((p) => `<span><b>${p.head}</b><small>${esc(p.sub)}</small></span>`).join('')}</div>
+        ${rows.map((r) => `<a class="ovk-row" href="#${r.go}" data-go="${r.go}">
+          <div class="ovk-name"><b>${esc(r.name)}</b><small>Target ${esc(r.target)}${r.extra ? ` · ${esc(r.extra)}` : ''}</small></div>
+          ${r.cells.map((c, i) => `<div class="ovk-wrap"><span class="ovk-mob">${P[i].head}</span>${ovCell(c)}</div>`).join('')}
+        </a>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  /* ---- At a glance: one card per area ---- */
+
   function ovCard(o) {
     const w = Math.max(0, Math.min(1, o.bar || 0)) * 100;
     const mark = o.mark != null && o.mark > 0 && o.mark < 1 ? `<b style="left:${(o.mark * 100).toFixed(1)}%"></b>` : '';
@@ -5256,96 +5391,9 @@
     </a>`;
   }
   const ovWait = (o, what) => ovCard(Object.assign({ value: '—', bar: 0, note: `Loading ${what}…` }, o));
-  const ovGlyph = (ok) => (ok ? '<span class="good">▲</span>' : '<span class="bad">▼</span>');
 
-  function ovSalesCards(today, r) {
-    const W = (report && report.weeklyTarget) || 12;
-    const len = ovDiff(r.start, r.end) + 1;
-    const gone = ovDiff(r.start, today) + 1;
+  function ovGlance(today) {
     const cards = [];
-
-    // Bookings in the period, against 12 a week scaled to its length, and the
-    // pace mark: how many there should be by today.
-    const bk = { go: 'report', tab: 'Report', icon: 'bookings', title: 'Bookings', pill: r.pill };
-    const n = ovBooked(r.start, r.end);
-    if (n == null) cards.push(ovWait(bk, 'bookings'));
-    else {
-      const target = Math.round((W * len) / 7);
-      const expected = (W * gone) / 7;
-      const ok = n >= expected;
-      cards.push(ovCard(Object.assign(bk, {
-        value: int(n), of: int(target), pct: ovPct(n / target), state: ok ? 'good' : 'bad', bar: n / target, mark: expected / target,
-        note: `${ovGlyph(ok)} ${ok ? 'On pace' : 'Behind pace'}: about <b>${int(expected)}</b> expected by today (${W} a week)`,
-      })));
-    }
-
-    // The last 24 hours, with the last 14 days as small bars.
-    const dy = { go: 'report', tab: 'Report', icon: 'clock', title: 'Bookings · last 24 hours', pill: '24h' };
-    if (!report || !report.events) cards.push(ovWait(dy, 'bookings'));
-    else {
-      const per = new Map();
-      for (let i = 13; i >= 0; i -= 1) per.set(ovAdd(today, -i), 0);
-      for (const e of report.events) {
-        if (e.x || !e.n) continue;
-        const d = omanDay(e.at);
-        if (per.has(d)) per.set(d, per.get(d) + e.n);
-      }
-      const vals = [...per.values()];
-      const max = Math.max(1, ...vals);
-      const spark = `<div class="ov-spark">${[...per.entries()].map(([d, v]) => `<i class="${v ? 'on' : ''}" style="height:${((v / max) * 100).toFixed(0)}%" title="${attr(ovDate(d) + ': ' + v)}"></i>`).join('')}</div>`;
-      cards.push(ovCard(Object.assign(dy, {
-        value: int(last24hTotal(report.events)), visual: spark,
-        note: `Last 14 days: <b>${int(vals.reduce((a, b) => a + b, 0))}</b> · daily pace for ${W} a week is ${(W / 7).toFixed(1)}`,
-      })));
-    }
-
-    // Leads, high potential and conversion, from Marina's sheet.
-    const L = ovLeads(r.start, r.end);
-    const sinceNote = L && L.first && L.first > r.start ? ` · since ${ovDate(L.first)}, when the sheet starts` : '';
-    const ld = { go: 'leads', tab: 'Leads', icon: 'leads', title: 'Leads', pill: r.pill };
-    const cv = { go: 'leads', tab: 'Leads', icon: 'funnel', title: 'Conversion', pill: r.pill };
-    if (!L) { cards.push(ovWait(ld, 'leads'), ovWait(cv, 'leads')); return cards; }
-    const LT = typeof LEADS_DAILY_TARGET === 'number' ? LEADS_DAILY_TARGET : 20;
-    if (!L.days) cards.push(ovCard(Object.assign(ld, { value: '0', note: `Nothing logged ${r.label} yet` })));
-    else {
-      const lt = LT * L.days;
-      cards.push(ovCard(Object.assign(ld, {
-        value: int(L.n), of: int(lt), pct: ovPct(L.n / lt), state: L.n >= lt ? 'good' : 'bad', bar: L.n / lt,
-        note: `${ovGlyph(L.n >= lt)} ${(L.n / L.days).toFixed(1)} a day, target ${LT} · <b>${L.days}</b> day${L.days === 1 ? '' : 's'} logged${sinceNote}`,
-      })));
-    }
-    // Same-period bookings ÷ leads, as the Leads tab, from the day the sheet starts.
-    const a = L.first && L.first > r.start ? L.first : r.start;
-    const b = r.end < today ? r.end : today;
-    const lb = leadBookings(a, b);
-    const T = typeof CONV_TARGET === 'number' ? CONV_TARGET : 0.1;
-    if (!lb) cards.push(ovWait(cv, 'bookings'));
-    else if (!L.n) cards.push(ovCard(Object.assign(cv, { value: '—', of: ovPct(T), note: `No leads logged ${r.label} yet` })));
-    else {
-      const c = lb.all / L.n;
-      cards.push(ovCard(Object.assign(cv, {
-        value: ovPct(c, 1), of: ovPct(T), pct: `${int(lb.all)} ÷ ${int(L.n)}`, state: c >= T ? 'good' : 'bad', bar: c / (2 * T), mark: 0.5,
-        note: `${ovGlyph(c >= T)} ${int(lb.all)} booking${lb.all === 1 ? '' : 's'} ÷ ${int(L.n)} leads${sinceNote}`,
-      })));
-    }
-    return cards;
-  }
-
-  function ovMarketingCards(today, r) {
-    const cards = [];
-    // High potential leads sit here, as lead quality, so each row has four cards.
-    const hpc = { go: 'leads', tab: 'Leads', icon: 'star', title: 'High potential leads', pill: r.pill, tone: 'mkt' };
-    const L = ovLeads(r.start, r.end);
-    const HT = typeof HP_DAILY_TARGET === 'number' ? HP_DAILY_TARGET : 5;
-    if (!L) cards.push(ovWait(hpc, 'leads'));
-    else if (!L.hpDays) cards.push(ovCard(Object.assign(hpc, { value: L.days ? '—' : '0', note: L.days ? `Not recorded ${r.label}` : `Nothing logged ${r.label} yet` })));
-    else {
-      const ht = HT * L.hpDays;
-      cards.push(ovCard(Object.assign(hpc, {
-        value: int(L.hp), of: int(ht), pct: ovPct(L.hp / ht), state: L.hp >= ht ? 'good' : 'bad', bar: L.hp / ht,
-        note: `${ovGlyph(L.hp >= ht)} ${(L.hp / L.hpDays).toFixed(1)} a day, target ${HT} · <b>${L.hpDays}</b> day${L.hpDays === 1 ? '' : 's'} recorded`,
-      })));
-    }
     const cp = { go: 'campaigns', tab: 'Campaign Ads', icon: 'target', title: 'Cost per result', pill: 'Running', tone: 'mkt' };
     const bu = { go: 'campaigns', tab: 'Campaign Ads', icon: 'wallet', title: 'Ad budget used', pill: 'Year', tone: 'mkt' };
     if (!campaigns || !campaigns.campaigns) cards.push(ovWait(cp, 'Meta'), ovWait(bu, 'Meta'));
@@ -5358,59 +5406,36 @@
       const early = running.filter((c) => !c.cprOver && (c.results || 0) < minR).length;
       const okN = running.length - over.length;
       cards.push(ovCard(Object.assign(cp, {
-        value: int(okN), of: int(running.length), pct: running.length ? ovPct(okN / running.length) : '', state: over.length ? 'bad' : 'good', bar: running.length ? okN / running.length : 0,
+        value: int(okN), of: `${int(running.length)} within limit`, state: over.length ? 'bad' : 'good', bar: running.length ? okN / running.length : 0,
         note: (running.length
           ? (over.length
             ? `<span class="bad">▼ Over ${esc(cur)} ${int(lim)}:</span> ${over.map((c) => `${esc(c.name)} (${esc(money(c.costPerResult))})`).join(', ')}`
-            : `<span class="good">▲</span> Running campaigns within ${esc(cur)} ${int(lim)} a result`)
+            : `<span class="good">▲</span> All within ${esc(cur)} ${int(lim)} a result`)
             + (early ? ` · ${early} with under ${minR} results yet` : '')
           : 'No campaign is running right now'),
       })));
       const t = campaigns.totals || {};
       const used = t.budget ? t.spend / t.budget : null;
-      const yearGone = (ovDiff(today.slice(0, 4) + '-01-01', today) + 1) / (ovDiff(today.slice(0, 4) + '-01-01', today.slice(0, 4) + '-12-31') + 1);
+      const y0 = today.slice(0, 4) + '-01-01';
+      const yearGone = (ovDiff(y0, today) + 1) / (ovDiff(y0, today.slice(0, 4) + '-12-31') + 1);
       cards.push(ovCard(Object.assign(bu, {
         value: ovPct(used), of: `${esc(cur)} ${int(t.budget)}`, state: used != null && used > 1 ? 'bad' : '', bar: used, mark: yearGone,
-        note: `<b>${esc(cur)} ${int(t.spend)}</b> spent · ${ovPct(yearGone)} of the year gone (the mark) · ${esc(cur)} ${int(t.dailyBudget)} a day on ${int(t.active)} running`,
+        note: `<b>${esc(cur)} ${int(t.spend)}</b> spent · ${ovPct(yearGone)} of the year gone (the mark) · ${int(t.active)} running`,
       })));
     }
 
-    // Engagement on posts in the period: interactions ÷ views, as Maryam's sheet.
-    const en = { go: 'engagements', tab: 'Engagements', icon: 'heart', title: 'Engagement rate', pill: r.pill, tone: 'mkt' };
-    if (!engagements || !engagements.posts) cards.push(ovWait(en, 'posts'));
-    else {
-      const posts = engagements.posts.filter((p) => p.date && p.date >= r.start && p.date <= r.end && p.views);
-      const views = posts.reduce((a, p) => a + (p.views || 0), 0);
-      const acts = posts.reduce((a, p) => a + (p.interactions || 0), 0);
-      const T = 0.01;
-      if (!posts.length) cards.push(ovCard(Object.assign(en, { value: '—', of: '1%', note: `No posts recorded ${r.label} yet` })));
-      else {
-        const e = acts / views;
-        cards.push(ovCard(Object.assign(en, {
-          value: ovPct(e, 2), of: '1%', pct: `${posts.length} post${posts.length === 1 ? '' : 's'}`, state: e >= T ? 'good' : 'bad', bar: e / (2 * T), mark: 0.5,
-          note: `${ovGlyph(e >= T)} ${int(acts)} interactions on ${int(views)} views · target 1% (proposed)`,
-        })));
-      }
-    }
-
-    return cards;
-  }
-
-  function ovOpsCards() {
-    const cards = [];
     const fb = { go: 'feedback', tab: 'Feedback', icon: 'smile', title: 'Guest satisfaction', pill: 'Year', tone: 'ops' };
     if (!feedback || !feedback.totals) cards.push(ovWait(fb, 'feedback'));
     else {
-      const sat = feedback.totals.satisfaction;
       const trips = (feedback.trips || []).filter((t) => t.overall != null && t.month);
       const lastM = trips.reduce((m, t) => (t.month > m ? t.month : m), '');
       const last = trips.filter((t) => t.month === lastM);
       const avg = last.length ? last.reduce((a, t) => a + t.overall, 0) / last.length : null;
-      const esc1 = feedback.totals.escalations || 0;
+      const escN = feedback.totals.escalations || 0;
       cards.push(ovCard(Object.assign(fb, {
-        value: ovPct(sat, 1), pct: esc(feedback.totals.tripsReported || '') + ' trips', state: '', bar: sat,
+        value: ovPct(feedback.totals.satisfaction, 1), pct: esc(feedback.totals.tripsReported || '') + ' trips', bar: feedback.totals.satisfaction,
         note: (lastM ? `Latest, ${ovMon(lastM, true)}: <b>${avg.toFixed(1)}</b> / 5 over ${last.length} trip${last.length === 1 ? '' : 's'}` : 'No trip surveyed yet')
-          + (esc1 ? ` · <span class="bad">⚑ ${esc1} escalated</span>` : ''),
+          + (escN ? ` · <span class="bad">⚑ ${escN} escalated</span>` : ''),
       })));
     }
 
@@ -5426,7 +5451,7 @@
       })));
     }
 
-    const kp = { go: 'kpis', tab: 'KPIs', icon: 'gauge', title: 'KPIs passed', pill: 'Today', tone: 'ops' };
+    const kp = { go: 'kpis', tab: 'KPIs', icon: 'gauge', title: 'All KPI checks', pill: 'Today', tone: 'ops' };
     if (!kpiData || !kpiData.kpis) cards.push(ovWait(kp, 'the KPIs'));
     else {
       const camps = kpiData.kpis.filter((k) => k.group === 'Cost per result');
@@ -5437,12 +5462,12 @@
       const total = passed + failed.length;
       const names = failed.slice(0, 3).map((k) => esc(k.name)).join(', ') + (failed.length > 3 ? ` +${failed.length - 3} more` : '');
       cards.push(ovCard(Object.assign(kp, {
-        value: int(passed), of: int(total), pct: total ? ovPct(passed / total) : '', state: failed.length ? 'bad' : 'good', bar: total ? passed / total : 0,
+        value: int(passed), of: `${int(total)} passed`, state: failed.length ? 'bad' : 'good', bar: total ? passed / total : 0,
         note: failed.length ? `<span class="bad">✗ Failing:</span> ${names}` : '<span class="good">✓</span> Every KPI passed',
       })));
     }
 
-    const tk = { go: 'pending', tab: 'Monday', icon: 'tasks', title: 'Pending tasks', pill: 'Live', tone: 'ops' };
+    const tk = { go: 'pending', tab: 'Monday Tasks', icon: 'tasks', title: 'Pending tasks', pill: 'Live', tone: 'ops' };
     if (!monData || !monData.items) cards.push(ovWait(tk, 'monday'));
     else {
       const by = new Map();
@@ -5454,12 +5479,10 @@
       const total = monData.items.length;
       const order = [...by.entries()].sort((x, y) => y[1].n - x[1].n);
       const stack = `<div class="ov-stack">${order.map(([k, v]) => `<i style="width:${((v.n / total) * 100).toFixed(1)}%;background:${attr(v.color)}" title="${attr(`${k}: ${v.n}`)}"></i>`).join('')}</div>`;
-      const stuck = (by.get('Stuck') || { n: 0 }).n;
       const overdue = monData.items.filter((i) => i.overdue).length;
       cards.push(ovCard(Object.assign(tk, {
         value: int(total), visual: stack,
-        note: order.slice(0, 3).map(([k, v]) => `${esc(k)} <b>${v.n}</b>`).join(' · ')
-          + (overdue || stuck ? ` · <span class="bad">${overdue} overdue</span>` : ''),
+        note: order.slice(0, 3).map(([k, v]) => `${esc(k)} <b>${v.n}</b>`).join(' · ') + (overdue ? ` · <span class="bad">${overdue} overdue</span>` : ''),
       })));
     }
     return cards;
@@ -5478,7 +5501,7 @@
       list.unshift(ym);
       ym = ovAdd(ym + '-01', -1).slice(0, 7);
     }
-    // Categories with bookings in the window, for the filter.
+    // Only categories with bookings in the window are offered.
     const seen = new Map();
     for (const k of list) for (const [c, n] of Object.entries((months[k] && months[k].cats) || {})) seen.set(c, (seen.get(c) || 0) + n);
     const dests = new Map(), progs = new Map();
@@ -5496,13 +5519,13 @@
       if (ovCat.startsWith('p:')) return g === ovCat.slice(2);
       return c === ovCat.slice(2);
     };
-    const byName = (a, b) => b[1] - a[1];
+    const byCount = (a, b) => b[1] - a[1];
     const opt = (v, label) => `<option value="${attr(v)}"${ovCat === v ? ' selected' : ''}>${esc(label)}</option>`;
-    const select = `<select id="ovCat" aria-label="Category">
+    const select = `<select id="ovCat" aria-label="Trips">
       ${opt('all', 'All trips')}
-      <optgroup label="Destination">${[...dests].sort(byName).map(([d]) => opt('d:' + d, OV_DEST[d] || d)).join('')}</optgroup>
-      <optgroup label="Programme">${[...progs].sort(byName).map(([g]) => opt('p:' + g, OV_PROG[g] || g)).join('')}</optgroup>
-      <optgroup label="Trip">${[...seen].filter(([c]) => c.includes('|')).sort(byName).map(([c]) => opt('c:' + c, ovCatName(c))).join('')}</optgroup>
+      <optgroup label="Destination">${[...dests].sort(byCount).map(([d]) => opt('d:' + d, OV_DEST[d] || d)).join('')}</optgroup>
+      <optgroup label="Programme">${[...progs].sort(byCount).map(([g]) => opt('p:' + g, OV_PROG[g] || g)).join('')}</optgroup>
+      <optgroup label="Trip">${[...seen].filter(([c]) => c.includes('|')).sort(byCount).map(([c]) => opt('c:' + c, ovCatName(c))).join('')}</optgroup>
     </select>`;
     const seg = `<div class="seg">${[6, 12, 24].map((m) => `<button data-ov-months="${m}" aria-pressed="${ovMonths === m}">${m} months</button>`).join('')}</div>`;
     const W = (report && report.weeklyTarget) || 12;
@@ -5518,9 +5541,10 @@
     });
     const max = Math.max(1, ...rows.map((x) => Math.max(x.n, x.target || 0)));
     const total = rows.reduce((a, x) => a + x.n, 0);
+    const catLabel = ovCat === 'all' ? '' : ovCat.startsWith('c:') ? ovCatName(ovCat.slice(2)) : ovCat.startsWith('d:') ? OV_DEST[ovCat.slice(2)] || ovCat.slice(2) : OV_PROG[ovCat.slice(2)] || ovCat.slice(2);
     const cols = rows.map((x) => {
       const now = x.k === cur;
-      const tip = `<div class="tt">${esc(ovMon(x.k, true))} ${x.k.slice(0, 4)}${now ? ' · so far' : ''}</div><div class="more">${int(x.n)} booking${x.n === 1 ? '' : 's'}${ovCat === 'all' ? '' : ' · ' + esc(ovCat.startsWith('c:') ? ovCatName(ovCat.slice(2)) : ovCat.startsWith('d:') ? OV_DEST[ovCat.slice(2)] || ovCat.slice(2) : OV_PROG[ovCat.slice(2)] || ovCat.slice(2))}${x.target ? ` · target ${int(x.target)} (${W} a week)` : ''}</div>`;
+      const tip = `<div class="tt">${esc(ovMon(x.k, true))} ${x.k.slice(0, 4)}${now ? ' · so far' : ''}</div><div class="more">${int(x.n)} booking${x.n === 1 ? '' : 's'}${catLabel ? ' · ' + esc(catLabel) : ''}${x.target ? ` · target ${int(x.target)} (${W} a week)` : ''}</div>`;
       return `<div class="ov-col" data-tip="${attr(tip)}">
         <span class="v">${x.n ? int(x.n) : ''}</span>
         <i class="b${now ? ' now' : ''}" style="height:${((x.n / max) * 100).toFixed(1)}%"></i>
@@ -5531,7 +5555,7 @@
     const minW = ovMonths > 12 ? `style="min-width:${ovMonths * 30}px"` : '';
     return `<div class="panel">
       ${head(`<div class="ov-filters">${select}${seg}</div>`)}
-      <div class="ov-big"><b>${int(total)}</b><span>bookings in the last ${ovMonths} months${ovCat === 'all' ? ', charters left out' : ''}</span></div>
+      <div class="ov-big"><b>${int(total)}</b><span>bookings in the last ${ovMonths} months${catLabel ? ' · ' + esc(catLabel) : ', charters left out'}</span></div>
       <div class="ov-chart"><div class="ov-chart-in" ${minW}>
         <div class="ov-cols">${cols}</div>
         <div class="ov-axis">${axis}</div>
@@ -5562,7 +5586,7 @@
     const parts = [
       ['sold', 'Sold out', 'var(--soldout)'],
       ['at', `At target (${T}+)`, 'var(--q-high)'],
-      ['below', `Below target`, 'var(--fill)'],
+      ['below', 'Below target', 'var(--fill)'],
       ['cancel', 'Cancelled', 'var(--q-low)'],
     ];
     const stack = total ? `<div class="ov-dstack">${parts.filter(([key]) => k[key]).map(([key, label, c]) => `<i style="width:${((k[key] / total) * 100).toFixed(1)}%;background:${c}" data-tip="${attr(`<div class="tt">${esc(label)}</div><div class="more">${k[key]} of ${total} weeks</div>`)}"></i>`).join('')}</div>` : '';
@@ -5587,27 +5611,14 @@
   function renderOverview() {
     if (view !== 'overview') return;
     const today = ovToday();
-    const r = ovRange(today);
-    const per = { week: 'This week', month: 'This month', year: 'This year' };
-    const span = r.pill === 'Week' ? `${ovDate(r.start)} – ${ovDate(r.end)}` : r.pill === 'Month' ? `${ovMon(today.slice(0, 7), true)} ${today.slice(0, 4)}` : today.slice(0, 4);
     $('overviewWrap').innerHTML = `
       <div class="ov-head">
-        <div>
-          <div class="ov-h1">Dashboard</div>
-          <div class="ov-sub">Live · ${esc(span)} · tap any card for the details</div>
-        </div>
-        <div class="ov-ctrl">
-          <span class="lbl">Reporting period</span>
-          <div class="seg">${Object.entries(per).map(([k, l]) => `<button data-ov-period="${k}" aria-pressed="${ovPeriod === k}">${l}</button>`).join('')}</div>
-          <button class="btn ov-pdf" id="ovPdf" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>PDF</button>
-        </div>
+        <div class="ov-sub">Live from WeTravel, Meta, the sheets and monday · tap a row or card for the details</div>
+        <button class="btn ov-pdf" id="ovPdf" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>PDF</button>
       </div>
-      <div class="ov-sec">Sales</div>
-      <div class="ov-grid">${ovSalesCards(today, r).join('')}</div>
-      <div class="ov-sec">Marketing</div>
-      <div class="ov-grid">${ovMarketingCards(today, r).join('')}</div>
-      <div class="ov-sec">Operations &amp; team</div>
-      <div class="ov-grid">${ovOpsCards().join('')}</div>
+      ${ovScore(today)}
+      <div class="ov-sec">At a glance</div>
+      <div class="ov-grid">${ovGlance(today).join('')}</div>
       <div class="ov-low">${ovChart(today)}${ovDepartures(today)}</div>`;
     const root = $('overviewWrap');
     bindHelp(root);
@@ -5615,11 +5626,6 @@
       e.preventDefault();
       setView(a.dataset.go);
       scrollTo(0, 0);
-    }));
-    root.querySelectorAll('[data-ov-period]').forEach((b) => b.addEventListener('click', () => {
-      ovPeriod = b.dataset.ovPeriod;
-      saveViewState();
-      renderOverview();
     }));
     root.querySelectorAll('[data-ov-months]').forEach((b) => b.addEventListener('click', () => {
       ovMonths = Number(b.dataset.ovMonths);
@@ -5630,19 +5636,38 @@
     $('ovPdf').addEventListener('click', () => print());
   }
 
-
   /* ================= view switching ================= */
 
-  // Explicit target, not a toggle — Dashboard is always one click away from
-  // Report, rather than requiring "click the same tab again to go back."
+  // The sidebar is the Dashboard plus four sections; each section's pages
+  // are tabs across its top. Every page keeps its own view name and #hash,
+  // so old links still land where they did.
+  const SECTIONS = [
+    { key: 'overview', name: 'Dashboard', views: [['overview', 'Dashboard']] },
+    { key: 'sales', name: 'Sales', views: [['board', 'Booking'], ['previous', 'Previous Sales'], ['report', 'Report'], ['leads', 'Leads']] },
+    { key: 'marketing', name: 'Marketing', views: [['campaigns', 'Campaign Ads'], ['history', 'Campaign History'], ['engagements', 'Engagements']] },
+    { key: 'operations', name: 'Operations', views: [['trips', 'Trips & R&D'], ['feedback', 'Feedback'], ['revenue', 'Trip Revenue']] },
+    { key: 'corporate', name: 'Corporate', views: [['kpis', 'KPIs'], ['pending', 'Monday Tasks']] },
+  ];
+  const sectionOf = (v) => SECTIONS.find((sec) => sec.views.some(([k]) => k === v)) || SECTIONS[0];
+  // The page each section last showed, so going back to it lands there.
+  const secLast = {};
+
   function setView(next) {
     view = next;
-    $('viewSeg').querySelectorAll('button[data-view]').forEach((b) => {
-      // History is a sub-tab of Ads, so Ads stays lit while it's open.
-      const lit = b.dataset.view === view || (b.dataset.view === 'campaigns' && view === 'history')
-        || (b.dataset.view === 'board' && view === 'previous');
-      b.setAttribute('aria-pressed', String(lit));
+    const sec = sectionOf(view);
+    secLast[sec.key] = view;
+    $('viewSeg').querySelectorAll('button[data-section]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.section === sec.key));
     });
+    $('pageTitle').textContent = sec.name;
+    $('secTabs').hidden = sec.views.length < 2;
+    $('secTabs').innerHTML = sec.views.map(([k, label]) => `<button role="tab" data-sec-view="${k}" aria-selected="${k === view}">${esc(label)}</button>`).join('');
+    $('secTabs').querySelectorAll('[data-sec-view]').forEach((b) => b.addEventListener('click', () => {
+      if (view !== b.dataset.secView) setView(b.dataset.secView);
+    }));
+    // The booking figures in the header belong to the sales pages.
+    $('headStats').hidden = !['board', 'previous', 'report'].includes(view);
+    $('rangeWrap').hidden = view !== 'board';
     $('board').hidden = view !== 'board';
     $('legend').hidden = view !== 'board';
     applyAnnouncement();
@@ -5654,18 +5679,6 @@
     $('previousWrap').hidden = view !== 'previous';
     $('campaignsWrap').hidden = view !== 'campaigns';
     $('historyWrap').hidden = view !== 'history';
-    $('adsSub').hidden = view !== 'campaigns' && view !== 'history';
-    $('bookSub').hidden = view !== 'board' && view !== 'previous';
-    $('bookSub').querySelectorAll('[data-book-sub]').forEach((b) => {
-      const on = b.dataset.bookSub === view;
-      b.setAttribute('aria-pressed', String(on));
-      b.setAttribute('aria-selected', String(on));
-    });
-    $('adsSub').querySelectorAll('[data-ads-sub]').forEach((b) => {
-      const on = b.dataset.adsSub === view;
-      b.setAttribute('aria-pressed', String(on));
-      b.setAttribute('aria-selected', String(on));
-    });
     $('leadsWrap').hidden = view !== 'leads';
     $('engagementsWrap').hidden = view !== 'engagements';
     $('tripsWrap').hidden = view !== 'trips';
@@ -5744,14 +5757,11 @@
     saveViewState();
   }
 
-  $('viewSeg').querySelectorAll('button[data-view]').forEach((b) => {
-    b.addEventListener('click', () => setView(b.dataset.view));
-  });
-  $('bookSub').querySelectorAll('[data-book-sub]').forEach((b) => {
-    b.addEventListener('click', () => { if (view !== b.dataset.bookSub) setView(b.dataset.bookSub); });
-  });
-  $('adsSub').querySelectorAll('[data-ads-sub]').forEach((b) => {
-    b.addEventListener('click', () => { if (view !== b.dataset.adsSub) setView(b.dataset.adsSub); });
+  $('viewSeg').querySelectorAll('button[data-section]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const sec = SECTIONS.find((x) => x.key === b.dataset.section);
+      setView(secLast[sec.key] || sec.views[0][0]);
+    });
   });
   $('refreshBtn').addEventListener('click', () => {
     load(true);
@@ -5812,7 +5822,7 @@
     if (e.key === 'Escape' && docEl.classList.contains('sb-open')) closeDrawer();
   });
   // Picking a tab from the drawer is the end of the errand, so it closes.
-  $('viewSeg').querySelectorAll('button[data-view]').forEach((b) => {
+  $('viewSeg').querySelectorAll('button[data-section]').forEach((b) => {
     b.addEventListener('click', () => { if (narrow.matches) closeDrawer(); });
   });
   // A tablet rotated across the breakpoint shouldn't keep a drawer open over
