@@ -10,20 +10,24 @@
 <link rel="apple-touch-icon" href="/brand/icon-192.png">
 <style>
   :root {
-    --navy: #1b3358;
-    --card: #21406b;
-    --card-2: #1a3459;
-    --line: #34517c;
-    --yellow: #f2b233;
-    --fill: #f5b935;
-    --fill-full: #56b98a;
-    --fill-empty: #45618c;
-    --track: #16294a;
+    /* Dark mode is the dark version of the light theme (Anton, 19 Oct 2026):
+       deep teal surfaces and the brand teal as the accent, replacing the old
+       navy and yellow. --navy / --yellow keep their names (page background /
+       accent) so nothing that uses them had to change. */
+    --navy: #0b1c20;
+    --card: #12292e;
+    --card-2: #0e2226;
+    --line: #22414a;
+    --yellow: #3cc3d3;
+    --fill: #2db1c3;
+    --fill-full: #3fbf86;
+    --fill-empty: #2b4b54;
+    --track: #09171a;
     --target: #ef8b3c;
     --danger: #e0483d;
-    --danger-bg: #3a2230;
+    --danger-bg: #3a1f23;
     --soldout: #e0791f;
-    --info: #4d9de0;
+    --info: #4fa6e0;
     --info-bg: rgba(77,157,224,.10);
     --info-line: rgba(77,157,224,.4);
     --fresh: #3ddc84;
@@ -31,9 +35,9 @@
     --fresh-dim: #1e5c3d;
     --fresh-wash: rgba(61,220,132,.20);
     --fresh-ink: #062d18;
-    --text: #ffffff;
-    --text-2: #b7c5d8;
-    --text-3: #8698b4;
+    --text: #eef7f8;
+    --text-2: #a9c4ca;
+    --text-3: #7d9aa1;
 
     /* Leads channels. The first three reference-palette slots, validated as
        a set against --track, where the charts sit (all pairs: CVD dE 9.4,
@@ -59,7 +63,7 @@
     --q-med: #fab219;
     --q-low: #d03b3b;
     --q-rd: #3987e5;
-    --q-none: #6f86a8;
+    --q-none: #6d8b93;
 
     /* Reference bands behind the weekly chart. Kept faint on purpose: they
        have to tint the plot without competing with the line drawn over them. */
@@ -74,11 +78,15 @@
     --bad-soft: #ffb3ab;
     --cancel-ink: #f0b8b3;
     --cancel-ink2: #c98d87;
-    --cancel-track: #2a1a22;
+    --cancel-track: #2a1a1d;
     --ov: 255,255,255;
-    --well-rgb: 8,20,42;
+    --well-rgb: 5,16,19;
     --mix-ink: #fff;
-    --tip-bg: #0d1c33;
+    --tip-bg: #0a191d;
+    /* The accent and the bar fill as RGB triplets, for tints:
+       rgba(var(--acc-rgb), .15). */
+    --acc-rgb: 60,195,211;
+    --fill-rgb: 45,177,195;
   }
 
   /* Light mode (Anton, 18 Oct 2026): NomuHub's brand teal from the logo
@@ -95,8 +103,11 @@
     --good-ink: #12813f; --bad-ink: #c0352b; --bad-soft: #b4413a;
     --cancel-ink: #b4413a; --cancel-ink2: #c0675f; --cancel-track: #f6dcd9;
     --ov: 15,47,56; --well-rgb: 230,240,243; --mix-ink: #000; --tip-bg: #ffffff;
+    --acc-rgb: 26,143,161; --fill-rgb: 32,153,172;
     --zone-good: rgba(23,156,83,.08); --zone-watch: rgba(217,119,43,.08); --zone-act: rgba(214,60,50,.08);
   }
+  /* Dark sidebar: the light theme's teal, taken down to night. */
+  html:not([data-theme="light"]) .sidebar { background: linear-gradient(180deg, #0f3036, #0a2226); border-right-color: #1b3a41; }
   /* The sidebar wears the brand teal in light mode, like the logo. */
   html[data-theme="light"] .sidebar { background: linear-gradient(180deg, #1f97aa, #157e8f); border-right-color: transparent; }
   html[data-theme="light"] .sb-brand { color: #fff; }
@@ -118,6 +129,120 @@
   html[data-theme="light"] .adv-form textarea { background: #fff; border-color: #cfe2e7; }
   html[data-theme="light"] .adv-chips button { border-color: rgba(32,153,172,.35); background: rgba(32,153,172,.07); }
   html[data-theme="light"] .adv-cloud { color: #137483; }
+
+
+  /* ---------- Dashboard (executive overview) ----------
+     The executives' first screen (Anton, 19 Oct 2026, after the meeting with
+     Shakir, who built HASA's EMMS): one card per headline number against its
+     target, and a tap on any card opens the tab with the details. Kept light
+     on the eyes: white cards, one accent, colour only where it means
+     on / off target. Classes prefixed ov-. */
+  #overviewWrap > * + * { margin-top: 14px; }
+  .ov-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .ov-h1 { font-size: 22px; font-weight: 800; color: var(--strong); letter-spacing: -.01em; }
+  .ov-sub { font-size: 12.5px; color: var(--text-3); margin-top: 3px; }
+  .ov-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ov-ctrl .lbl { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+  .ov-ctrl .seg button { font-size: 12.5px; padding: 6px 13px; }
+  .ov-pdf { display: inline-flex; align-items: center; gap: 6px; }
+  .ov-pdf svg { width: 15px; height: 15px; }
+  .ov-sec { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--text-3); margin-top: 20px !important; }
+  .ov-sec::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .ov-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px; margin-top: 10px !important; }
+  .ov-card {
+    display: flex; flex-direction: column; gap: 10px; min-width: 0;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 15px 16px 14px;
+    color: inherit; text-decoration: none; cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+  }
+  .ov-card:hover, .ov-card:focus-visible { border-color: rgba(var(--acc-rgb),.6); box-shadow: 0 6px 20px rgba(var(--acc-rgb),.14); transform: translateY(-1px); outline: none; }
+  .ov-top { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .ov-ico { flex: none; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: rgba(var(--acc-rgb),.13); color: var(--yellow); }
+  .ov-ico svg { width: 17px; height: 17px; }
+  .ov-ico.mkt { background: rgba(217,119,43,.14); color: var(--target); }
+  .ov-ico.ops { background: rgba(var(--ov),.07); color: var(--info); }
+  .ov-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.25; }
+  .ov-pill { flex: none; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(var(--acc-rgb),.12); color: var(--yellow); }
+  .ov-mid { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .ov-num { font-size: 28px; font-weight: 800; line-height: 1; color: var(--strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ov-num small { font-size: 13px; font-weight: 600; color: var(--text-3); }
+  .ov-pct { font-size: 13px; font-weight: 800; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ov-pct.good { color: var(--good-ink); } .ov-pct.bad { color: var(--bad-ink); } .ov-pct.warn { color: var(--target); }
+  .ov-track { position: relative; height: 8px; border-radius: 999px; background: var(--track); overflow: visible; }
+  .ov-track > i { display: block; height: 100%; border-radius: 999px; background: var(--fill); max-width: 100%; }
+  .ov-track > i.good { background: var(--q-high); } .ov-track > i.bad { background: var(--q-low); } .ov-track > i.warn { background: var(--target); }
+  .ov-track > b { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--text-2); }
+  .ov-stack { display: flex; gap: 2px; height: 8px; border-radius: 999px; overflow: hidden; background: var(--track); }
+  .ov-stack > i { display: block; height: 100%; min-width: 3px; }
+  .ov-spark { display: flex; align-items: flex-end; gap: 3px; height: 30px; }
+  .ov-spark > i { flex: 1; min-width: 0; border-radius: 3px 3px 0 0; background: rgba(var(--fill-rgb),.35); min-height: 2px; }
+  .ov-spark > i.on { background: var(--fill); }
+  .ov-note { font-size: 11.5px; line-height: 1.4; color: var(--text-3); }
+  .ov-note b { color: var(--text-2); font-weight: 700; }
+  .ov-note .good { color: var(--good-ink); font-weight: 700; } .ov-note .bad { color: var(--bad-ink); font-weight: 700; } .ov-note .warn { color: var(--target); font-weight: 700; }
+  .ov-low { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; margin-top: 20px !important; }
+  .ov-low .panel { border-radius: 14px; min-width: 0; }
+  .ov-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ov-ph .ptitle { margin: 0; }
+  .ov-more { font-size: 12px; font-weight: 700; color: var(--yellow); text-decoration: none; white-space: nowrap; }
+  .ov-more:hover { text-decoration: underline; }
+  .ov-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ov-filters select { font: inherit; font-size: 12px; padding: 5px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--card); color: var(--text); max-width: 220px; }
+  .ov-chart { overflow-x: auto; }
+  .ov-chart-in { min-width: 100%; }
+  .ov-cols { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 190px; padding-top: 16px; border-bottom: 1px solid var(--line); }
+  .ov-col { flex: 1 1 0; min-width: 0; height: 100%; position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .ov-col .v { font-size: 10.5px; font-weight: 700; color: var(--text-2); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+  .ov-col .b { width: 72%; max-width: 34px; border-radius: 4px 4px 0 0; background: var(--fill); min-height: 2px; }
+  .ov-col .b.now { background: repeating-linear-gradient(135deg, var(--fill) 0 6px, rgba(var(--fill-rgb),.4) 6px 12px); }
+  .ov-col .t { position: absolute; left: 6%; right: 6%; height: 0; border-top: 2px dashed var(--target); }
+  .ov-axis { display: flex; gap: 6px; margin-top: 5px; }
+  .ov-axis span { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; font-size: 10.5px; color: var(--text-3); white-space: nowrap; line-height: 1.25; }
+  .ov-axis span small { font-size: 9.5px; opacity: .8; }
+  .ov-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 11.5px; color: var(--text-2); }
+  .ov-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .ov-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .ov-legend i.tl { height: 0; border-top: 2px dashed var(--target); border-radius: 0; width: 16px; }
+  .ov-big { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .ov-big b { font-size: 30px; font-weight: 800; color: var(--strong); line-height: 1; }
+  .ov-big span { font-size: 12.5px; color: var(--text-3); }
+  .ov-dstack { display: flex; gap: 2px; height: 14px; border-radius: 7px; overflow: hidden; background: var(--track); }
+  .ov-dstack i { display: block; height: 100%; }
+  .ov-dleg { display: grid; grid-template-columns: 1fr auto; gap: 7px 10px; margin-top: 12px; font-size: 12.5px; color: var(--text-2); }
+  .ov-dleg span { display: inline-flex; align-items: center; gap: 8px; }
+  .ov-dleg i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .ov-dleg b { color: var(--strong); font-variant-numeric: tabular-nums; text-align: right; }
+  .ov-next { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .ov-next .ptitle { margin-bottom: 8px; }
+  .ov-trip { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 7px 0; font-size: 12.5px; }
+  .ov-trip + .ov-trip { border-top: 1px dashed var(--line); }
+  .ov-trip .n { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ov-trip .d { color: var(--text-3); font-size: 11.5px; }
+  .ov-trip .c { text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ov-trip .c b { color: var(--strong); }
+  html[data-theme="light"] .ov-card, html[data-theme="light"] .ov-low .panel { box-shadow: 0 1px 3px rgba(15,47,56,.07); }
+  html[data-theme="light"] .ov-card:hover { box-shadow: 0 8px 22px rgba(15,47,56,.12); }
+  @media (max-width: 900px) { .ov-low { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) {
+    .ov-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .ov-card { padding: 12px 12px 11px; gap: 8px; }
+    .ov-top { align-items: flex-start; }
+    .ov-ico { width: 28px; height: 28px; }
+    .ov-mid { flex-wrap: wrap; row-gap: 2px; }
+    .ov-num { font-size: 22px; white-space: normal; }
+    .ov-note { font-size: 11px; }
+    .ov-pill { display: none; }
+    .ov-ctrl { width: 100%; }
+  }
+  @media (max-width: 360px) { .ov-grid { grid-template-columns: minmax(0, 1fr); } }
+  /* Download PDF prints the page: just the overview, on white. */
+  @media print {
+    .sidebar, .sb-backdrop, .head .headright, .sb-menu, #adv, .ov-ctrl, .ov-filters, .ov-more { display: none !important; }
+    .shell { margin-left: 0 !important; padding: 0 !important; }
+    body { background: #fff; }
+    .ov-card, .ov-low .panel { break-inside: avoid; box-shadow: none !important; }
+    .ov-grid { grid-template-columns: repeat(4, 1fr); }
+  }
 
   * { box-sizing: border-box; }
 
@@ -424,7 +549,7 @@
      text produces the huge lopsided caps a pill was never meant to show. */
   .tzbadge {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(242,178,51,.14); border: 1px solid rgba(242,178,51,.35);
+    background: rgba(var(--acc-rgb),.14); border: 1px solid rgba(var(--acc-rgb),.35);
     color: var(--yellow); font-size: 12px; font-weight: 600;
     padding: 6px 12px; border-radius: 20px; margin-bottom: 14px;
   }
@@ -460,7 +585,7 @@
   .cslot.selected .cval { color: var(--yellow); }
   /* the in-progress period is drawn hollow so a partial week never reads as a miss */
   .cslot.partial .cbar {
-    background: repeating-linear-gradient(135deg, var(--fill) 0 6px, rgba(245,185,53,.35) 6px 12px);
+    background: repeating-linear-gradient(135deg, var(--fill) 0 6px, rgba(var(--fill-rgb),.35) 6px 12px);
   }
   .cslot .charter {
     width: 100%; max-width: 54px; min-height: 0;
@@ -640,7 +765,7 @@
   .pt-month:last-child { margin-bottom: 0; }
   .pt-mhead {
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    background: rgba(242,178,51,.10); border: 1px solid rgba(242,178,51,.32);
+    background: rgba(var(--acc-rgb),.10); border: 1px solid rgba(var(--acc-rgb),.32);
     border-left: 3px solid var(--yellow);
     border-radius: 7px; padding: 8px 14px; margin-bottom: 10px;
   }
@@ -871,7 +996,7 @@
   .trp-strip { flex: 1; min-width: 200px; display: flex; gap: 2px; height: 22px; border-radius: 6px; overflow: hidden; background: var(--track); }
   .trp-strip-seg {
     display: flex; align-items: center; justify-content: center; min-width: 22px;
-    font-size: 11px; font-weight: 700; color: #fff; background: rgba(245,185,53,.35);
+    font-size: 11px; font-weight: 700; color: #fff; background: rgba(var(--fill-rgb),.35);
   }
   .trp-strip-seg.idle { background: rgba(134,152,180,.28); }
   .trp-strip-seg.done { background: var(--fill); color: #0b1a2e; }
@@ -883,7 +1008,7 @@
   .trp-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .trp-col-head {
     font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2);
-    padding: 0 2px 6px; border-bottom: 2px solid rgba(245,185,53,.45);
+    padding: 0 2px 6px; border-bottom: 2px solid rgba(var(--fill-rgb),.45);
   }
   .trp-col.hold .trp-col-head { border-bottom-style: dashed; border-bottom-color: var(--line); color: var(--text-3); }
   .trp-col-empty { font-size: 11.5px; color: var(--text-3); padding: 10px 4px; }
@@ -891,7 +1016,7 @@
     background: var(--track); border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px;
     display: flex; flex-direction: column; gap: 7px; transition: border-color .15s, transform .15s;
   }
-  .trp-card:hover { border-color: rgba(245,185,53,.55); transform: translateY(-1px); }
+  .trp-card:hover { border-color: rgba(var(--fill-rgb),.55); transform: translateY(-1px); }
   .trp-card.hold { border-style: dashed; }
   .trp-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .trp-card-name { font-size: 14px; font-weight: 700; color: var(--strong); line-height: 1.25; }
@@ -899,10 +1024,10 @@
     flex: none; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
     color: var(--text-2); border: 1px solid var(--line); font-variant-numeric: tabular-nums;
   }
-  .trp-year.now { color: var(--yellow); border-color: rgba(245,185,53,.6); }
+  .trp-year.now { color: var(--yellow); border-color: rgba(var(--fill-rgb),.6); }
   .trp-stepper { display: flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-2); }
   .trp-stepper i { display: block; width: 18px; height: 5px; border-radius: 3px; background: rgba(134,152,180,.25); }
-  .trp-stepper i.on { background: rgba(245,185,53,.7); }
+  .trp-stepper i.on { background: rgba(var(--fill-rgb),.7); }
   .trp-stepper.done i.on { background: var(--fill); }
   .trp-stepper.paused i.on { background: rgba(134,152,180,.7); }
   .trp-stepper span { margin-left: 6px; }
@@ -1033,7 +1158,7 @@
   .announce-list > .announce { margin-bottom: 0; }
   /* A reminder with a deadline: amber edge, so it reads as "act on this",
      distinct from the blue general banner. */
-  .announce.due { border-color: #f2b233; border-left-color: #f2b233; box-shadow: 0 0 0 1px rgba(242,178,51,.18), 0 6px 20px rgba(242,178,51,.16); }
+  .announce.due { border-color: var(--yellow); border-left-color: var(--yellow); box-shadow: 0 0 0 1px rgba(var(--acc-rgb),.18), 0 6px 20px rgba(var(--acc-rgb),.16); }
   .announce-due {
     display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
     color: #7a5200; background: #fff1cf; border-radius: 999px; padding: 3px 10px; margin-bottom: 7px;
@@ -1091,15 +1216,15 @@
   /* The accordion row: a tinted row with a yellow caret badge, a count of
      what's inside and a button, so it reads as something to open. */
   .kp-grp { cursor: pointer; }
-  .kp-grp td { background: rgba(242,178,51,.09); border-bottom: 1px dashed rgba(242,178,51,.45); }
-  .kp-grp:hover td { background: rgba(242,178,51,.15); }
+  .kp-grp td { background: rgba(var(--acc-rgb),.09); border-bottom: 1px dashed rgba(var(--acc-rgb),.45); }
+  .kp-grp:hover td { background: rgba(var(--acc-rgb),.15); }
   .kp-caret { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-right: 9px; border-radius: 50%; background: var(--yellow); color: var(--navy); font-size: 13px; font-weight: 800; vertical-align: middle; }
-  .kp-count { display: inline-block; margin: 6px 0 0 31px; padding: 1px 9px; border-radius: 999px; background: rgba(242,178,51,.16); color: var(--yellow); font-size: 11.5px; font-weight: 700; }
+  .kp-count { display: inline-block; margin: 6px 0 0 31px; padding: 1px 9px; border-radius: 999px; background: rgba(var(--acc-rgb),.16); color: var(--yellow); font-size: 11.5px; font-weight: 700; }
   .kp-toggle { display: block; margin-top: 8px; padding: 5px 13px; border: 1px solid var(--yellow); border-radius: 999px; background: transparent; color: var(--yellow); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .kp-grp:hover .kp-toggle { background: var(--yellow); color: var(--navy); }
   .kp-child td { background: rgba(0,0,0,.16); }
   .kp-child td.cname { padding-left: 40px; position: relative; }
-  .kp-child td.cname::before { content: '└'; position: absolute; left: 22px; top: 8px; color: rgba(242,178,51,.7); }
+  .kp-child td.cname::before { content: '└'; position: absolute; left: 22px; top: 8px; color: rgba(var(--acc-rgb),.7); }
   .kp-more { display: inline-block; margin-left: 6px; color: var(--yellow); font-weight: 600; cursor: help; white-space: nowrap; }
 
   /* AI Adviser bubble: the bottom-left corner of the screen (over the empty
@@ -1110,13 +1235,13 @@
   .adv-btn {
     width: 60px; height: 60px; border-radius: 50%; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
     color: var(--navy); background: radial-gradient(circle at 30% 25%, #ffe08a, var(--yellow) 55%, #d9901a);
-    box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 6px rgba(242,178,51,.16), 0 0 28px rgba(242,178,51,.45);
+    box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 6px rgba(var(--acc-rgb),.16), 0 0 28px rgba(var(--acc-rgb),.45);
     animation: advPulse 2.8s ease-in-out infinite;
   }
   .adv-btn svg { width: 28px; height: 28px; }
   .adv-btn:hover { transform: scale(1.06); }
   .adv-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-  @keyframes advPulse { 0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 6px rgba(242,178,51,.16), 0 0 28px rgba(242,178,51,.45); } 50% { box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 12px rgba(242,178,51,.06), 0 0 40px rgba(242,178,51,.6); } }
+  @keyframes advPulse { 0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 6px rgba(var(--acc-rgb),.16), 0 0 28px rgba(var(--acc-rgb),.45); } 50% { box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 12px rgba(var(--acc-rgb),.06), 0 0 40px rgba(var(--acc-rgb),.6); } }
   /* The thought cloud: a rounded bubble with two trailing puffs. */
   .adv-cloud {
     position: absolute; left: 66px; bottom: 58px; white-space: nowrap; pointer-events: none;
@@ -1131,8 +1256,8 @@
   .adv.open .adv-cloud { display: none; }
   .adv-panel {
     position: absolute; left: 0; bottom: 76px; width: 340px; max-width: calc(100vw - 32px);
-    border-radius: 16px; overflow: hidden; background: rgb(15,30,56); border: 1px solid rgba(242,178,51,.35);
-    box-shadow: 0 18px 50px rgba(0,0,0,.5), 0 0 30px rgba(242,178,51,.12);
+    border-radius: 16px; overflow: hidden; background: var(--card-2); border: 1px solid rgba(var(--acc-rgb),.35);
+    box-shadow: 0 18px 50px rgba(0,0,0,.5), 0 0 30px rgba(var(--acc-rgb),.12);
   }
   .adv-head { display: flex; align-items: center; gap: 11px; padding: 14px 14px 12px; border-bottom: 1px solid rgba(134,152,180,.2); }
   .adv-head div b { display: block; font-size: 15px; }
@@ -1148,8 +1273,8 @@
   .adv-hi { font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
   .adv-hi b { color: var(--strong); display: block; margin-bottom: 4px; }
   .adv-chips { display: flex; flex-direction: column; gap: 7px; }
-  .adv-chips button { text-align: left; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(242,178,51,.35); background: rgba(242,178,51,.07); color: var(--strong); font: inherit; font-size: 13px; cursor: pointer; }
-  .adv-chips button:hover { background: rgba(242,178,51,.16); }
+  .adv-chips button { text-align: left; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(var(--acc-rgb),.35); background: rgba(var(--acc-rgb),.07); color: var(--strong); font: inherit; font-size: 13px; cursor: pointer; }
+  .adv-chips button:hover { background: rgba(var(--acc-rgb),.16); }
   .adv-m { max-width: 92%; padding: 9px 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
   .adv-m.me { align-self: flex-end; background: var(--yellow); color: var(--navy); font-weight: 600; border-bottom-right-radius: 4px; white-space: pre-wrap; }
   .adv-m.ai { align-self: flex-start; background: rgba(var(--ov),.06); color: var(--text); border-bottom-left-radius: 4px; }
@@ -1162,7 +1287,7 @@
   .adv-li.num { padding-left: 0; }
   .adv-li.num::before { content: none; }
   .adv-li.num i { font-style: normal; color: var(--yellow); font-weight: 700; }
-  .adv-tag { display: inline-block; margin-bottom: 6px; padding: 1px 8px; border-radius: 999px; background: rgba(242,178,51,.18); color: var(--yellow); font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .adv-tag { display: inline-block; margin-bottom: 6px; padding: 1px 8px; border-radius: 999px; background: rgba(var(--acc-rgb),.18); color: var(--yellow); font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
   .adv-m.note { background: rgba(111,134,168,.16); color: var(--text-2); }
   .adv-m.error { background: rgba(208,59,59,.18); color: var(--bad-soft); }
   .adv-m.wait { color: var(--text-3); display: flex; align-items: center; gap: 4px; }
@@ -1437,8 +1562,12 @@
     </div>
     <nav class="sb-nav" id="viewSeg">
       <div class="sb-group">
+        <div class="sb-cat">Overview</div>
+        <button class="sb-item" data-view="overview" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.4"/><path d="M5 19h14"/></svg><span class="sb-label">Dashboard</span></button>
+      </div>
+      <div class="sb-group">
         <div class="sb-cat">Sales</div>
-        <button class="sb-item" data-view="board" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="sb-label">Booking</span></button>
+        <button class="sb-item" data-view="board" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="sb-label">Booking</span></button>
         <button class="sb-item" data-view="report" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-8M12 20V5M18 20v-11M3 20h18"/></svg><span class="sb-label">Report</span></button>
         <button class="sb-item" data-view="leads" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg><span class="sb-label">Leads</span></button>
       </div>
@@ -1497,13 +1626,14 @@
   <div class="announce-list" id="announce" hidden></div>
 
   <div class="legend" id="legend" hidden>
-    <span><i style="background:#f5b935"></i>Booking</span>
+    <span><i style="background:var(--fill)"></i>Booking</span>
     <span><i style="background:var(--soldout)"></i>Sold out</span>
     <span><i style="background:var(--track);border:1px solid var(--line)"></i>Empty</span>
     <span><i style="background:#ef8b3c;width:3px"></i>Target marker</span>
     <span><i style="background:var(--fresh)"></i>New booking (last 24h)</span>
   </div>
 
+  <div id="overviewWrap" hidden></div>
   <div id="board"></div>
   <div id="reportWrap" hidden></div>
   <div id="previousWrap" hidden></div>
@@ -1570,7 +1700,11 @@
   const attr = (s) => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  let view = 'board';   // 'board' | 'report'
+  // The executive Dashboard is the first screen (Anton, 19 Oct 2026); a
+  // device that was on another tab goes back to it.
+  let view = 'overview';
+  // The Dashboard's reporting period: 'week' | 'month' | 'year'.
+  let ovPeriod = 'week';
   let latest = null;
 
   // Banner content comes from Vercel env vars via /api/announcement, so it can
@@ -1624,7 +1758,7 @@
   function saveViewState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        view, rGran, rCount, selectedWeekStart, selectedMonthStart, ptYear, ptMonth,
+        view, rGran, rCount, selectedWeekStart, selectedMonthStart, ptYear, ptMonth, ovPeriod,
       }));
     } catch (e) { /* storage unavailable (private mode, etc.) — just skip persisting */ }
   }
@@ -1636,7 +1770,8 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'].includes(s.view)) view = s.view;
+      if (['overview', 'board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'].includes(s.view)) view = s.view;
+      if (['week', 'month', 'year'].includes(s.ovPeriod)) ovPeriod = s.ovPeriod;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -1823,6 +1958,7 @@
       $('dot').className = 'dot' + (p.stale ? ' warn' : '');
       $('dot').title = p.stale ? 'Showing last known data' : 'Live';
       render(p);
+      ovSoon();
     } catch (err) {
       if (!latest) {
         $('msg').textContent = 'Could not load booking data: ' + err.message;
@@ -2150,9 +2286,9 @@
         <div class="chart">${chrome}<div class="cbars">${bars}</div></div>
         <div class="caxis">${axis}</div>
         <div class="rlegend">
-          <span><i style="background:#f5b935"></i>Bookings taken</span>
+          <span><i style="background:var(--fill)"></i>Bookings taken</span>
           <span><i style="background:#56b98a"></i>Week hit target</span>
-          <span><i style="background:repeating-linear-gradient(135deg,#f5b935 0 4px,rgba(245,185,53,.35) 4px 8px)"></i>Still in progress</span>
+          <span><i style="background:repeating-linear-gradient(135deg,var(--fill) 0 4px,rgba(var(--fill-rgb),.35) 4px 8px)"></i>Still in progress</span>
         </div>
       </div>`;
 
@@ -2278,6 +2414,7 @@
       if (!res.ok) throw new Error(p.error || 'request failed');
       report = p;
       renderReport();
+      ovSoon();
       applyHeaderStats();
       // The Leads table's Bookings / Conversion columns come from this data.
       if (leads) renderLeads();
@@ -2656,6 +2793,7 @@
       if (!res.ok && !p.campaigns) throw new Error(p.error || `HTTP ${res.status}`);
       campaigns = p;
       renderCampaigns();
+      ovSoon();
     } catch (err) {
       if (!campaigns) {
         $('campaignsWrap').innerHTML = `<div class="msg err">Could not load campaign data: ${esc(err.message)}</div>`;
@@ -2954,8 +3092,8 @@
         ${psChart(yoy)}
         <div class="ps-line">${line}</div>
         <div class="rlegend">
-          <span><i style="background:#f5b935"></i>Bookings taken in ${PS_MON[m]}</span>
-          <span><i style="background:repeating-linear-gradient(135deg,#f5b935 0 4px,rgba(245,185,53,.35) 4px 8px)"></i>Still in progress</span>
+          <span><i style="background:var(--fill)"></i>Bookings taken in ${PS_MON[m]}</span>
+          <span><i style="background:repeating-linear-gradient(135deg,var(--fill) 0 4px,rgba(var(--fill-rgb),.35) 4px 8px)"></i>Still in progress</span>
           ${sales.charterExcluded ? `<span>${int(sales.charterExcluded)} charter booking(s) excluded, as on the Report</span>` : ''}
         </div>
       </div>
@@ -3072,6 +3210,7 @@
       if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
       previousTrips = p;
       renderPreviousTrips();
+      ovSoon();
     } catch (err) {
       if (!previousTrips) {
         $('previousWrap').innerHTML = `<div class="msg err">Could not load previous projects: ${esc(err.message)}</div>`;
@@ -3501,6 +3640,7 @@
       if (!res.ok && !p.weeks) throw new Error(p.error || `HTTP ${res.status}`);
       leads = p;
       renderLeads();
+      ovSoon();
     } catch (err) {
       if (!leads) $('leadsWrap').innerHTML = `<div class="msg err">Could not load leads: ${esc(err.message)}</div>`;
     }
@@ -3803,6 +3943,7 @@
       if (!res.ok && !p.posts) throw new Error(p.error || `HTTP ${res.status}`);
       engagements = p;
       renderEngagements();
+      ovSoon();
     } catch (err) {
       if (!engagements) $('engagementsWrap').innerHTML = `<div class="msg err">Could not load engagements: ${esc(err.message)}</div>`;
     }
@@ -4334,6 +4475,7 @@
       if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
       feedback = p;
       renderFeedback();
+      ovSoon();
     } catch (err) {
       if (!feedback) $('feedbackWrap').innerHTML = `<div class="msg err">Could not load feedback: ${esc(err.message)}</div>`;
     }
@@ -4545,6 +4687,7 @@
       if (!res.ok && !p.trips) throw new Error(p.error || `HTTP ${res.status}`);
       revData = p;
       renderRevenue();
+      ovSoon();
     } catch (err) {
       if (!revData) $('revenueWrap').innerHTML = `<div class="msg err">Could not load trip revenue: ${esc(err.message)}</div>`;
     }
@@ -4653,6 +4796,7 @@
       if (!res.ok && !p.items) throw new Error(p.error || `HTTP ${res.status}`);
       monData = p;
       renderPending();
+      ovSoon();
     } catch (err) {
       if (!monData) $('pendingWrap').innerHTML = `<div class="msg err">Could not load monday.com: ${esc(err.message)}</div>`;
     }
@@ -4791,6 +4935,7 @@
       if (!res.ok && !p.kpis) throw new Error(p.error || `HTTP ${res.status}`);
       kpiData = p;
       renderKpis();
+      ovSoon();
     } catch (err) {
       if (!kpiData) $('kpisWrap').innerHTML = `<div class="msg err">Could not check the KPIs: ${esc(err.message)}</div>`;
     }
@@ -4992,6 +5137,500 @@
     document.addEventListener('click', (e) => { if (!panel.hidden && e.target.isConnected && !wrap.contains(e.target)) setOpen(false); });
   })();
 
+  /* ================= Dashboard (executive overview) ================= */
+
+  // What the executives check first (Anton, 19 Oct 2026, from his meeting
+  // with Shakir, who built HASA's EMMS): bookings in the last 24 hours, this
+  // week and this month against target, then one card per area, and a tap
+  // on any card opens the tab with the details. Nothing is fetched just for
+  // this page: every card reads the data its own tab already loads, so a
+  // card and its tab can never disagree. Trip Revenue stays percentages only
+  // (Muatasam, 4 Oct 2026), so the margin card has no amount on it.
+  let ovCat = 'all';
+  let ovMonths = 12;
+  let ovTimer = null;
+  function ovSoon() {
+    if (view !== 'overview') return;
+    clearTimeout(ovTimer);
+    ovTimer = setTimeout(renderOverview, 80);
+  }
+
+  const OV_DEST = { JP: 'Japan', ZNZ: 'Zanzibar', TH: 'Thailand', VN: 'Vietnam', KO: 'Korea', NP: 'Nepal', KN: 'Kenya', SAL: 'Salalah', SL: 'Sri Lanka', PH: 'Philippines', BA: 'Bali', SA: 'South Africa', MO: 'Morocco', ALAULA: 'AlUla' };
+  const OV_PROG = { WL: 'Wellness', EX: 'Explore', BL: 'Building', TA: 'Teaching', MED: 'Medical' };
+  const ovCatName = (key) => {
+    if (key === 'Other') return 'Other (no destination in the title)';
+    const [d, g] = key.split('|');
+    return (OV_DEST[d] || d) + (g ? ' · ' + (OV_PROG[g] || g) : '');
+  };
+
+  const OV_ICON = {
+    bookings: '<path d="M4 6h16v14H4z"/><path d="M8 3v5M16 3v5M4 10h16"/><path d="M9 15l2 2 4-4"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    leads: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/>',
+    star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+    funnel: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+    wallet: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12.5h2M3 9h18"/>',
+    heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/>',
+    smile: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14a4 4 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',
+    percent: '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.3"/><circle cx="17" cy="17" r="2.3"/>',
+    gauge: '<path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/><circle cx="17" cy="7" r="1.5"/>',
+    tasks: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11l2 2 4-4M9 17h6"/>',
+  };
+  const ovSvg = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${OV_ICON[k]}</svg>`;
+
+  const ovToday = () => new Date(Date.now() + 4 * 3600e3).toISOString().slice(0, 10);
+  const ovAdd = (day, n) => new Date(Date.parse(day + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+  const ovDiff = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
+  const ovMon = (ym, long) => new Date(ym + '-01T00:00:00Z').toLocaleDateString('en-GB', { month: long ? 'long' : 'short', timeZone: 'UTC' });
+  const ovDate = (day) => new Date(day + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const ovPct = (x, dp) => (Number.isFinite(x) ? (x * 100).toFixed(dp == null ? 0 : dp) + '%' : '—');
+
+  // The reporting period: Sunday to Saturday (the Report's week), the
+  // calendar month, or the calendar year, all in Muscat time.
+  function ovRange(today) {
+    if (ovPeriod === 'month') {
+      const start = today.slice(0, 7) + '-01';
+      return { start, end: ovAdd(ovAdd(start, 32).slice(0, 7) + '-01', -1), pill: 'Month', label: 'this month' };
+    }
+    if (ovPeriod === 'year') return { start: today.slice(0, 4) + '-01-01', end: today.slice(0, 4) + '-12-31', pill: 'Year', label: 'this year' };
+    const start = ovAdd(today, -new Date(today + 'T00:00:00Z').getUTCDay());
+    return { start, end: ovAdd(start, 6), pill: 'Week', label: 'this week' };
+  }
+
+  // Bookings taken between two days (charters out, as on the Report). The
+  // year comes from the monthly sales series, which reaches back further
+  // than the Report's 300 days; a week or month from the Report's events.
+  function ovBooked(start, end) {
+    const z = end < ovToday() ? end : ovToday();
+    const months = previousTrips && previousTrips.sales && previousTrips.sales.months;
+    if (ovPeriod === 'year' && months) {
+      let n = 0;
+      for (const [k, v] of Object.entries(months)) if (k >= start.slice(0, 7) && k <= z.slice(0, 7)) n += v.n;
+      return n;
+    }
+    if (!report || !report.events) return null;
+    let n = 0;
+    for (const e of report.events) {
+      if (e.x || !e.n) continue;
+      const d = omanDay(e.at);
+      if (d >= start && d <= z) n += e.n;
+    }
+    return n;
+  }
+
+  // Leads and high potential leads Marina logged in the period. Days come
+  // from the daily sheet; weeks only her weekly report covers (late July to
+  // mid September) count whole, by their first day.
+  function ovLeads(start, end) {
+    if (!leads || !leads.weeks) return null;
+    let n = 0, hp = 0, days = 0, hpDays = 0;
+    for (const w of leads.weeks) {
+      if (w.days && w.days.length) {
+        for (const d of w.days) {
+          if (!d.recorded || d.date < start || d.date > end) continue;
+          n += d.total || 0; days += 1;
+          if (d.hp != null) { hp += d.hp; hpDays += 1; }
+        }
+      } else if (w.start >= start && w.start <= end) {
+        const len = ovDiff(w.start, w.end) + 1;
+        n += w.total || 0; days += len;
+        if (w.hp != null) { hp += w.hp; hpDays += len; }
+      }
+    }
+    return { n, hp, days, hpDays, first: leads.weeks.length ? leads.weeks[0].start : null };
+  }
+
+  // One card: icon, name, period pill, the number against its target, a bar,
+  // and one line on what it means. The whole card opens its tab.
+  function ovCard(o) {
+    const w = Math.max(0, Math.min(1, o.bar || 0)) * 100;
+    const mark = o.mark != null && o.mark > 0 && o.mark < 1 ? `<b style="left:${(o.mark * 100).toFixed(1)}%"></b>` : '';
+    const visual = o.visual || `<div class="ov-track"><i class="${o.state || ''}" style="width:${w.toFixed(1)}%"></i>${mark}</div>`;
+    return `<a class="ov-card" href="#${o.go}" data-go="${o.go}" title="${attr('Open ' + o.tab)}">
+      <div class="ov-top"><span class="ov-ico ${o.tone || ''}">${ovSvg(o.icon)}</span><span class="ov-name">${esc(o.title)}</span><span class="ov-pill">${esc(o.pill)}</span></div>
+      <div class="ov-mid"><div class="ov-num">${o.value}${o.of != null ? `<small> of ${o.of}</small>` : ''}</div>${o.pct ? `<span class="ov-pct ${o.state || ''}">${o.pct}</span>` : ''}</div>
+      ${visual}
+      <div class="ov-note">${o.note}</div>
+    </a>`;
+  }
+  const ovWait = (o, what) => ovCard(Object.assign({ value: '—', bar: 0, note: `Loading ${what}…` }, o));
+  const ovGlyph = (ok) => (ok ? '<span class="good">▲</span>' : '<span class="bad">▼</span>');
+
+  function ovSalesCards(today, r) {
+    const W = (report && report.weeklyTarget) || 12;
+    const len = ovDiff(r.start, r.end) + 1;
+    const gone = ovDiff(r.start, today) + 1;
+    const cards = [];
+
+    // Bookings in the period, against 12 a week scaled to its length, and the
+    // pace mark: how many there should be by today.
+    const bk = { go: 'report', tab: 'Report', icon: 'bookings', title: 'Bookings', pill: r.pill };
+    const n = ovBooked(r.start, r.end);
+    if (n == null) cards.push(ovWait(bk, 'bookings'));
+    else {
+      const target = Math.round((W * len) / 7);
+      const expected = (W * gone) / 7;
+      const ok = n >= expected;
+      cards.push(ovCard(Object.assign(bk, {
+        value: int(n), of: int(target), pct: ovPct(n / target), state: ok ? 'good' : 'bad', bar: n / target, mark: expected / target,
+        note: `${ovGlyph(ok)} ${ok ? 'On pace' : 'Behind pace'}: about <b>${int(expected)}</b> expected by today (${W} a week)`,
+      })));
+    }
+
+    // The last 24 hours, with the last 14 days as small bars.
+    const dy = { go: 'report', tab: 'Report', icon: 'clock', title: 'Bookings · last 24 hours', pill: '24h' };
+    if (!report || !report.events) cards.push(ovWait(dy, 'bookings'));
+    else {
+      const per = new Map();
+      for (let i = 13; i >= 0; i -= 1) per.set(ovAdd(today, -i), 0);
+      for (const e of report.events) {
+        if (e.x || !e.n) continue;
+        const d = omanDay(e.at);
+        if (per.has(d)) per.set(d, per.get(d) + e.n);
+      }
+      const vals = [...per.values()];
+      const max = Math.max(1, ...vals);
+      const spark = `<div class="ov-spark">${[...per.entries()].map(([d, v]) => `<i class="${v ? 'on' : ''}" style="height:${((v / max) * 100).toFixed(0)}%" title="${attr(ovDate(d) + ': ' + v)}"></i>`).join('')}</div>`;
+      cards.push(ovCard(Object.assign(dy, {
+        value: int(last24hTotal(report.events)), visual: spark,
+        note: `Last 14 days: <b>${int(vals.reduce((a, b) => a + b, 0))}</b> · daily pace for ${W} a week is ${(W / 7).toFixed(1)}`,
+      })));
+    }
+
+    // Leads, high potential and conversion, from Marina's sheet.
+    const L = ovLeads(r.start, r.end);
+    const sinceNote = L && L.first && L.first > r.start ? ` · since ${ovDate(L.first)}, when the sheet starts` : '';
+    const ld = { go: 'leads', tab: 'Leads', icon: 'leads', title: 'Leads', pill: r.pill };
+    const cv = { go: 'leads', tab: 'Leads', icon: 'funnel', title: 'Conversion', pill: r.pill };
+    if (!L) { cards.push(ovWait(ld, 'leads'), ovWait(cv, 'leads')); return cards; }
+    const LT = typeof LEADS_DAILY_TARGET === 'number' ? LEADS_DAILY_TARGET : 20;
+    if (!L.days) cards.push(ovCard(Object.assign(ld, { value: '0', note: `Nothing logged ${r.label} yet` })));
+    else {
+      const lt = LT * L.days;
+      cards.push(ovCard(Object.assign(ld, {
+        value: int(L.n), of: int(lt), pct: ovPct(L.n / lt), state: L.n >= lt ? 'good' : 'bad', bar: L.n / lt,
+        note: `${ovGlyph(L.n >= lt)} ${(L.n / L.days).toFixed(1)} a day, target ${LT} · <b>${L.days}</b> day${L.days === 1 ? '' : 's'} logged${sinceNote}`,
+      })));
+    }
+    // Same-period bookings ÷ leads, as the Leads tab, from the day the sheet starts.
+    const a = L.first && L.first > r.start ? L.first : r.start;
+    const b = r.end < today ? r.end : today;
+    const lb = leadBookings(a, b);
+    const T = typeof CONV_TARGET === 'number' ? CONV_TARGET : 0.1;
+    if (!lb) cards.push(ovWait(cv, 'bookings'));
+    else if (!L.n) cards.push(ovCard(Object.assign(cv, { value: '—', of: ovPct(T), note: `No leads logged ${r.label} yet` })));
+    else {
+      const c = lb.all / L.n;
+      cards.push(ovCard(Object.assign(cv, {
+        value: ovPct(c, 1), of: ovPct(T), pct: `${int(lb.all)} ÷ ${int(L.n)}`, state: c >= T ? 'good' : 'bad', bar: c / (2 * T), mark: 0.5,
+        note: `${ovGlyph(c >= T)} ${int(lb.all)} booking${lb.all === 1 ? '' : 's'} ÷ ${int(L.n)} leads${sinceNote}`,
+      })));
+    }
+    return cards;
+  }
+
+  function ovMarketingCards(today, r) {
+    const cards = [];
+    // High potential leads sit here, as lead quality, so each row has four cards.
+    const hpc = { go: 'leads', tab: 'Leads', icon: 'star', title: 'High potential leads', pill: r.pill, tone: 'mkt' };
+    const L = ovLeads(r.start, r.end);
+    const HT = typeof HP_DAILY_TARGET === 'number' ? HP_DAILY_TARGET : 5;
+    if (!L) cards.push(ovWait(hpc, 'leads'));
+    else if (!L.hpDays) cards.push(ovCard(Object.assign(hpc, { value: L.days ? '—' : '0', note: L.days ? `Not recorded ${r.label}` : `Nothing logged ${r.label} yet` })));
+    else {
+      const ht = HT * L.hpDays;
+      cards.push(ovCard(Object.assign(hpc, {
+        value: int(L.hp), of: int(ht), pct: ovPct(L.hp / ht), state: L.hp >= ht ? 'good' : 'bad', bar: L.hp / ht,
+        note: `${ovGlyph(L.hp >= ht)} ${(L.hp / L.hpDays).toFixed(1)} a day, target ${HT} · <b>${L.hpDays}</b> day${L.hpDays === 1 ? '' : 's'} recorded`,
+      })));
+    }
+    const cp = { go: 'campaigns', tab: 'Campaign Ads', icon: 'target', title: 'Cost per result', pill: 'Running', tone: 'mkt' };
+    const bu = { go: 'campaigns', tab: 'Campaign Ads', icon: 'wallet', title: 'Ad budget used', pill: 'Year', tone: 'mkt' };
+    if (!campaigns || !campaigns.campaigns) cards.push(ovWait(cp, 'Meta'), ovWait(bu, 'Meta'));
+    else {
+      const cur = campaigns.currency || 'SAR';
+      const lim = (campaigns.cprLimit && campaigns.cprLimit.report) || 25;
+      const minR = (campaigns.cprLimit && campaigns.cprLimit.minResults) || 5;
+      const running = campaigns.campaigns.filter((c) => c.status === 'Active');
+      const over = running.filter((c) => c.cprOver);
+      const early = running.filter((c) => !c.cprOver && (c.results || 0) < minR).length;
+      const okN = running.length - over.length;
+      cards.push(ovCard(Object.assign(cp, {
+        value: int(okN), of: int(running.length), pct: running.length ? ovPct(okN / running.length) : '', state: over.length ? 'bad' : 'good', bar: running.length ? okN / running.length : 0,
+        note: (running.length
+          ? (over.length
+            ? `<span class="bad">▼ Over ${esc(cur)} ${int(lim)}:</span> ${over.map((c) => `${esc(c.name)} (${esc(money(c.costPerResult))})`).join(', ')}`
+            : `<span class="good">▲</span> Running campaigns within ${esc(cur)} ${int(lim)} a result`)
+            + (early ? ` · ${early} with under ${minR} results yet` : '')
+          : 'No campaign is running right now'),
+      })));
+      const t = campaigns.totals || {};
+      const used = t.budget ? t.spend / t.budget : null;
+      const yearGone = (ovDiff(today.slice(0, 4) + '-01-01', today) + 1) / (ovDiff(today.slice(0, 4) + '-01-01', today.slice(0, 4) + '-12-31') + 1);
+      cards.push(ovCard(Object.assign(bu, {
+        value: ovPct(used), of: `${esc(cur)} ${int(t.budget)}`, state: used != null && used > 1 ? 'bad' : '', bar: used, mark: yearGone,
+        note: `<b>${esc(cur)} ${int(t.spend)}</b> spent · ${ovPct(yearGone)} of the year gone (the mark) · ${esc(cur)} ${int(t.dailyBudget)} a day on ${int(t.active)} running`,
+      })));
+    }
+
+    // Engagement on posts in the period: interactions ÷ views, as Maryam's sheet.
+    const en = { go: 'engagements', tab: 'Engagements', icon: 'heart', title: 'Engagement rate', pill: r.pill, tone: 'mkt' };
+    if (!engagements || !engagements.posts) cards.push(ovWait(en, 'posts'));
+    else {
+      const posts = engagements.posts.filter((p) => p.date && p.date >= r.start && p.date <= r.end && p.views);
+      const views = posts.reduce((a, p) => a + (p.views || 0), 0);
+      const acts = posts.reduce((a, p) => a + (p.interactions || 0), 0);
+      const T = 0.01;
+      if (!posts.length) cards.push(ovCard(Object.assign(en, { value: '—', of: '1%', note: `No posts recorded ${r.label} yet` })));
+      else {
+        const e = acts / views;
+        cards.push(ovCard(Object.assign(en, {
+          value: ovPct(e, 2), of: '1%', pct: `${posts.length} post${posts.length === 1 ? '' : 's'}`, state: e >= T ? 'good' : 'bad', bar: e / (2 * T), mark: 0.5,
+          note: `${ovGlyph(e >= T)} ${int(acts)} interactions on ${int(views)} views · target 1% (proposed)`,
+        })));
+      }
+    }
+
+    return cards;
+  }
+
+  function ovOpsCards() {
+    const cards = [];
+    const fb = { go: 'feedback', tab: 'Feedback', icon: 'smile', title: 'Guest satisfaction', pill: 'Year', tone: 'ops' };
+    if (!feedback || !feedback.totals) cards.push(ovWait(fb, 'feedback'));
+    else {
+      const sat = feedback.totals.satisfaction;
+      const trips = (feedback.trips || []).filter((t) => t.overall != null && t.month);
+      const lastM = trips.reduce((m, t) => (t.month > m ? t.month : m), '');
+      const last = trips.filter((t) => t.month === lastM);
+      const avg = last.length ? last.reduce((a, t) => a + t.overall, 0) / last.length : null;
+      const esc1 = feedback.totals.escalations || 0;
+      cards.push(ovCard(Object.assign(fb, {
+        value: ovPct(sat, 1), pct: esc(feedback.totals.tripsReported || '') + ' trips', state: '', bar: sat,
+        note: (lastM ? `Latest, ${ovMon(lastM, true)}: <b>${avg.toFixed(1)}</b> / 5 over ${last.length} trip${last.length === 1 ? '' : 's'}` : 'No trip surveyed yet')
+          + (esc1 ? ` · <span class="bad">⚑ ${esc1} escalated</span>` : ''),
+      })));
+    }
+
+    // Margin only: no amount leaves the API for Trip Revenue.
+    const mg = { go: 'revenue', tab: 'Trip Revenue', icon: 'percent', title: 'Trip margin', pill: 'Year', tone: 'ops' };
+    if (!revData || !revData.totals) cards.push(ovWait(mg, 'trip revenue'));
+    else {
+      const m = revData.totals.margin;
+      const st = m == null ? '' : m >= 0.3 ? 'good' : m >= 0.15 ? 'warn' : 'bad';
+      cards.push(ovCard(Object.assign(mg, {
+        value: ovPct(m, 1), pct: st === 'good' ? 'Healthy' : st === 'warn' ? 'Workable' : st === 'bad' ? 'Thin' : '', state: st, bar: m, mark: 0.3,
+        note: `${int(revData.totals.entered)} of ${int(revData.totals.trips)} trips entered · 30%+ is healthy (the mark)`,
+      })));
+    }
+
+    const kp = { go: 'kpis', tab: 'KPIs', icon: 'gauge', title: 'KPIs passed', pill: 'Today', tone: 'ops' };
+    if (!kpiData || !kpiData.kpis) cards.push(ovWait(kp, 'the KPIs'));
+    else {
+      const camps = kpiData.kpis.filter((k) => k.group === 'Cost per result');
+      const all = kpiData.kpis.filter((k) => k.group !== 'Cost per result');
+      if (camps.length) all.push({ name: 'Cost per result', status: camps.some((k) => k.status === 'fail') ? 'fail' : camps.every((k) => k.status === 'na') ? 'na' : 'pass' });
+      const passed = all.filter((k) => k.status === 'pass').length;
+      const failed = all.filter((k) => k.status === 'fail');
+      const total = passed + failed.length;
+      const names = failed.slice(0, 3).map((k) => esc(k.name)).join(', ') + (failed.length > 3 ? ` +${failed.length - 3} more` : '');
+      cards.push(ovCard(Object.assign(kp, {
+        value: int(passed), of: int(total), pct: total ? ovPct(passed / total) : '', state: failed.length ? 'bad' : 'good', bar: total ? passed / total : 0,
+        note: failed.length ? `<span class="bad">✗ Failing:</span> ${names}` : '<span class="good">✓</span> Every KPI passed',
+      })));
+    }
+
+    const tk = { go: 'pending', tab: 'Monday', icon: 'tasks', title: 'Pending tasks', pill: 'Live', tone: 'ops' };
+    if (!monData || !monData.items) cards.push(ovWait(tk, 'monday'));
+    else {
+      const by = new Map();
+      for (const it of monData.items) {
+        const k = it.status || 'Not Started';
+        if (!by.has(k)) by.set(k, { n: 0, color: it.statusColor || '#757575' });
+        by.get(k).n += 1;
+      }
+      const total = monData.items.length;
+      const order = [...by.entries()].sort((x, y) => y[1].n - x[1].n);
+      const stack = `<div class="ov-stack">${order.map(([k, v]) => `<i style="width:${((v.n / total) * 100).toFixed(1)}%;background:${attr(v.color)}" title="${attr(`${k}: ${v.n}`)}"></i>`).join('')}</div>`;
+      const stuck = (by.get('Stuck') || { n: 0 }).n;
+      const overdue = monData.items.filter((i) => i.overdue).length;
+      cards.push(ovCard(Object.assign(tk, {
+        value: int(total), visual: stack,
+        note: order.slice(0, 3).map(([k, v]) => `${esc(k)} <b>${v.n}</b>`).join(' · ')
+          + (overdue || stuck ? ` · <span class="bad">${overdue} overdue</span>` : ''),
+      })));
+    }
+    return cards;
+  }
+
+  // Bookings taken per month, all trips or one destination / programme
+  // (Shakir: "filter by category, like Thailand, last 12 or 9 months").
+  function ovChart(today) {
+    const months = previousTrips && previousTrips.sales && previousTrips.sales.months;
+    const head = (extra) => `<div class="ov-ph"><div class="ptitle">Bookings by month</div><a class="ov-more" href="#previous" data-go="previous">View all ›</a></div>${extra}`;
+    if (!months) return `<div class="panel">${head('')}<div class="msg">Loading bookings by month…</div></div>`;
+    const cur = today.slice(0, 7);
+    const list = [];
+    let ym = cur;
+    for (let i = 0; i < ovMonths; i += 1) {
+      list.unshift(ym);
+      ym = ovAdd(ym + '-01', -1).slice(0, 7);
+    }
+    // Categories with bookings in the window, for the filter.
+    const seen = new Map();
+    for (const k of list) for (const [c, n] of Object.entries((months[k] && months[k].cats) || {})) seen.set(c, (seen.get(c) || 0) + n);
+    const dests = new Map(), progs = new Map();
+    for (const [c, n] of seen) {
+      if (c === 'Other') continue;
+      const [d, g] = c.split('|');
+      dests.set(d, (dests.get(d) || 0) + n);
+      if (g) progs.set(g, (progs.get(g) || 0) + n);
+    }
+    if (ovCat !== 'all' && !((ovCat.startsWith('d:') && dests.has(ovCat.slice(2))) || (ovCat.startsWith('p:') && progs.has(ovCat.slice(2))) || (ovCat.startsWith('c:') && seen.has(ovCat.slice(2))))) ovCat = 'all';
+    const match = (c) => {
+      if (ovCat === 'all') return true;
+      const [d, g] = c.split('|');
+      if (ovCat.startsWith('d:')) return d === ovCat.slice(2);
+      if (ovCat.startsWith('p:')) return g === ovCat.slice(2);
+      return c === ovCat.slice(2);
+    };
+    const byName = (a, b) => b[1] - a[1];
+    const opt = (v, label) => `<option value="${attr(v)}"${ovCat === v ? ' selected' : ''}>${esc(label)}</option>`;
+    const select = `<select id="ovCat" aria-label="Category">
+      ${opt('all', 'All trips')}
+      <optgroup label="Destination">${[...dests].sort(byName).map(([d]) => opt('d:' + d, OV_DEST[d] || d)).join('')}</optgroup>
+      <optgroup label="Programme">${[...progs].sort(byName).map(([g]) => opt('p:' + g, OV_PROG[g] || g)).join('')}</optgroup>
+      <optgroup label="Trip">${[...seen].filter(([c]) => c.includes('|')).sort(byName).map(([c]) => opt('c:' + c, ovCatName(c))).join('')}</optgroup>
+    </select>`;
+    const seg = `<div class="seg">${[6, 12, 24].map((m) => `<button data-ov-months="${m}" aria-pressed="${ovMonths === m}">${m} months</button>`).join('')}</div>`;
+    const W = (report && report.weeklyTarget) || 12;
+    const rows = list.map((k) => {
+      const m = months[k];
+      let n = 0;
+      if (m) {
+        if (ovCat === 'all') n = m.n;
+        else for (const [c, v] of Object.entries(m.cats || {})) if (match(c)) n += v;
+      }
+      const dim = ovDiff(k + '-01', ovAdd(ovAdd(k + '-01', 32).slice(0, 7) + '-01', -1)) + 1;
+      return { k, n, target: ovCat === 'all' ? Math.round((W * dim) / 7) : null };
+    });
+    const max = Math.max(1, ...rows.map((x) => Math.max(x.n, x.target || 0)));
+    const total = rows.reduce((a, x) => a + x.n, 0);
+    const cols = rows.map((x) => {
+      const now = x.k === cur;
+      const tip = `<div class="tt">${esc(ovMon(x.k, true))} ${x.k.slice(0, 4)}${now ? ' · so far' : ''}</div><div class="more">${int(x.n)} booking${x.n === 1 ? '' : 's'}${ovCat === 'all' ? '' : ' · ' + esc(ovCat.startsWith('c:') ? ovCatName(ovCat.slice(2)) : ovCat.startsWith('d:') ? OV_DEST[ovCat.slice(2)] || ovCat.slice(2) : OV_PROG[ovCat.slice(2)] || ovCat.slice(2))}${x.target ? ` · target ${int(x.target)} (${W} a week)` : ''}</div>`;
+      return `<div class="ov-col" data-tip="${attr(tip)}">
+        <span class="v">${x.n ? int(x.n) : ''}</span>
+        <i class="b${now ? ' now' : ''}" style="height:${((x.n / max) * 100).toFixed(1)}%"></i>
+        ${x.target ? `<i class="t" style="bottom:${((x.target / max) * 100).toFixed(1)}%"></i>` : ''}
+      </div>`;
+    }).join('');
+    const axis = rows.map((x) => `<span>${esc(ovMon(x.k))}${x.k.slice(5) === '01' || x.k === rows[0].k ? `<small>${x.k.slice(0, 4)}</small>` : ''}</span>`).join('');
+    const minW = ovMonths > 12 ? `style="min-width:${ovMonths * 30}px"` : '';
+    return `<div class="panel">
+      ${head(`<div class="ov-filters">${select}${seg}</div>`)}
+      <div class="ov-big"><b>${int(total)}</b><span>bookings in the last ${ovMonths} months${ovCat === 'all' ? ', charters left out' : ''}</span></div>
+      <div class="ov-chart"><div class="ov-chart-in" ${minW}>
+        <div class="ov-cols">${cols}</div>
+        <div class="ov-axis">${axis}</div>
+      </div></div>
+      <div class="ov-legend">
+        <span><i style="background:var(--fill)"></i>Bookings taken</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fill) 0 4px,rgba(var(--fill-rgb),.4) 4px 8px)"></i>This month so far</span>
+        ${ovCat === 'all' ? `<span><i class="tl"></i>Target (${W} a week)</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // Every upcoming departure week by where it stands, plus the next trips out.
+  function ovDepartures(today) {
+    const head = `<div class="ov-ph"><div class="ptitle">Upcoming departures</div><a class="ov-more" href="#board" data-go="board">View all ›</a></div>`;
+    if (!latest || !latest.trips) return `<div class="panel">${head}<div class="msg">Loading departures…</div></div>`;
+    const T = latest.target || 10;
+    const k = { sold: 0, at: 0, below: 0, cancel: 0 };
+    let booked = 0;
+    for (const t of latest.trips) for (const w of t.weeks || []) {
+      if (w.unavailable || t.cancelled) { k.cancel += 1; continue; }
+      booked += w.booked || 0;
+      if (w.capacity > 0 && w.booked >= w.capacity) k.sold += 1;
+      else if (w.booked >= T) k.at += 1;
+      else k.below += 1;
+    }
+    const total = k.sold + k.at + k.below + k.cancel;
+    const parts = [
+      ['sold', 'Sold out', 'var(--soldout)'],
+      ['at', `At target (${T}+)`, 'var(--q-high)'],
+      ['below', `Below target`, 'var(--fill)'],
+      ['cancel', 'Cancelled', 'var(--q-low)'],
+    ];
+    const stack = total ? `<div class="ov-dstack">${parts.filter(([key]) => k[key]).map(([key, label, c]) => `<i style="width:${((k[key] / total) * 100).toFixed(1)}%;background:${c}" data-tip="${attr(`<div class="tt">${esc(label)}</div><div class="more">${k[key]} of ${total} weeks</div>`)}"></i>`).join('')}</div>` : '';
+    const leg = parts.map(([key, label, c]) => `<span><i style="background:${c}"></i>${esc(label)}</span><b>${k[key]}</b>`).join('');
+    const next = latest.trips
+      .filter((t) => !t.cancelled && t.start >= today)
+      .sort((a, b) => a.start.localeCompare(b.start))
+      .slice(0, 4)
+      .map((t) => {
+        const live = (t.weeks || []).filter((w) => !w.unavailable);
+        const b = live.reduce((a, w) => a + (w.booked || 0), 0);
+        return `<div class="ov-trip"><span class="n">${esc(t.name)}</span><span class="c"><b>${int(b)}</b> booked</span><span class="d">${esc(ovDate(t.start))} · ${live.length} week${live.length === 1 ? '' : 's'}</span><span class="c">target ${int(T * live.length)}</span></div>`;
+      }).join('');
+    return `<div class="panel">${head}
+      <div class="ov-big"><b>${int(booked)}</b><span>booked across ${total} departure week${total === 1 ? '' : 's'}</span></div>
+      ${stack}
+      <div class="ov-dleg">${leg}</div>
+      ${next ? `<div class="ov-next"><div class="ptitle">Next departures</div>${next}</div>` : ''}
+    </div>`;
+  }
+
+  function renderOverview() {
+    if (view !== 'overview') return;
+    const today = ovToday();
+    const r = ovRange(today);
+    const per = { week: 'This week', month: 'This month', year: 'This year' };
+    const span = r.pill === 'Week' ? `${ovDate(r.start)} – ${ovDate(r.end)}` : r.pill === 'Month' ? `${ovMon(today.slice(0, 7), true)} ${today.slice(0, 4)}` : today.slice(0, 4);
+    $('overviewWrap').innerHTML = `
+      <div class="ov-head">
+        <div>
+          <div class="ov-h1">Dashboard</div>
+          <div class="ov-sub">Live · ${esc(span)} · tap any card for the details</div>
+        </div>
+        <div class="ov-ctrl">
+          <span class="lbl">Reporting period</span>
+          <div class="seg">${Object.entries(per).map(([k, l]) => `<button data-ov-period="${k}" aria-pressed="${ovPeriod === k}">${l}</button>`).join('')}</div>
+          <button class="btn ov-pdf" id="ovPdf" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>PDF</button>
+        </div>
+      </div>
+      <div class="ov-sec">Sales</div>
+      <div class="ov-grid">${ovSalesCards(today, r).join('')}</div>
+      <div class="ov-sec">Marketing</div>
+      <div class="ov-grid">${ovMarketingCards(today, r).join('')}</div>
+      <div class="ov-sec">Operations &amp; team</div>
+      <div class="ov-grid">${ovOpsCards().join('')}</div>
+      <div class="ov-low">${ovChart(today)}${ovDepartures(today)}</div>`;
+    const root = $('overviewWrap');
+    bindHelp(root);
+    root.querySelectorAll('[data-go]').forEach((a) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      setView(a.dataset.go);
+      scrollTo(0, 0);
+    }));
+    root.querySelectorAll('[data-ov-period]').forEach((b) => b.addEventListener('click', () => {
+      ovPeriod = b.dataset.ovPeriod;
+      saveViewState();
+      renderOverview();
+    }));
+    root.querySelectorAll('[data-ov-months]').forEach((b) => b.addEventListener('click', () => {
+      ovMonths = Number(b.dataset.ovMonths);
+      renderOverview();
+    }));
+    const sel = $('ovCat');
+    if (sel) sel.addEventListener('change', () => { ovCat = sel.value; renderOverview(); });
+    $('ovPdf').addEventListener('click', () => print());
+  }
+
+
   /* ================= view switching ================= */
 
   // Explicit target, not a toggle — Dashboard is always one click away from
@@ -5034,6 +5673,20 @@
     $('revenueWrap').hidden = view !== 'revenue';
     $('pendingWrap').hidden = view !== 'pending';
     $('kpisWrap').hidden = view !== 'kpis';
+    $('overviewWrap').hidden = view !== 'overview';
+    // The Dashboard reads every tab's data, so opening it loads whatever
+    // hasn't been loaded yet; each card fills in as its source arrives.
+    if (view === 'overview') {
+      if (!leads) loadLeads(false);
+      if (!campaigns) loadCampaigns(false);
+      if (!engagements) loadEngagements(false);
+      if (!feedback) loadFeedback(false);
+      if (!revData) loadRevenue(false);
+      if (!monData) loadPending(false);
+      if (!kpiData) loadKpis(false);
+      if (!previousTrips) loadPreviousTrips(false);
+      renderOverview();
+    }
     if (view === 'report') {
       if (!report) $('reportWrap').innerHTML = '<div class="msg">Loading report…</div>';
       loadReport(false);
@@ -5113,6 +5766,7 @@
     if (revData) loadRevenue(true);
     if (monData) loadPending(true);
     if (kpiData) loadKpis(true);
+    if (view === 'overview') renderOverview();
   });
 
   /* ================= sidebar ================= */
@@ -5173,7 +5827,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'];
+  const VIEWS = ['overview', 'board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;

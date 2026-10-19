@@ -30,9 +30,13 @@ One static frontend, a folder of Vercel serverless functions, no build step,
 no framework.
 
 - `index.html` — the entire frontend. One file: inline `<style>`, inline
-  `<script>`, no bundler. ~230,000 characters. Eleven views in four sidebar
+  `<script>`, no bundler. ~340,000 characters. Thirteen views in five sidebar
   categories (`<aside class="sidebar">`, its `<nav id="viewSeg">` holds the
   `data-view` buttons `setView()` drives). Regrouped by Anton, 4 Oct 2026:
+  - **OVERVIEW**: Dashboard (`data-view="overview"`, 19 Oct 2026), the
+    executive overview and **the first screen** for a device with nothing
+    saved. See "Dashboard tab (executive overview)" below. Not to be confused
+    with the Booking tab, which was labelled "Dashboard" until 30 Sep 2026.
   - **SALES**: Booking, Report, Leads. **Previous Sales is a sub-tab of
     Booking** (Muatasam, 5 Oct 2026: "add previous projects under sales ...
     Call the tab Previous Sales ... combine ... as new tab under booking"):
@@ -102,7 +106,7 @@ no framework.
 | --- | --- |
 | `lib/wetravel.js` | Shared WeTravel client. `WETRAVEL_API_KEY` is a **refresh token**, exchanged here for a 1-hour access token (cached, retried on 429/401). Also exports `mapWithConcurrency`. |
 | `api/trips-progress.js` | Booking tab (sidebar label; was "Dashboard") — live/upcoming departures, per-week booking bars. Keeps a departure for its whole month, drops it once the month passes. **No cut-off date**: every departure WeTravel has open shows, however far out (`SEASON_END` defaulted to 2026-12-31 until 5 Oct 2026, which hid five January 2027 trips WeTravel already had on sale; Anton: "show all trips that is available currently in wetravel"). If `SEASON_END` is set it still applies. The header's "<today> to <month>" is the last departure on the board. **`?audit=1`** (needs `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`) lists every upcoming WeTravel trip with why it is or isn't shown: excluded, past the season end, no booking record, or no weeks set up. Use it first when asked "why isn't trip X showing". **Unavailable = Cancelled (Anton, 13 Oct 2026)**: a week WeTravel has at 0 seats (its "Unavailable") is sent as `unavailable` and drawn as a red, struck-through CANCELLED week, bookings or not; a trip whose weeks are all unavailable (or in `CANCELLED_TRIP_UUIDS`) is a red CANCELLED card (Thai | Wellness and SA | Explore, Nov 2026). **SOLD OUT** only when every week still on sale has seats (> 0) and all are taken; before this, a 0-seat week with bookings read as Sold out. Hidden **on purpose**, don't "fix": the charters and **Korea Explore 24–31 Oct 2026** (hidden by an earlier decision, see `EXCLUDED_TRIP_UUIDS` in the README). |
-| `api/previous-trips.js` | Previous Sales (Booking sub-tab; was the Previous Projects tab) — the complement of trips-progress: everything whose month has already passed. `end < monthStart` is the exact filter, so a trip is never in both views or neither. Also returns **`sales`**: bookings taken per month (`{ 'YYYY-MM': { n, byDay[31] } }`, Muscat day of `created_at`, each order's `active_count`, charters left out, `charterExcluded` count) across **every** trip, upcoming ones included (their orders are fetched for this only). Counted exactly like the Report's "bookings taken"; checked 5 Oct 2026, all 11 months in the Report's window match. Data starts 2019-04; 2020 is all zero. |
+| `api/previous-trips.js` | Previous Sales (Booking sub-tab; was the Previous Projects tab) — the complement of trips-progress: everything whose month has already passed. `end < monthStart` is the exact filter, so a trip is never in both views or neither. Also returns **`sales`**: bookings taken per month (`{ 'YYYY-MM': { n, byDay[31], cats } }`, `cats` = per project `"TH|WL"` / `"ZNZ"` / `"Other"` for the Dashboard's category filter, Muscat day of `created_at`, each order's `active_count`, charters left out, `charterExcluded` count) across **every** trip, upcoming ones included (their orders are fetched for this only). Counted exactly like the Report's "bookings taken"; checked 5 Oct 2026, all 11 months in the Report's window match. Data starts 2019-04; 2020 is all zero. |
 | `api/booking-report.js` | Report tab — flat list of booking events, last 300 days by default. Exports `build()`, reused by `slack-notify.js`. |
 | `api/slack-notify.js` | Cron target — posts the day's new bookings to Slack. `?preview=1` renders without posting. Gated by `CRON_SECRET` if set. |
 | `api/announcement.js` | Banner text from env vars, editable without a code change, **plus dated reminders** in its `REMINDERS` array (Anton, 6 Oct 2026: decide on Thailand Wellness by Mon 12 Oct, South Africa Explore by Mon 19 Oct). The API sends `items` (env banner first, then reminders by due date) and drops a reminder after its due day (Muscat), so it disappears on its own. The Booking tab shows each as its own card in `#announce` (now an `.announce-list` grid): amber edge, a countdown pill ("6 days left · Mon 12 Oct", red from 2 days out). To add or remove one, edit `REMINDERS`. **Emptied on 13 Oct 2026** (Anton: "remove the announcements"); with nothing to show, the banner area is hidden entirely (no "No current announcement" placeholder). |
@@ -1147,6 +1151,65 @@ window, on Windows and Mac (Chrome, Edge; Safari "Add to Dock") and phones.
   hide when already running installed (`display-mode: standalone`).
 - Updates need nothing: the installed app loads the live site each time.
 
+## Dashboard tab (executive overview), 19 Oct 2026
+
+Anton, after a meeting with Shakir Khatti (who built HASA Energy's EMMS) and
+a HASA screenshot as the reference: "an overall Dashboard ... what the
+executives want to check and they can see the details to each when they
+press a particular card". Shakir's advice used: bookings in the last 24
+hours / this week / this month against target, a feedback card, trip
+revenue, a bookings-by-month graph filterable by category and 6/12/24
+months, quick overview first and the detail one tap away, easy on the eyes.
+
+- **Sidebar**: new first category **Overview › Dashboard**
+  (`data-view="overview"`, `#overviewWrap`, `#overview`). `let view =
+  'overview'` is the default; a device with a saved tab still reopens it.
+- **No new endpoint** (12 of 12 functions used). `renderOverview()` reads
+  the data each tab already loads (`latest`, `report`, `previousTrips`,
+  `leads`, `campaigns`, `engagements`, `feedback`, `revData`, `monData`,
+  `kpiData`); opening the tab loads whatever's missing, and every loader
+  calls `ovSoon()` so cards fill in as their source arrives ("Loading …"
+  until then). A card and its tab can't disagree.
+- **Reporting period** (`ovPeriod`, saved with the view state): This week
+  (Sun–Sat, Muscat, as the Report) / This month / This year. **PDF** button
+  = `print()`, with an `@media print` block that prints only the page.
+- **Cards** (`ovCard()`: icon, name, period pill, number "of target", % on
+  the right, a bar with an optional mark, one line under it; the whole card
+  is a link to its tab). Four per row:
+  - Sales: **Bookings** (period; target 12 a week scaled to the period's
+    length, the mark = where pace says it should be by today; the year uses
+    `previousTrips.sales`, a week or month the Report's events), **Bookings ·
+    last 24 hours** (with the last 14 days as small bars), **Leads** (target
+    20 × days logged), **Conversion** (bookings ÷ leads, same period, 10%,
+    `leadBookings()`; leads data starts 1 Jul, said on the card).
+  - Marketing: **High potential leads** (5 × days with HP recorded), **Cost
+    per result** (running campaigns within SAR 25, `cprOver`), **Ad budget
+    used** (YTD spend ÷ media-plan budget, mark = share of the year gone),
+    **Engagement rate** (posts in the period, 1% proposed).
+  - Operations & team: **Guest satisfaction** (YTD + latest surveyed month,
+    escalations), **Trip margin** (**percentage only**, Muatasam's rule;
+    30%+ healthy mark), **KPIs passed** (cost-per-result rows count as one,
+    as on the KPIs tab), **Pending tasks** (monday statuses as a stacked bar
+    in monday's colours, overdue count).
+- **Bookings by month** (`ovChart()`): `previousTrips.sales.months`, 6 / 12
+  / 24 months (`ovMonths`), category filter (`ovCat`: All, a destination, a
+  programme, or a destination + programme). Needs **`cats`** per month, added
+  to `api/previous-trips.js` `salesByMonth()` this day (`"TH|WL"`, `"ZNZ"`,
+  or `"Other"`, via `booking-report.js` `leadProject()`). Dashed target per
+  month (12 × days ÷ 7) only for All; the current month is hatched.
+- **Upcoming departures** (`ovDepartures()`): every upcoming departure week
+  as Sold out / At target (10+) / Below target / Cancelled, seats booked,
+  and the next four trips out.
+- **Flagged to Anton**: Shakir suggested showing revenue amounts
+  ("$5,000 target, $2,300 achieved"); not done, because Trip Revenue is
+  percentages only until Muatasam says otherwise. And with the 12-a-week
+  target the year reads 116 of 626 (19%), so the bookings cards will be red
+  most of the time; that's the agreed target, not a bug.
+- Not done yet from the meeting: category / month filters on the Booking tab,
+  moving its detail into Report sub-tabs, push notifications once installed.
+- Classes `ov-`. Checked in both themes, at phone width (2 cards a row, 1
+  under 360px), against live data for all three periods.
+
 ## Login gate, light / dark mode (18 Oct 2026)
 
 Anton: password-only login (no username), stay signed in for a month while
@@ -1179,6 +1242,17 @@ button on the AI Adviser.
 - **Function budget**: middleware is not one of the 12 serverless functions
   (checked by the deploy succeeding; if a future deploy fails at 13, this is
   the first suspect).
+- **Dark mode is now a dark version of the light theme** (Anton, 19 Oct
+  2026: "make the dark mode ... a dark mode version of the light mode"): the
+  `:root` tokens are deep teal (page `#0b1c20`, cards `#12292e`, lines
+  `#22414a`) with the brand teal as the accent (`--yellow` `#3cc3d3`,
+  `--fill` `#2db1c3`), and a dark teal sidebar gradient
+  (`html:not([data-theme="light"]) .sidebar`). The old navy / yellow look is
+  gone. Every hard-coded yellow tint (`rgba(242,178,51,…)` /
+  `rgba(245,185,53,…)`) became `rgba(var(--acc-rgb),…)` /
+  `rgba(var(--fill-rgb),…)`, two new RGB tokens set in both themes, so tints
+  follow the accent. The one yellow kept on purpose is `--tgt-hp` (the HP
+  target line and bars) and the `--q-med` status step.
 - **Theme**: **light is the default** (Anton, 18 Oct 2026); dark is the
   `:root` tokens and applies when `localStorage` `nomuTheme` is `dark`. Light
   is `html[data-theme="light"]`, set before first paint. The switch is the
@@ -1195,8 +1269,8 @@ button on the AI Adviser.
   accent `--yellow` = teal `#1a8fa1`, bars `--fill` `#2099ac`; the sidebar is a
   teal gradient with white text; status colours unchanged. **New CSS must use
   the tokens, not `#fff` / white overlays**, or it breaks in light mode.
-- **AI Adviser panel follows the theme** (18 Oct 2026): dark keeps its navy
-  panel and yellow accents; light is a white panel, teal bubble / send button /
+- **AI Adviser panel follows the theme** (18 Oct 2026): dark is a dark teal
+  panel (`--card-2`) with teal accents; light is a white panel, teal bubble / send button /
   your messages, pale teal answers. "New chat" doesn't wrap.
 - **AI Adviser New chat** (`#advNew`): clears the conversation; it doesn't
   give back the day's question count.

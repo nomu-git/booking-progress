@@ -4,6 +4,7 @@
 
 const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
 const { buildCode } = require('../lib/trip-code');
+const { leadProject } = require('./booking-report');
 
 const CACHE_TTL_MS = Number(process.env.PREVIOUS_TRIPS_CACHE_TTL_MS || 300000);
 
@@ -169,11 +170,17 @@ async function loadTripDetail(trip) {
 // order's active travellers, charters left out), so a month reads the same
 // number here as on the Report's monthly chart. byDay lets the page compare
 // the current, unfinished month against the same days in earlier years.
+//
+// cats splits each month by project ("TH|WL", "ZNZ", or "Other" when the
+// title names no destination), so the overview's bookings chart can be
+// filtered to one destination or programme (Shakir's suggestion, Oct 2026).
 function salesByMonth(tripOrders, nowMs) {
   const months = {};
   let charterExcluded = 0;
   for (const { trip, orders } of tripOrders) {
     const charter = CHARTERS.has(String(trip.uuid));
+    const proj = leadProject(trip);
+    const cat = proj.pd ? (proj.pg ? `${proj.pd}|${proj.pg}` : proj.pd) : 'Other';
     for (const order of orders || []) {
       const at = Date.parse(order.created_at);
       if (!Number.isFinite(at) || at > nowMs) continue;
@@ -183,9 +190,10 @@ function salesByMonth(tripOrders, nowMs) {
       const oman = new Date(at + OMAN_OFFSET_MS).toISOString();
       const key = oman.slice(0, 7);
       const day = Number(oman.slice(8, 10));
-      const m = months[key] || (months[key] = { n: 0, byDay: new Array(31).fill(0) });
+      const m = months[key] || (months[key] = { n: 0, byDay: new Array(31).fill(0), cats: {} });
       m.n += n;
       m.byDay[day - 1] += n;
+      m.cats[cat] = (m.cats[cat] || 0) + n;
     }
   }
   return { months, charterExcluded };
