@@ -1239,7 +1239,18 @@ months, quick overview first and the detail one tap away, easy on the eyes.
   × days logged), High potential (5 × days with HP), Conversion (10%;
   **daily added 19 Oct 2026** at Anton's request, though Muatasam had said
   on 8 Oct daily makes no sense: a day's bookings rarely come from that
-  day's leads, so it swings). "N of M on target" in the title. **The engagement rate
+  day's leads, so it swings). "N of M on target" in the title. **Pickers per
+  column (Anton, 19 Oct 2026)**: Daily (today and the last 60 days:
+  "Yesterday", "Today so far", then dates), Weekly (Sunday–Saturday, this
+  week and the 39 before) and Monthly (this month and the 11 before) each
+  have a dropdown in the heading with the exact dates in small text under it
+  (`ovPickDay` / `ovPickWeek` / `ovPickMonth`, null = default; `ovPicker()`).
+  A **finished** period is judged against its whole target ("N short" /
+  "Target reached", no pace mark); the current one on pace. A month's
+  bookings come from `previousTrips.sales` (whole month, back past the
+  Report's 300 days); a day / week from the Report's events. Leads data
+  starts 1 Jul 2026, so earlier periods read "Nothing logged". Checked: last
+  week = 38 leads, 2 bookings, 5.3%, same as the KPIs tab. **The engagement rate
   KPI was removed everywhere** (Anton, 19 Oct 2026): Dashboard scorecard,
   KPIs tab, daily Slack KPI message, AI Adviser targets; `lib/kpis.js` no
   longer reads the engagements sheet and `KPI_ENGAGEMENT` is gone. The
@@ -1255,7 +1266,11 @@ months, quick overview first and the detail one tap away, easy on the eyes.
   KPI checks** (the KPIs tab's pass count, cost-per-result rows as one),
   **Pending tasks** (monday statuses as a stacked bar in monday's colours,
   overdue count). **PDF** button = `print()`, with an `@media print` block.
-- **Bookings by month** (`ovChart()`): `previousTrips.sales.months`, 6 / 12
+- **Bookings by month** (`ovChart()`): `previousTrips.sales.months`, a
+  **Monthly / Yearly** switch (`ovGran`, Anton 19 Oct 2026: yearly = one bar
+  per year from the first year of data, 2019, to now; the current year
+  hatched "so far"; target 12 × days in the year ÷ 7; the headline is this
+  year so far plus the total since 2019); in monthly, 6 / 12
   / 24 months (`ovMonths`), category filter (`ovCat`: All, a destination, a
   programme, or a destination + programme). Needs **`cats`** per month, added
   to `api/previous-trips.js` `salesByMonth()` this day (`"TH|WL"`, `"ZNZ"`,
