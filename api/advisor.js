@@ -86,6 +86,10 @@ function cleanHistory(history) {
 const textOf = (msg) => (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
 
 module.exports = async (req, res) => {
+  // The CRM's Claude connector (lib/mcp.js) shares this function, since all
+  // 12 Vercel function slots are used; vercel.json routes /mcp, /oauth/* and
+  // the /.well-known OAuth documents here with ?route=.
+  if (req.query && req.query.route) return require('../lib/mcp')(req, res, String(req.query.route));
   const t0 = Date.now();
   const connected = !!(process.env.ANTHROPIC_API_KEY || '').trim();
   try {

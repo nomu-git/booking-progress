@@ -21,6 +21,42 @@
     {
       "source": "/api/feedback",
       "destination": "/api/sheets?name=feedback"
+    },
+    {
+      "source": "/mcp",
+      "destination": "/api/advisor?route=mcp"
+    },
+    {
+      "source": "/.well-known/oauth-protected-resource",
+      "destination": "/api/advisor?route=protected-resource"
+    },
+    {
+      "source": "/.well-known/oauth-protected-resource/:path*",
+      "destination": "/api/advisor?route=protected-resource"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server",
+      "destination": "/api/advisor?route=authorization-server"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server/:path*",
+      "destination": "/api/advisor?route=authorization-server"
+    },
+    {
+      "source": "/.well-known/openid-configuration",
+      "destination": "/api/advisor?route=authorization-server"
+    },
+    {
+      "source": "/oauth/register",
+      "destination": "/api/advisor?route=register"
+    },
+    {
+      "source": "/oauth/authorize",
+      "destination": "/api/advisor?route=authorize"
+    },
+    {
+      "source": "/oauth/token",
+      "destination": "/api/advisor?route=token"
     }
   ],
   "functions": {

@@ -189,6 +189,9 @@ export default async function middleware(req) {
   const key = `${process.env.SESSION_SECRET || secret}|${password}`;
 
   if (OWN_AUTH.includes(path) || path === '/manifest.webmanifest' || path === '/sw.js') return next();
+  // The Claude connector (lib/mcp.js) checks its own OAuth tokens, and its
+  // sign-in page asks for the same password.
+  if (path === '/mcp' || path.startsWith('/oauth/') || path.startsWith('/.well-known/')) return next();
   if (secret && req.headers.get('authorization') === `Bearer ${secret}`) return next();
   if (req.method === 'HEAD' && (path === '/' || path === '/index.html')) return next();
 

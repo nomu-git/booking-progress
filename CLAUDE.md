@@ -1306,6 +1306,45 @@ months, quick overview first and the detail one tap away, easy on the eyes.
 - Classes `ov-`. Checked in both themes, at phone width (2 cards a row, 1
   under 360px), against live data for all three periods.
 
+## Claude connector (MCP server), 19 Oct 2026
+
+Anton: an API with read access to the whole CRM, connected to Claude as a
+connector "like the Meta connector", so he can chat with the data from
+Claude itself. Built as a **remote MCP server** (Streamable HTTP, stateless
+JSON-RPC) at **`https://crm.nomuhub.com/mcp`**; add it in Claude under
+Settings › Connectors › Add custom connector (URL only, no client ID).
+
+- **`lib/mcp.js`**, run **inside `api/advisor.js`** (12 of 12 functions
+  used): `vercel.json` rewrites `/mcp`, `/oauth/register|authorize|token`
+  and `/.well-known/oauth-protected-resource`, `oauth-authorization-server`,
+  `openid-configuration` (and their `/…` suffixed forms) to
+  `/api/advisor?route=…`, and the handler hands those to `lib/mcp.js`.
+  `middleware.js` lets those paths past the login gate.
+- **Sign-in is OAuth 2.1 with PKCE and dynamic client registration**, all
+  stateless: the client_id is a signed blob carrying its redirect URIs;
+  `/oauth/authorize` is a NomuHub page asking for the **dashboard password**
+  (same 10-per-15-minutes limit, `login-fail:<ip>`); codes (5 min), access
+  tokens (30 days) and refresh tokens (180 days) are HMAC-signed with
+  `SESSION_SECRET`/`CAMPAIGN_ALERT_SECRET` **plus the password**, so changing
+  `DASHBOARD_PASSWORD` disconnects every connector. No token = 401 with
+  `WWW-Authenticate: Bearer resource_metadata=…`, which starts Claude's
+  sign-in.
+- **Read-only by construction**: 13 tools, all `readOnlyHint`, each reading
+  one of the dashboard's own endpoints with the Bearer secret (same data the
+  tabs show: revenue percentages only, leads as counts):
+  `get_crm_overview` (the AI Adviser's text snapshot, `lib/advisor-context.js`),
+  `get_upcoming_departures` (destination / month filters),
+  `get_bookings_taken` (from / to), `get_sales_history` (year; `byDay`
+  dropped to keep it small), `get_leads`, `get_ad_campaigns`
+  (running_only), `get_campaign_history` (year), `get_social_engagement`,
+  `get_trip_products`, `get_guest_feedback`, `get_trip_margins`, `get_kpis`,
+  `get_pending_tasks`. No write tool exists.
+- Nothing here costs Claude API credit: the user's own Claude does the
+  thinking; the dashboard only serves data.
+- **Use crm.nomuhub.com, not bookingprogress.vercel.app**: Vercel's
+  Security Checkpoint started answering scripted requests on the vercel.app
+  domain with 403 on 19 Oct 2026.
+
 ## Shorter pages and the phone layout (19 Oct 2026)
 
 Anton: "check each tab and make sure to avoid having long scrolls, have a
@@ -1505,7 +1544,8 @@ name, who it's assigned to and its status exactly as monday shows it.
   General), so Overdue will usually read low; that's the data, not a bug.
 
 **Function budget: 12 of Vercel Hobby's 12 (FULL)** (sheets merged into one;
-`campaign-alerts`, `lead-alerts` and `advisor` added). New sheet tabs don't add
+`campaign-alerts`, `lead-alerts` and `advisor` added; the Claude connector
+shares `advisor`). New sheet tabs don't add
 to it; a new endpoint needs two existing ones merged first.
 
 ## Open items waiting on Muatasam
