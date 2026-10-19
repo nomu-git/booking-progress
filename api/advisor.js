@@ -10,7 +10,8 @@
 //   - Off-topic questions and requests to change things are turned away by a
 //     tiny Claude Haiku check that sees only the question, before the
 //     dashboard snapshot is ever sent. They still count toward the 10.
-//   - Questions are capped in length, and so is the conversation sent back.
+//   - Questions can be long (up to 20,000 characters); the conversation sent
+//     back is the last 6 turns.
 // No passcode (Anton's call): anyone with the link can use the 10.
 //
 // Model: Claude Sonnet 5.5 (agreed for cost), medium effort. Key in
@@ -30,7 +31,10 @@ const MODEL = process.env.ADVISOR_MODEL || 'claude-sonnet-5-5';
 const DEEP_MODEL = process.env.ADVISOR_DEEP_MODEL || 'claude-opus-5-5';
 const DEEP_LIMIT = Number(process.env.ADVISOR_DEEP_LIMIT || 4);
 const GATE_MODEL = 'claude-haiku-4-5';
-const MAX_QUESTION = 800;
+// Long questions are fine (Anton, 19 Oct 2026: no small limit). 20,000
+// characters is about 5,000 tokens, roughly $0.015 more on Sonnet; the 10 a
+// day still caps the spend.
+const MAX_QUESTION = 20000;
 const MAX_TURNS = 6;
 
 const OFF_TOPIC = "I can only help with NomuHub's dashboard: bookings, leads, campaigns, engagement, trips, feedback, revenue and tasks, and what to improve. Try asking about one of those.";
@@ -63,7 +67,7 @@ function cleanHistory(history) {
   const out = [];
   for (const m of Array.isArray(history) ? history.slice(-MAX_TURNS) : []) {
     if (!m || (m.role !== 'user' && m.role !== 'assistant')) continue;
-    const content = String(m.content || '').slice(0, 2000).trim();
+    const content = String(m.content || '').slice(0, MAX_QUESTION).trim();
     if (!content) continue;
     if (out.length && out[out.length - 1].role === m.role) continue; // keep turns alternating
     out.push({ role: m.role, content });

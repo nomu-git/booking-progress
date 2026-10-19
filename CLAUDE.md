@@ -1157,8 +1157,9 @@ Anton's rules (15 Oct 2026): **dashboard / strategy questions only, read-only
   questions a day, shared** (`ADVISOR_DAILY_LIMIT`), Upstash
   `advisor:count:<Muscat date>`, counted before answering so two people can't
   both take the last one; every send counts, including off-topic ones; a
-  technical failure `DECR`s it back. (3) Questions capped at 800 characters,
-  history at the last 6 turns of 2,000 characters.
+  technical failure `DECR`s it back. (3) Questions up to **20,000 characters**
+  (was 800; Anton, 19 Oct 2026: no small limit), history the last 6 turns,
+  each up to the same length.
 - **Model routing (Anton, 15 Oct 2026)**: the Haiku gate answers SIMPLE /
   COMPLEX / CHANGE / OFF. SIMPLE goes to Sonnet 5.5; COMPLEX (root causes,
   several areas together, comparisons, forecasts, plans, full reviews) goes to
