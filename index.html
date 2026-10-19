@@ -154,6 +154,8 @@
   .ovk-head span { display: flex; flex-direction: column; gap: 2px; }
   .ovk-head b { color: var(--text); }
   .ovk-head small { font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .ovk-head small { margin-top: 3px; }
+  .ovk-pick select { width: 100%; max-width: 240px; margin-top: 4px; font: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; }
   .ovk-row { padding: 13px 10px; border-bottom: 1px solid var(--line); border-radius: 10px; color: inherit; text-decoration: none; }
   .ovk-row:last-child { border-bottom: 0; }
   .ovk-row:hover, .ovk-row:focus-visible { background: rgba(var(--acc-rgb),.06); outline: none; }
@@ -171,7 +173,9 @@
   .ovk-cell.na .ovk-v b, .ovk-cell.wait .ovk-v b { color: var(--text-3); font-weight: 600; }
   .ovk-n { font-size: 11.5px; line-height: 1.35; color: var(--text-3); }
   @media (max-width: 760px) {
-    .ovk-head { display: none; }
+    .ovk-head { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 4px 10px; }
+    .ovk-head > span:first-child { display: none; }
+    .ovk-pick select { font-size: 11.5px; padding: 5px 4px; }
     .ovk-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px 4px; align-items: start; }
     .ovk-v { white-space: nowrap; }
     .ovk-v small { font-size: 10.5px; }
@@ -5334,6 +5338,7 @@
   // only (Muatasam, 4 Oct 2026), so the margin card has no amount.
   let ovCat = 'all';
   let ovMonths = 12;
+  let ovGran = 'month'; // bookings chart: 'month' | 'year' (Anton, 19 Oct 2026)
   let ovTimer = null;
   function ovSoon() {
     if (view !== 'overview') return;
@@ -5406,16 +5411,60 @@
   // Daily is yesterday, the last whole day (and the one Marina has logged);
   // weekly and monthly are this week (Sunday to Saturday, as the Report) and
   // this month so far, judged on pace.
+  // Each column can be set to a specific day, week or month (Anton, 19 Oct
+  // 2026); null means the default (yesterday, this week, this month). A
+  // finished period is judged against its whole target; the current one on
+  // pace.
+  let ovPickDay = null;
+  let ovPickWeek = null;
+  let ovPickMonth = null;
+  const ovWeekStart = (day) => ovAdd(day, -new Date(day + 'T00:00:00Z').getUTCDay());
+  const ovMonthEnd = (ym) => ovAdd(ovAdd(ym + '-01', 32).slice(0, 7) + '-01', -1);
+  // How far back the pickers go: the Report's bookings reach about 300 days.
+  const OV_BACK_WEEKS = 40;
+  const OV_BACK_MONTHS = 12;
   function ovPeriods(today) {
     const y = ovAdd(today, -1);
-    const ws = ovAdd(today, -new Date(today + 'T00:00:00Z').getUTCDay());
-    const ms = today.slice(0, 7) + '-01';
-    const me = ovAdd(ovAdd(ms, 32).slice(0, 7) + '-01', -1);
+    const day = ovPickDay && ovPickDay <= today ? ovPickDay : y;
+    const curWs = ovWeekStart(today);
+    const ws = ovPickWeek && ovPickWeek <= curWs ? ovPickWeek : curWs;
+    const we = ovAdd(ws, 6);
+    const m = ovPickMonth && ovPickMonth <= today.slice(0, 7) ? ovPickMonth : today.slice(0, 7);
+    const ms = m + '-01';
+    const me = ovMonthEnd(m);
+    const clip = (e) => (e < today ? e : today);
     return [
-      { key: 'd', head: 'Daily', sub: `Yesterday · ${ovWeekday(y)}`, start: y, end: y, len: 1, gone: 1 },
-      { key: 'w', head: 'Weekly', sub: `This week · ${ovDate(ws)} – ${ovDate(ovAdd(ws, 6))}`, start: ws, end: today, len: 7, gone: ovDiff(ws, today) + 1 },
-      { key: 'm', head: 'Monthly', sub: `This month · ${ovMon(ms.slice(0, 7), true)}`, start: ms, end: today, len: ovDiff(ms, me) + 1, gone: ovDiff(ms, today) + 1 },
+      { key: 'd', head: 'Daily', start: day, end: day, len: 1, gone: 1, done: day < today, value: day },
+      { key: 'w', head: 'Weekly', start: ws, end: clip(we), len: 7, gone: Math.min(7, ovDiff(ws, today) + 1), done: we < today, value: ws },
+      { key: 'm', head: 'Monthly', start: ms, end: clip(me), len: ovDiff(ms, me) + 1, gone: Math.min(ovDiff(ms, me) + 1, ovDiff(ms, today) + 1), done: me < today, value: m },
     ];
+  }
+  // The picker in each column's heading.
+  function ovPicker(p, today) {
+    if (p.key === 'd') {
+      return `<label class="ovk-pick"><select data-ovp="d" aria-label="Day">${[...Array(60)].map((_, i) => {
+        const d = ovAdd(today, -i);
+        const t = i === 0 ? 'Today so far' : i === 1 ? 'Yesterday' : ovWeekday(d);
+        return `<option value="${d}"${d === p.value ? ' selected' : ''}>${esc(t)}</option>`;
+      }).join('')}</select></label><small>${esc(ovWeekday(p.value))}</small>`;
+    }
+    if (p.key === 'w') {
+      const cur = ovWeekStart(today);
+      return `<label class="ovk-pick"><select data-ovp="w" aria-label="Week">${[...Array(OV_BACK_WEEKS)].map((_, i) => {
+        const ws = ovAdd(cur, -7 * i);
+        const span = `${ovDate(ws)} – ${ovDate(ovAdd(ws, 6))}`;
+        const t = i === 0 ? 'This week' : i === 1 ? 'Last week' : span;
+        return `<option value="${ws}"${ws === p.value ? ' selected' : ''}>${esc(t)}</option>`;
+      }).join('')}</select></label><small>${esc(`${ovDate(p.value)} – ${ovDate(ovAdd(p.value, 6))}`)}</small>`;
+    }
+    let ym = today.slice(0, 7);
+    const opts = [];
+    for (let i = 0; i < OV_BACK_MONTHS; i += 1) {
+      const t = i === 0 ? 'This month' : `${ovMon(ym)} ${ym.slice(0, 4)}`;
+      opts.push(`<option value="${ym}"${ym === p.value ? ' selected' : ''}>${esc(t)}</option>`);
+      ym = ovAdd(ym + '-01', -1).slice(0, 7);
+    }
+    return `<label class="ovk-pick"><select data-ovp="m" aria-label="Month">${opts.join('')}</select></label><small>${esc(`${ovMon(p.value, true)} ${p.value.slice(0, 4)}`)}</small>`;
   }
 
   // One cell: { v, of, ok, bar, mark, note } or { na: 'why' } or null while loading.
@@ -5442,16 +5491,19 @@
     const rows = [];
 
     // Bookings: 12 a week, scaled to the period and judged on pace by today.
+    const salesMonths = previousTrips && previousTrips.sales && previousTrips.sales.months;
     rows.push({ go: 'report', name: 'Bookings', target: `${DAILY_BOOKINGS} a day, ${W} a week`, extra: report && report.events ? `${int(last24hTotal(report.events))} in the last 24 hours` : '', cells: P.map((p) => {
-      const n = ovBooked(p.start, p.end);
+      // A whole month comes from the monthly sales series (it reaches back
+      // further than the Report's events); a day or week from the events.
+      const n = p.key === 'm' && salesMonths ? ((salesMonths[p.value] || {}).n || 0) : ovBooked(p.start, p.end);
       if (n == null) return null;
       // Daily is a round 2 (Anton, 19 Oct 2026), not 12 ÷ 7.
       const target = p.key === 'd' ? DAILY_BOOKINGS : (W * p.len) / 7;
-      const expected = p.key === 'd' ? DAILY_BOOKINGS : (W * p.gone) / 7;
+      const expected = p.key === 'd' || p.done ? target : (W * p.gone) / 7;
       const ok = n >= expected;
-      const tShow = int(target);
-      return { v: int(n), of: tShow, ok, bar: n / target, mark: p.key === 'd' ? null : expected / target,
-        note: p.key === 'd' ? (ok ? 'Daily pace reached' : 'Under the daily pace') : `${ok ? 'On pace' : 'Behind pace'}: ${Math.ceil(expected)} by today` };
+      const short = Math.ceil(target - n);
+      return { v: int(n), of: int(target), ok, bar: n / target, mark: p.key === 'd' || p.done ? null : expected / target,
+        note: p.key === 'd' || p.done ? (ok ? 'Target reached' : `${int(short)} short`) : `${ok ? 'On pace' : 'Behind pace'}: ${Math.ceil(expected)} by today` };
     }) });
 
     // Leads and high potential: the daily target times the days logged.
@@ -5461,7 +5513,7 @@
       if (!l) return null;
       if (!l.days) return { na: p.key === 'd' ? 'Not logged yet' : 'Nothing logged yet' };
       const t = LT * l.days;
-      return { v: int(l.n), of: int(t), ok: l.n >= t, bar: l.n / t, note: p.key === 'd' ? `${l.n >= t ? 'Target reached' : `${int(t - l.n)} short`}` : `${fmt1(l.n / l.days)} a day · ${l.days} day${l.days === 1 ? '' : 's'} logged` };
+      return { v: int(l.n), of: int(t), ok: l.n >= t, bar: l.n / t, note: p.key === 'd' ? `${l.n >= t ? 'Target reached' : `${int(t - l.n)} short`}` : `${fmt1(l.n / l.days)} a day · ${l.days} of ${p.len} day${p.len === 1 ? '' : 's'} logged` };
     }) });
     rows.push({ go: 'leads', name: 'High potential leads', target: `${HT} a day`, cells: P.map((p, i) => {
       const l = L[i];
@@ -5488,7 +5540,7 @@
     return `<div class="panel ovk">
       <div class="ov-ph"><div class="ptitle">KPIs · daily, weekly, monthly</div>${judged.length ? `<span class="ovk-sum"><b>${good}</b> of ${judged.length} on target</span>` : ''}</div>
       <div class="ovk-grid">
-        <div class="ovk-head"><span>KPI</span>${P.map((p) => `<span><b>${p.head}</b><small>${esc(p.sub)}</small></span>`).join('')}</div>
+        <div class="ovk-head"><span>KPI</span>${P.map((p) => `<span><b>${p.head}</b>${ovPicker(p, today)}</span>`).join('')}</div>
         ${rows.map((r) => `<a class="ovk-row" href="#${r.go}" data-go="${r.go}">
           <div class="ovk-name"><b>${esc(r.name)}</b><small>Target ${esc(r.target)}${r.extra ? ` · ${esc(r.extra)}` : ''}</small></div>
           ${r.cells.map((c, i) => `<div class="ovk-wrap"><span class="ovk-mob">${P[i].head}</span>${ovCell(c)}</div>`).join('')}
@@ -5612,18 +5664,26 @@
   // (Shakir: "filter by category, like Thailand, last 12 or 9 months").
   function ovChart(today) {
     const months = previousTrips && previousTrips.sales && previousTrips.sales.months;
-    const head = (extra) => `<div class="ov-ph"><div class="ptitle">Bookings by month</div><a class="ov-more" href="#previous" data-go="previous">View all ›</a></div>${extra}`;
-    if (!months) return `<div class="panel">${head('')}<div class="msg">Loading bookings by month…</div></div>`;
-    const cur = today.slice(0, 7);
+    const yearly = ovGran === 'year';
+    const head = (extra) => `<div class="ov-ph"><div class="ptitle">Bookings by ${yearly ? 'year' : 'month'}</div><a class="ov-more" href="#previous" data-go="previous">View all ›</a></div>${extra}`;
+    if (!months) return `<div class="panel">${head('')}<div class="msg">Loading bookings…</div></div>`;
+    const cur = yearly ? today.slice(0, 4) : today.slice(0, 7);
+    // Keys are months ("2026-10") or years ("2026"); a year sums its months.
     const list = [];
-    let ym = cur;
-    for (let i = 0; i < ovMonths; i += 1) {
-      list.unshift(ym);
-      ym = ovAdd(ym + '-01', -1).slice(0, 7);
+    if (yearly) {
+      const first = Object.keys(months).sort()[0] || today;
+      for (let y = Number(first.slice(0, 4)); y <= Number(cur); y += 1) list.push(String(y));
+    } else {
+      let ym = cur;
+      for (let i = 0; i < ovMonths; i += 1) {
+        list.unshift(ym);
+        ym = ovAdd(ym + '-01', -1).slice(0, 7);
+      }
     }
+    const monthsOf = (k) => (yearly ? Object.keys(months).filter((m) => m.startsWith(k + '-')) : [k]);
     // Only categories with bookings in the window are offered.
     const seen = new Map();
-    for (const k of list) for (const [c, n] of Object.entries((months[k] && months[k].cats) || {})) seen.set(c, (seen.get(c) || 0) + n);
+    for (const k of list) for (const mk of monthsOf(k)) for (const [c, n] of Object.entries((months[mk] && months[mk].cats) || {})) seen.set(c, (seen.get(c) || 0) + n);
     const dests = new Map(), progs = new Map();
     for (const [c, n] of seen) {
       if (c === 'Other') continue;
@@ -5647,42 +5707,47 @@
       <optgroup label="Programme">${[...progs].sort(byCount).map(([g]) => opt('p:' + g, OV_PROG[g] || g)).join('')}</optgroup>
       <optgroup label="Trip">${[...seen].filter(([c]) => c.includes('|')).sort(byCount).map(([c]) => opt('c:' + c, ovCatName(c))).join('')}</optgroup>
     </select>`;
-    const seg = `<div class="seg">${[6, 12, 24].map((m) => `<button data-ov-months="${m}" aria-pressed="${ovMonths === m}">${m} months</button>`).join('')}</div>`;
+    const gran = `<div class="seg">${[['month', 'Monthly'], ['year', 'Yearly']].map(([g, l]) => `<button data-ov-gran="${g}" aria-pressed="${ovGran === g}">${l}</button>`).join('')}</div>`;
+    const seg = gran + (yearly ? '' : `<div class="seg">${[6, 12, 24].map((m) => `<button data-ov-months="${m}" aria-pressed="${ovMonths === m}">${m} months</button>`).join('')}</div>`);
     const W = (report && report.weeklyTarget) || 12;
     const rows = list.map((k) => {
-      const m = months[k];
       let n = 0;
-      if (m) {
-        if (ovCat === 'all') n = m.n;
+      for (const mk of monthsOf(k)) {
+        const m = months[mk];
+        if (!m) continue;
+        if (ovCat === 'all') n += m.n;
         else for (const [c, v] of Object.entries(m.cats || {})) if (match(c)) n += v;
       }
-      const dim = ovDiff(k + '-01', ovAdd(ovAdd(k + '-01', 32).slice(0, 7) + '-01', -1)) + 1;
-      return { k, n, target: ovCat === 'all' ? Math.round((W * dim) / 7) : null };
+      const days = yearly ? ovDiff(k + '-01-01', k + '-12-31') + 1 : ovDiff(k + '-01', ovMonthEnd(k)) + 1;
+      return { k, n, target: ovCat === 'all' ? Math.round((W * days) / 7) : null };
     });
     const max = Math.max(1, ...rows.map((x) => Math.max(x.n, x.target || 0)));
     const total = rows.reduce((a, x) => a + x.n, 0);
     const catLabel = ovCat === 'all' ? '' : ovCat.startsWith('c:') ? ovCatName(ovCat.slice(2)) : ovCat.startsWith('d:') ? OV_DEST[ovCat.slice(2)] || ovCat.slice(2) : OV_PROG[ovCat.slice(2)] || ovCat.slice(2);
     const cols = rows.map((x) => {
       const now = x.k === cur;
-      const tip = `<div class="tt">${esc(ovMon(x.k, true))} ${x.k.slice(0, 4)}${now ? ' · so far' : ''}</div><div class="more">${int(x.n)} booking${x.n === 1 ? '' : 's'}${catLabel ? ' · ' + esc(catLabel) : ''}${x.target ? ` · target ${int(x.target)} (${W} a week)` : ''}</div>`;
+      const tip = `<div class="tt">${yearly ? x.k : `${esc(ovMon(x.k, true))} ${x.k.slice(0, 4)}`}${now ? ' · so far' : ''}</div><div class="more">${int(x.n)} booking${x.n === 1 ? '' : 's'}${catLabel ? ' · ' + esc(catLabel) : ''}${x.target ? ` · target ${int(x.target)} (${W} a week)` : ''}</div>`;
       return `<div class="ov-col" data-tip="${attr(tip)}">
         <span class="v">${x.n ? int(x.n) : ''}</span>
         <i class="b${now ? ' now' : ''}" style="height:${((x.n / max) * 100).toFixed(1)}%"></i>
         ${x.target ? `<i class="t" style="bottom:${((x.target / max) * 100).toFixed(1)}%"></i>` : ''}
       </div>`;
     }).join('');
-    const axis = rows.map((x) => `<span>${esc(ovMon(x.k))}${x.k.slice(5) === '01' || x.k === rows[0].k ? `<small>${x.k.slice(0, 4)}</small>` : ''}</span>`).join('');
-    const minW = ovMonths > 12 ? `style="min-width:${ovMonths * 30}px"` : '';
+    const axis = rows.map((x) => (yearly ? `<span>${x.k}</span>` : `<span>${esc(ovMon(x.k))}${x.k.slice(5) === '01' || x.k === rows[0].k ? `<small>${x.k.slice(0, 4)}</small>` : ''}</span>`)).join('');
+    const minW = !yearly && ovMonths > 12 ? `style="min-width:${ovMonths * 30}px"` : '';
+    const curN = (rows.find((x) => x.k === cur) || {}).n || 0;
     return `<div class="panel">
       ${head(`<div class="ov-filters">${select}${seg}</div>`)}
-      <div class="ov-big"><b>${int(total)}</b><span>bookings in the last ${ovMonths} months${catLabel ? ' · ' + esc(catLabel) : ', charters left out'}</span></div>
+      <div class="ov-big">${yearly
+        ? `<b>${int(curN)}</b><span>bookings in ${cur} so far${catLabel ? ' · ' + esc(catLabel) : ', charters left out'} · ${int(total)} since ${list[0]}</span>`
+        : `<b>${int(total)}</b><span>bookings in the last ${ovMonths} months${catLabel ? ' · ' + esc(catLabel) : ', charters left out'}</span>`}</div>
       <div class="ov-chart"><div class="ov-chart-in" ${minW}>
         <div class="ov-cols">${cols}</div>
         <div class="ov-axis">${axis}</div>
       </div></div>
       <div class="ov-legend">
         <span><i style="background:var(--fill)"></i>Bookings taken</span>
-        <span><i style="background:repeating-linear-gradient(135deg,var(--fill) 0 4px,rgba(var(--fill-rgb),.4) 4px 8px)"></i>This month so far</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fill) 0 4px,rgba(var(--fill-rgb),.4) 4px 8px)"></i>This ${yearly ? 'year' : 'month'} so far</span>
         ${ovCat === 'all' ? `<span><i class="tl"></i>Target (${W} a week)</span>` : ''}
       </div>
     </div>`;
@@ -5746,6 +5811,18 @@
       e.preventDefault();
       setView(a.dataset.go);
       scrollTo(0, 0);
+    }));
+    root.querySelectorAll('[data-ovp]').forEach((sel) => sel.addEventListener('change', () => {
+      const k = sel.dataset.ovp;
+      const t = ovToday();
+      if (k === 'd') ovPickDay = sel.value === ovAdd(t, -1) ? null : sel.value;
+      if (k === 'w') ovPickWeek = sel.value === ovWeekStart(t) ? null : sel.value;
+      if (k === 'm') ovPickMonth = sel.value === t.slice(0, 7) ? null : sel.value;
+      renderOverview();
+    }));
+    root.querySelectorAll('[data-ov-gran]').forEach((b) => b.addEventListener('click', () => {
+      ovGran = b.dataset.ovGran;
+      renderOverview();
     }));
     root.querySelectorAll('[data-ov-months]').forEach((b) => b.addEventListener('click', () => {
       ovMonths = Number(b.dataset.ovMonths);
