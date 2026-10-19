@@ -1029,8 +1029,8 @@ artwork that isn't ready a week before its post.
   leads, as the Leads tab), leads sheet up to date (yesterday logged).
   Marketing: **cost per result per running campaign** ≤ SAR 25 (one KPI per
   campaign, `cprOver`, judged from 5 results), no running campaign rated Bad
-  on lead quality, no running campaign over budget, engagement rate (posts,
-  this month) ≥ 1% (proposed; months ran 0.5-1.1%), posts in the last 7
+  on lead quality, no running campaign over budget (engagement rate ≥ 1% was here until
+  19 Oct 2026, removed at Anton's request), posts in the last 7
   days ≥ 3 (proposed; **since 18 Oct 2026 counted from the monday calendar**:
   posts marked Posted, or Scheduled with a date already reached, in the last 7
   days, `calendar.published`; it read Maryam's sheet before, which she updates
@@ -1196,10 +1196,11 @@ months, quick overview first and the detail one tap away, easy on the eyes.
   (12 a week → 1.7 a day / 12 / 12 × days ÷ 7, "N in the last 24 hours"
   under the name), Leads (20 × days logged), High potential (5 × days with
   HP), Conversion (weekly / monthly only, as Muatasam said daily makes no
-  sense; 10%). "N of M on target" in the title. **Engagement rate was
-  removed from the scorecard and from the daily Slack KPI message** (Anton,
-  19 Oct 2026; `slackKpis()` in `lib/kpis.js` filters it out); it stays on
-  the KPIs tab and the Engagements page. The earlier This week / month / year toggle was
+  sense; 10%). "N of M on target" in the title. **The engagement rate
+  KPI was removed everywhere** (Anton, 19 Oct 2026): Dashboard scorecard,
+  KPIs tab, daily Slack KPI message, AI Adviser targets; `lib/kpis.js` no
+  longer reads the engagements sheet and `KPI_ENGAGEMENT` is gone. The
+  Engagements page itself (Maryam's posts and stories) is unchanged. The earlier This week / month / year toggle was
   removed: the three columns replace it. Rows link to their page. On a phone
   the name sits above the three cells.
 - **At a glance** (`ovGlance()`, `ovCard()`: icon, name, pill, number "of
