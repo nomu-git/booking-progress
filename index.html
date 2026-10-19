@@ -5350,19 +5350,6 @@
       return { v: ovPct(c, 1), of: ovPct(CONV_TARGET), ok: c >= CONV_TARGET, bar: c / (2 * CONV_TARGET), mark: 0.5, note: `${int(lb.all)} booking${lb.all === 1 ? '' : 's'} ÷ ${int(l.n)} leads` };
     }) });
 
-    // Engagement on posts: interactions ÷ views, as Maryam's sheet.
-    const ET = 0.01;
-    rows.push({ go: 'engagements', name: 'Engagement rate', target: '1% or more (proposed)', cells: P.map((p) => {
-      if (p.key === 'd') return { na: 'Weekly and monthly only' };
-      if (!engagements || !engagements.posts) return null;
-      const posts = engagements.posts.filter((x) => x.date && x.date >= p.start && x.date <= p.end && x.views);
-      if (!posts.length) return { na: 'No posts recorded yet' };
-      const views = posts.reduce((a, x) => a + (x.views || 0), 0);
-      const acts = posts.reduce((a, x) => a + (x.interactions || 0), 0);
-      const e = acts / views;
-      return { v: ovPct(e, 2), of: '1%', ok: e >= ET, bar: e / (2 * ET), mark: 0.5, note: `${posts.length} post${posts.length === 1 ? '' : 's'} · ${int(views)} views` };
-    }) });
-
     const judged = rows.flatMap((r) => r.cells).filter((c) => c && !c.na);
     const good = judged.filter((c) => c.ok).length;
     return `<div class="panel ovk">
@@ -5692,7 +5679,6 @@
     if (view === 'overview') {
       if (!leads) loadLeads(false);
       if (!campaigns) loadCampaigns(false);
-      if (!engagements) loadEngagements(false);
       if (!feedback) loadFeedback(false);
       if (!revData) loadRevenue(false);
       if (!monData) loadPending(false);

@@ -1196,8 +1196,10 @@ months, quick overview first and the detail one tap away, easy on the eyes.
   (12 a week → 1.7 a day / 12 / 12 × days ÷ 7, "N in the last 24 hours"
   under the name), Leads (20 × days logged), High potential (5 × days with
   HP), Conversion (weekly / monthly only, as Muatasam said daily makes no
-  sense; 10%), Engagement rate (weekly / monthly; 1% proposed). "N of M on
-  target" in the title. The earlier This week / month / year toggle was
+  sense; 10%). "N of M on target" in the title. **Engagement rate was
+  removed from the scorecard and from the daily Slack KPI message** (Anton,
+  19 Oct 2026; `slackKpis()` in `lib/kpis.js` filters it out); it stays on
+  the KPIs tab and the Engagements page. The earlier This week / month / year toggle was
   removed: the three columns replace it. Rows link to their page. On a phone
   the name sits above the three cells.
 - **At a glance** (`ovGlance()`, `ovCard()`: icon, name, pill, number "of
