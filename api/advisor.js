@@ -36,6 +36,12 @@ const GATE_MODEL = 'claude-haiku-4-5';
 // day still caps the spend.
 const MAX_QUESTION = 20000;
 const MAX_TURNS = 6;
+// The function may run 300 s (vercel.json). A long Opus answer plus the
+// snapshot ran past the old 60 s and Vercel cut it off mid-answer: the chat
+// showed "Something went wrong" and the question wasn't given back (Anton,
+// 19 Oct 2026). Now the answer is stopped cleanly before the platform limit,
+// so the reply is a clear message and the count is returned.
+const BUDGET_MS = 280 * 1000;
 
 const OFF_TOPIC = "I can only help with NomuHub's dashboard: bookings, leads, campaigns, engagement, trips, feedback, revenue and tasks, and what to improve. Try asking about one of those.";
 const READ_ONLY = "I'm read-only: I can read and analyse the dashboard, but I can't change it, write code, or edit Meta, monday, WeTravel or the sheets. Ask me what the data says or what to do next.";
@@ -80,6 +86,7 @@ function cleanHistory(history) {
 const textOf = (msg) => (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
 
 module.exports = async (req, res) => {
+  const t0 = Date.now();
   const connected = !!(process.env.ANTHROPIC_API_KEY || '').trim();
   try {
     if (req.method === 'GET') {
@@ -130,6 +137,8 @@ module.exports = async (req, res) => {
       // 2. The real answer, from the dashboard snapshot.
       const base = (process.env.DASHBOARD_URL || `https://${req.headers.host}`).replace(/\/$/, '');
       const snapshot = await buildContext(base, muscatToday());
+      const left = BUDGET_MS - (Date.now() - t0);
+      if (left < 20000) throw Object.assign(new Error('out of time before answering'), { timeout: true });
       const msg = await client.beta.messages.create({
         model,
         max_tokens: 8000,
@@ -142,7 +151,7 @@ module.exports = async (req, res) => {
           { type: 'text', text: `Dashboard snapshot:\n\n${snapshot}`, cache_control: { type: 'ephemeral' } },
         ],
         messages: [...history, { role: 'user', content: question }],
-      });
+      }, { timeout: left, maxRetries: 0 });
       if (msg.stop_reason === 'refusal') {
         return res.status(200).json({ answer: "I can't help with that one. Ask me about the dashboard's data or what to improve.", kind: 'refusal', remaining, limit: LIMIT });
       }
@@ -153,9 +162,12 @@ module.exports = async (req, res) => {
       console.error('advisor failed:', err);
       const status = err && err.status;
       const credit = status === 400 && /credit|balance|billing/i.test(String(err.message));
+      const slow = err.timeout || (err.name && /timeout/i.test(err.name)) || /timed? ?out/i.test(String(err.message));
       return res.status(502).json({
-        code: credit ? 'credit' : 'failed',
-        error: credit ? 'The adviser is out of credit. Add funds in the Claude Console.' : 'The adviser could not answer just now. It did not count toward today\'s limit; please try again.',
+        code: credit ? 'credit' : slow ? 'timeout' : 'failed',
+        error: credit ? 'The adviser is out of credit. Add funds in the Claude Console.'
+          : slow ? 'That one took too long to answer in full. It did not count toward today\'s limit. Try splitting it into two or three shorter questions.'
+            : 'The adviser could not answer just now. It did not count toward today\'s limit; please try again.',
       });
     }
   } catch (err) {

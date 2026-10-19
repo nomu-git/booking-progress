@@ -1185,6 +1185,13 @@ Anton's rules (15 Oct 2026): **dashboard / strategy questions only, read-only
   midnight Muscat. History is kept in `sessionStorage` (`nomuAdvisor`).
 - **No passcode** (Anton's call, after being told anyone with the link can use
   the 10 a day).
+- **Timeouts (19 Oct 2026)**: a long multi-part question went to Opus and
+  ran past the function's 60 s; Vercel cut it off, the chat showed
+  "Something went wrong" and the question wasn't given back. `api/advisor.js`
+  now has `maxDuration: 300` (vercel.json) and stops the Claude call itself
+  at a 280 s budget (`BUDGET_MS`, SDK `timeout`, no retries), answering with
+  a clear "took too long, split it" message and returning the count. The page
+  also says so on a bare 502 / 504 instead of the generic message.
 
 ## Install as an app (PWA), 18 Oct 2026
 
