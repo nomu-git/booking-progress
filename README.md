@@ -41,6 +41,7 @@ env-var changes on a new deployment.
 | `ANTHROPIC_API_KEY` | Required for the AI Adviser (`api/advisor.js`). From the Claude Console, NomuHub Dashboard workspace. `ADVISOR_DAILY_LIMIT` (default `10`) and `ADVISOR_MODEL` (default `claude-sonnet-5-5`) are optional. |
 | `KPI_POSTS_WEEK`, `KPI_PLANNED_14`, `ARTWORK_LEAD_DAYS` | Optional, default `3`, `6`, `7`. Targets for the KPIs tab (`lib/kpis.js`) and the 8 AM KPI / artwork Slack messages. `MONDAY_MARKETING_WORKSPACE_ID` (default `121351`) is where the monthly calendar boards live. |
 | `LQ_MIN_LEADS` / `LQ_MIN_HP_RATE` | Optional, default `5` / `0.1`. Campaign Ads' lead-quality status for running campaigns (also reads `LEADS_SHEET_URL`). |
+| `IMPACT_SHEET_URL` | Required for the Impact tab (Operations). SharePoint share link to the "NomuHub Impact Dashboard" workbook, shared as "Anyone with the link can view". Never in the code: the repo is public. `IMPACT_CACHE_TTL_MS` optional, default 5 minutes. |
 | `LEADS_DAILY_TARGET` / `HP_DAILY_TARGET` | Optional, default `20` / `5`. The daily leads alert (`api/lead-alerts.js`, cron-job.org daily at 11:30 PM Muscat, same Bearer secret) posts to Slack when a day misses either. |
 | `MONDAY_API_TOKEN` | monday.com → profile picture → **Developers** → **API token**. Read by the Pending Task tab. Without it the tab says `MONDAY_API_TOKEN is not set`. |
 | `MONDAY_BOARD_IDS` | Optional. Comma-separated board IDs for Pending Task. Defaults to Operations General, Asia, Africa, Marketing General and Sales General. |

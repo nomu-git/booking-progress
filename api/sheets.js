@@ -15,6 +15,7 @@ const TABS = {
   trips: require('../lib/tabs/trips'),
   feedback: require('../lib/tabs/feedback'),
   revenue: require('../lib/tabs/revenue'),
+  impact: require('../lib/tabs/impact'),
   pending: require('../lib/tabs/pending'),
   kpis: require('../lib/tabs/kpis'),
 };

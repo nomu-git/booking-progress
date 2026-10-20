@@ -40,7 +40,7 @@ no framework.
   across the top** (`#secTabs`, `.sec-tabs`), built by `setView()` from the
   `SECTIONS` array in `index.html`: Sales = Booking / Previous Sales / Report
   / Leads; Marketing = Campaign Ads / Campaign History / Engagements;
-  Operations = Trips & R&D / Feedback / Trip Revenue; Corporate = KPIs /
+  Operations = Trips & R&D / Feedback / Trip Revenue / Impact; Corporate = KPIs /
   Monday Tasks. A section reopens on the page it last showed (`secLast`).
   The old `#bookSub` / `#adsSub` bars are gone (the section tabs replace
   them); pages with their own pill sub-tabs inside (Trips, Feedback,
@@ -800,6 +800,45 @@ Verified against the live sheet on 30 Sep 2026: 94.5% satisfaction, 10 of
   URL with no login.** No traveller names are in the sheet. Flagged to
   Anton when it was built; he chose to proceed.
 
+## Impact tab (Operations), 20 Oct 2026
+
+Anton: a tab under Operations called Impact, from the "NomuHub Impact
+Dashboard" workbook on SharePoint (link in **`IMPACT_SHEET_URL`**, Vercel
+only; the repo is public). `lib/tabs/impact.js`, served as
+`/api/sheets?name=impact` (5 min cache), `data-view="impact"`,
+`#impactWrap`, classes `im-`.
+
+- The workbook: a **Summary** tab and one tab per region (**Africa**,
+  **Asia**, **Other Regions**), each one row per trip since 2017: No. |
+  Year | Region | Destination | Trip Code | Client | Trip Type | Theme |
+  Start | End | Travellers | Officer in Charge | Village / School | Impact
+  Description | Status. Region tabs are found by that header row (Impact
+  Description + Status), not by name, so a new region tab is picked up.
+- **Counts are recomputed from the rows and match the Summary tab exactly**
+  (checked 20 Oct 2026): 193 trips (Africa 109, Asia 75, Other 9), 174 with
+  impact recorded, every year and theme row. "Impact recorded" = Recorded
+  (incl. "Recorded (recovered…)") **plus "No impact"**, as the Summary's
+  own note says. "… to fill" statuses (7 missing trips, 12 missing impact)
+  are the gaps; "Possible duplicate" rows would be left out of everything.
+- Dates come both as real dates and typed "21/10/2023" / "28/8/24"; dates
+  before 2015 (typos like 2002-07-09) are dropped, not shown. Destinations
+  "To confirm" are counted but left out of By destination.
+- UI, two sub-tabs (`imSub`): **Overview**: tiles (Trips 193 / Travellers
+  3,728 / Schools & villages 97, distinct names / Destinations 16), an
+  "Impact recorded 90.2%" bar, an amber "19 trips still need details" line
+  with **See them** (opens the log filtered to To fill in), Trips per year
+  stacked by region (Africa / Asia / Other in the validated `--lead-wa` /
+  `--lead-all` / `--lead-ig` slots), By theme and By destination as stacked
+  horizontal bars, region counts on hover. **Impact log**: Year / Region /
+  Destination / Theme / Status filters (only what exists, counted given the
+  others, Clear), then every trip newest first: destination, year, code,
+  status pill, dates · travellers · type / theme · client · "Led by …",
+  📍 school or village, and the impact text verbatim (10 shown, Show all).
+- Also in the Claude connector (`get_impact`, year / destination filters)
+  and the AI Adviser's snapshot.
+- **Officer in Charge names are shown** (as Feedback shows staff names);
+  the page is behind the login. Ask before hiding them.
+
 ## Trip Revenue tab
 
 `lib/tabs/revenue.js` mirrors the **"NomuHub Trips 2026"** revenue workbook
@@ -1337,8 +1376,8 @@ Settings › Connectors › Add custom connector (URL only, no client ID).
   `get_bookings_taken` (from / to), `get_sales_history` (year; `byDay`
   dropped to keep it small), `get_leads`, `get_ad_campaigns`
   (running_only), `get_campaign_history` (year), `get_social_engagement`,
-  `get_trip_products`, `get_guest_feedback`, `get_trip_margins`, `get_kpis`,
-  `get_pending_tasks`. No write tool exists.
+  `get_trip_products`, `get_guest_feedback`, `get_trip_margins`, `get_impact`,
+  `get_kpis`, `get_pending_tasks`. No write tool exists.
 - Nothing here costs Claude API credit: the user's own Claude does the
   thinking; the dashboard only serves data.
 - **Use crm.nomuhub.com, not bookingprogress.vercel.app**: Vercel's
