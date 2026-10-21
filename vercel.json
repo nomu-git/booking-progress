@@ -57,6 +57,10 @@
     {
       "source": "/oauth/token",
       "destination": "/api/advisor?route=token"
+    },
+    {
+      "source": "/hooks/manychat",
+      "destination": "/api/advisor?route=manychat"
     }
   ],
   "functions": {

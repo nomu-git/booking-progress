@@ -16,6 +16,7 @@ const TABS = {
   feedback: require('../lib/tabs/feedback'),
   revenue: require('../lib/tabs/revenue'),
   impact: require('../lib/tabs/impact'),
+  manychat: require('../lib/tabs/manychat'),
   pending: require('../lib/tabs/pending'),
   kpis: require('../lib/tabs/kpis'),
 };

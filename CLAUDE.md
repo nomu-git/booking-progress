@@ -607,6 +607,46 @@ webhooks.
   is public with no auth, so only aggregate counts may ever leave the API.
   Never add a raw-dump or debug endpoint that returns sheet rows.**
 
+## Leads: automatic count from ManyChat (in parallel), 21 Oct 2026
+
+Anton: "Lets do first with Marina the leads tab ... make sure the high
+potential and leads are accurately fetched." Meta Business verification is
+done. Built to run **beside** Marina's sheet, not replace it yet: the Leads
+tab has a third chip, **ManyChat check**, comparing the two per day.
+
+- **`lib/manychat.js`**: ManyChat's API can't list new contacts per day, so
+  ManyChat **pushes** each event (Automation rules with an External Request)
+  to `POST /hooks/manychat` (vercel.json → `api/advisor.js?route=manychat`;
+  middleware lets it through), header `X-NomuHub-Key: $MANYCHAT_SECRET`,
+  body `{ event: lead | hp | hp_removed | trip, contact, channel, trip }`.
+- **Counting rules** (tested locally, all 10 cases): a lead = a new contact,
+  **once per person per 30 days** (`MANYCHAT_DEDUP_DAYS`), on the Muscat day
+  it arrived; **HP = the HP tag in ManyChat**, applied by whoever is
+  chatting, counted on the day it's applied, once per contact;
+  `hp_removed` takes it back off that day; a `trip` event (a "Trip: ZNZ|BL"
+  tag or field) moves the contact's lead and HP to that project on the days
+  they were counted; an HP or trip event for an unseen contact counts as a
+  lead too; untagged leads are NA, as in the sheet. Trip text is read as a
+  code ("ZNZ|BL", "ZNZ-BL") or words ("Zanzibar Building" via `classify()`).
+- **Storage (Upstash)**: `mc:c:<hash>` per contact (`{d, ch, p, hp}`; the
+  ManyChat id is HMAC-hashed with the secret, nothing personal stored),
+  `mc:d:<date>` hash of `lead|wa|ZNZ|BL` / `hp|ig|NA` counters, `mc:first`,
+  `mc:last`, `mc:events:<date>`.
+- **Read side**: `/api/sheets?name=manychat` (`lib/tabs/manychat.js`, 30 s
+  cache) → per-day leads / HP / WA / IG / per project since the first event.
+  The panel (`mcCheckPanel()`, classes `mc-`) shows the last 14 days: sheet
+  vs automatic vs difference for leads and HP (within 1 = ✓), plus the
+  automatic WA / IG split; before any event it says "Not receiving from
+  ManyChat yet".
+- **Next, once they agree for 1–2 weeks**: switch the Leads tab (and the
+  Dashboard / KPIs / alerts that read it) to the automatic count, keeping the
+  sheet for anything ManyChat can't see.
+- Setup (Anton + Cowork, 21 Oct 2026): `MANYCHAT_SECRET` in Vercel; ManyChat
+  gets an **HP** tag, **Trip: <code>** tags with Marina's codes (ZNZ|BL,
+  ZNZ|EX, ZNZ|TA, ZNZ|MED, SA|EX, SL, BA|TA, BA|WL, BA|EX, TH|EX, TH|WL,
+  VN|EX, KN), and rules: new contact → lead (per channel), HP applied → hp,
+  HP removed → hp_removed, trip tag applied → trip.
+
 ## Engagements tab
 
 `lib/tabs/engagements.js`, same idea as Leads: mirrors **Maryam's** social media

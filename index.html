@@ -281,6 +281,17 @@
     .ov-grid { grid-template-columns: repeat(3, 1fr); }
   }
 
+  /* ---------- Leads: ManyChat check (mc-) ---------- */
+  .mc-wait { padding: 12px 14px; border-radius: 10px; background: var(--card-2); border: 1px dashed var(--line); font-size: 13px; line-height: 1.55; color: var(--text-2); }
+  .mc-wait b { color: var(--strong); }
+  .mc-sum { margin-bottom: 10px; font-size: 13px; color: var(--text-2); }
+  .mc-sum b { color: var(--strong); }
+  .mc-d { display: inline-block; min-width: 42px; padding: 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .mc-d.ok { background: rgba(12,163,12,.1); color: var(--good-ink); }
+  .mc-d.off { background: rgba(250,178,25,.16); color: var(--warn-ink); }
+  .mc-na { color: var(--text-3); font-size: 12px; }
+  .mc-split { color: var(--text-3); font-size: 12px; white-space: nowrap; }
+  .mc-table td b { color: var(--strong); }
   /* ---------- Impact tab (im-) ---------- */
   .im-search { display: flex; gap: 8px; margin: 2px 0 14px; }
   .im-search input { flex: 1; min-width: 0; font: inherit; font-size: 14.5px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
@@ -2697,6 +2708,7 @@
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
     leadsHpWa: ['High potential · WhatsApp', 'High-potential leads Marina marked on the WhatsApp row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
     leadsHpIg: ['High potential · Instagram', 'High-potential leads Marina marked on the Instagram row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
+    leadsMc: ['Automatic count', 'ManyChat sends every new WhatsApp or Instagram contact and every HP tag to the dashboard as it happens. This compares those counts with Marina\'s sheet for the same days, so we can check they agree before switching the Leads tab to the automatic count.'],
     leadsConvAll: ['Conversion (overall)', 'All bookings taken in the week divided by all leads that week, every project and channel together.'],
     leadsHp: ['High potential', "Leads Marina marked HP (high potential) in the sheet: the Status column of the per-lead logs (to 21 Jul) and the HP column of the daily sheet (from 23 Sep). Weeks covered only by the weekly reports (late Jul to mid Sep) have no HP recorded, so they show a dash."],
     leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
@@ -3423,6 +3435,9 @@
   /* ================= leads tab (Marina's sheet) ================= */
 
   let leads = null;
+  // ManyChat's automatic count (lib/manychat.js), shown beside Marina's sheet
+  // until the two agree (Anton, 21 Oct 2026).
+  let mcData = null;
   // The week on screen, by its start date. Null means "whichever week is
   // current", so the tab rolls into the next week on its own, which is the
   // behaviour Muatasam asked for.
@@ -3792,7 +3807,8 @@
           <span><i style="background:var(--lead-ig)"></i>Instagram</span>
           ${anyCombined ? '<span><i style="background:var(--lead-all)"></i>WhatsApp + Instagram together (the sheet has no clean split)</span>' : ''}
         </div>
-      </div>`;
+      </div>
+      ${mcCheckPanel(weeks)}`;
 
     // On a phone the weekly chart scrolls sideways and opened on January,
     // with the week that matters off to the right. Bring the selected week
@@ -3835,7 +3851,57 @@
     if (clear) clear.addEventListener('click', () => { leadsDay = null; renderLeads(); });
   }
 
+  async function loadMc(force) {
+    try {
+      const r = await fetch('/api/sheets?name=manychat' + (force ? '&refresh=1' : ''));
+      mcData = await r.json();
+    } catch (e) {
+      mcData = { error: e.message };
+    }
+    if (leads) renderLeads();
+  }
+
+  // Automatic count vs the sheet, day by day, for the last 14 days ManyChat
+  // has been sending. Within 1 either way reads as a match.
+  function mcCheckPanel(weeks) {
+    const head = `<div class="ptitle"><span ${hlp('leadsMc')}>Automatic count (ManyChat) vs Marina's sheet</span></div>`;
+    if (!mcData) return `<div class="panel">${head}<div class="pnote">Loading…</div></div>`;
+    if (mcData.error && !mcData.days) return `<div class="panel">${head}<div class="msg err">Could not read the automatic count: ${esc(mcData.error)}</div></div>`;
+    if (!mcData.first) {
+      return `<div class="panel">${head}<div class="mc-wait"><b>Not receiving from ManyChat yet.</b> Once it's set up, every new lead and every HP tag lands here the moment it happens, next to Marina's numbers for the same day, so we can check they match before the tab switches to the automatic count.</div></div>`;
+    }
+    const sheet = new Map();
+    for (const w of weeks) for (const d of w.days || []) if (d.recorded) sheet.set(d.date, d);
+    const days = mcData.days.slice(-14).reverse();
+    const cell = (a, b) => {
+      if (a == null) return `<td class="num">—</td><td class="num"><b>${int(b)}</b></td><td class="num mc-na">no sheet</td>`;
+      const d = b - a;
+      const ok = Math.abs(d) <= 1;
+      return `<td class="num">${int(a)}</td><td class="num"><b>${int(b)}</b></td><td class="num"><span class="mc-d ${ok ? 'ok' : 'off'}">${ok ? '✓' : '!'} ${d > 0 ? '+' : d < 0 ? '−' : ''}${int(Math.abs(d))}</span></td>`;
+    };
+    let sL = 0, aL = 0, sH = 0, aH = 0, n = 0;
+    const rows = days.map((d) => {
+      const s = sheet.get(d.date);
+      if (s) { n += 1; sL += s.total || 0; aL += d.leads; if (s.hp != null) { sH += s.hp; aH += d.hp; } }
+      return `<tr><td class="cname">${esc(new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }))}</td>
+        ${cell(s ? s.total : null, d.leads)}${cell(s && s.hp != null ? s.hp : null, d.hp)}
+        <td class="num mc-split">WA ${int(d.wa)} · IG ${int(d.ig)}${d.unknown ? ` · ? ${int(d.unknown)}` : ''}</td></tr>`;
+    }).join('');
+    const since = new Date(mcData.first + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const last = mcData.last ? new Date(mcData.last).toLocaleString('en-GB', { timeZone: 'Asia/Muscat', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+    return `<div class="panel">
+      ${head}
+      <div class="mc-sum">${n ? `Over ${n} day${n === 1 ? '' : 's'} both have: leads <b>${int(sL)}</b> sheet vs <b>${int(aL)}</b> automatic · high potential <b>${int(sH)}</b> vs <b>${int(aH)}</b>` : 'No day yet with both the sheet and ManyChat.'} · receiving since ${esc(since)}${last ? ` · last event ${esc(last)}` : ''}</div>
+      <div class="tscroll"><table class="ctable mc-table">
+        <thead><tr><th>Day</th><th>Leads · sheet</th><th>Automatic</th><th>Difference</th><th>HP · sheet</th><th>Automatic</th><th>Difference</th><th>Automatic by channel</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div class="pnote">A lead is a new WhatsApp or Instagram contact in ManyChat, once per person per 30 days. High potential is the HP tag in ManyChat, on the day it's added. Within 1 either way counts as a match.</div>
+    </div>`;
+  }
+
   async function loadLeads(force) {
+    if (!mcData || force) loadMc(force);
     try {
       const res = await fetch('/api/sheets?name=leads' + (force ? '&refresh=1' : ''));
       const p = await res.json();
@@ -6176,7 +6242,7 @@
   //  2. Long lists show their first rows and a "Show all" button.
   const PHONE = matchMedia('(max-width: 700px)');
   const PV = {
-    leadsWrap: { always: true, groups: [['This week', [0, 1]], ['Trends', [2, 3]]] },
+    leadsWrap: { always: true, groups: [['This week', [0, 1]], ['Trends', [2, 3]], ['ManyChat check', [4]]] },
     previousWrap: { always: true, groups: [['Charts', [0, 1]], ['Projects', [2, 3]]] },
     campaignsWrap: { groups: [['Budget', [0]], ['Lead quality', [1]], ['Campaigns', [2]]] },
     overviewWrap: { sel: [['KPIs', '.ovk'], ['At a glance', '.ov-sec, .ov-grid'], ['Bookings', '.ov-low']] },
