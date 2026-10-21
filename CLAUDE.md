@@ -625,8 +625,10 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   chatting, counted on the day it's applied, once per contact;
   `hp_removed` takes it back off that day; a `trip` event (a "Trip: ZNZ|BL"
   tag or field) moves the contact's lead and HP to that project on the days
-  they were counted; an HP or trip event for an unseen contact counts as a
-  lead too; untagged leads are NA, as in the sheet. Trip text is read as a
+  they were counted; an HP or trip event for a contact we haven't seen (wrote
+  before the rules went live, or over 30 days ago) counts the HP but **not**
+  a new lead (changed 21 Oct 2026, before go-live, so the first weeks don't
+  read above Marina's); untagged leads are NA, as in the sheet. Trip text is read as a
   code ("ZNZ|BL", "ZNZ-BL") or words ("Zanzibar Building" via `classify()`).
 - **Storage (Upstash)**: `mc:c:<hash>` per contact (`{d, ch, p, hp}`; the
   ManyChat id is HMAC-hashed with the secret, nothing personal stored),
@@ -641,6 +643,15 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
 - **Next, once they agree for 1–2 weeks**: switch the Leads tab (and the
   Dashboard / KPIs / alerts that read it) to the automatic count, keeping the
   sheet for anything ManyChat can't see.
+- **ManyChat as set up by Cowork (21 Oct 2026)**: plan Pro; WhatsApp
+  (+966 53 291 9603) and Instagram (@nomuhub) both connected, so both
+  channels count. 17 rules, built as drafts: "New lead, WhatsApp" and "New
+  lead, Instagram" both on the trigger **New contact created** (it can't be
+  limited by channel), with the condition WhatsApp ID has a value /
+  Instagram Username has a value; a contact with both fires both, and the
+  30-day dedup counts them once. "HP added" (Tag applied: HP), "HP removed"
+  (Tag removed: HP), and one "Trip: XX" rule per trip tag. Each rule has
+  its own External Request, so the key sits in 17 headers.
 - Setup (Anton + Cowork, 21 Oct 2026): `MANYCHAT_SECRET` in Vercel; ManyChat
   gets an **HP** tag, **Trip: <code>** tags with Marina's codes (ZNZ|BL,
   ZNZ|EX, ZNZ|TA, ZNZ|MED, SA|EX, SL, BA|TA, BA|WL, BA|EX, TH|EX, TH|WL,
