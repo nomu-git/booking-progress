@@ -282,47 +282,88 @@
   }
 
   /* ---------- Impact tab (im-) ---------- */
+  .im-search { display: flex; gap: 8px; margin: 2px 0 14px; }
+  .im-search input { flex: 1; min-width: 0; font: inherit; font-size: 14.5px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+  .im-search input:focus { outline: none; border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(var(--acc-rgb),.15); }
+  .im-search .btn { padding: 0 16px; font-size: 13.5px; font-weight: 700; }
+  .im-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .im-tile { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card-2); color: inherit; font: inherit; }
+  button.im-tile { cursor: pointer; }
+  button.im-tile:hover { border-color: rgba(var(--acc-rgb),.6); }
+  .im-tile span { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+  .im-tile b { font-size: 26px; font-weight: 800; color: var(--strong); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  button.im-tile b { color: var(--yellow); }
+  .im-tile small { font-size: 12px; color: var(--text-3); }
   .im-rec { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-top: 14px; font-size: 12.5px; color: var(--text-2); }
   .im-rec .abar { width: 100%; }
   .im-rec b { color: var(--strong); }
-  .im-fill { margin-top: 12px; padding: 10px 13px; border-radius: 10px; border-left: 3px solid var(--q-med); background: rgba(250,178,25,.1); font-size: 13px; color: var(--text-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .im-fill { width: 100%; margin-top: 12px; padding: 11px 14px; border: 0; border-left: 3px solid var(--q-med); border-radius: 10px; background: rgba(250,178,25,.1); font: inherit; font-size: 13px; color: var(--text-2); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; text-align: left; cursor: pointer; }
+  .im-fill:hover { background: rgba(250,178,25,.17); }
   .im-fill b { color: var(--strong); }
+  .im-arrow { margin-left: auto; font-weight: 700; color: var(--warn-ink); white-space: nowrap; }
+  .im-ph { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .im-hint { font-size: 12px; color: var(--text-3); margin-bottom: 10px; }
   .im-chart { overflow-x: auto; }
   .im-cols { display: flex; align-items: flex-end; gap: 10px; height: 200px; padding-top: 18px; border-bottom: 1px solid var(--line); min-width: 420px; }
-  .im-col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; cursor: default; }
+  .im-col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: 6px; }
+  .im-col:hover { background: rgba(var(--acc-rgb),.06); }
   .im-col .v { font-size: 11px; font-weight: 700; color: var(--text-2); margin-bottom: 3px; }
+  .im-col { position: relative; }
+  .im-col .y { position: absolute; left: 0; right: 0; bottom: -21px; text-align: center; font-size: 11px; color: var(--text-3); }
   .im-stack { width: 70%; max-width: 44px; display: flex; flex-direction: column-reverse; gap: 2px; border-radius: 4px 4px 0 0; overflow: hidden; min-height: 2px; }
   .im-stack i { display: block; min-height: 2px; }
-  .im-axis { display: flex; gap: 10px; margin-top: 5px; min-width: 420px; }
-  .im-axis span { flex: 1 1 0; min-width: 0; text-align: center; font-size: 11px; color: var(--text-3); }
+  .im-chart { padding-bottom: 22px; }
   .im-leg { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--text-2); }
   .im-leg span { display: inline-flex; align-items: center; gap: 6px; }
   .im-leg i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-  .im-hlist { display: flex; flex-direction: column; gap: 8px; }
-  .im-hrow { display: grid; grid-template-columns: minmax(120px, 210px) minmax(0, 1fr) 36px; gap: 12px; align-items: center; font-size: 13px; }
+  .im-hlist { display: flex; flex-direction: column; gap: 2px; }
+  .im-hrow { display: grid; grid-template-columns: minmax(120px, 210px) minmax(0, 1fr) 36px; gap: 12px; align-items: center; padding: 5px 6px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 13px; color: inherit; text-align: left; cursor: pointer; }
+  .im-hrow:hover { background: rgba(var(--acc-rgb),.06); }
   .im-hn { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .im-hb { height: 12px; border-radius: 6px; background: var(--track); overflow: hidden; }
   .im-hb > span { display: flex; height: 100%; gap: 2px; border-radius: 6px; overflow: hidden; }
   .im-hb i { display: block; height: 100%; }
   .im-hrow b { text-align: right; color: var(--strong); font-variant-numeric: tabular-nums; }
+  .im-filters { display: flex; flex-direction: column; gap: 10px; }
+  .im-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .im-chips button { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text-2); cursor: pointer; }
+  .im-chips button[aria-pressed="true"] { background: var(--yellow); border-color: var(--yellow); color: var(--navy); }
+  .im-chips button[aria-pressed="true"] .ecount { color: inherit; opacity: .8; }
+  .im-sels { display: flex; gap: 8px; flex-wrap: wrap; }
+  .im-sels select { font: inherit; font-size: 13px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); max-width: 240px; }
+  .im-count { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--text-2); }
+  .im-count > b { color: var(--strong); font-size: 15px; }
+  .im-pill { font: inherit; font-size: 12px; font-weight: 600; padding: 3px 6px 3px 10px; border-radius: 999px; border: 1px solid rgba(var(--acc-rgb),.4); background: rgba(var(--acc-rgb),.08); color: var(--text); cursor: pointer; }
+  .im-pill span { margin-left: 3px; color: var(--text-3); font-weight: 800; }
+  .im-pill:hover span { color: var(--bad-ink); }
+  .im-clear { font: inherit; font-size: 12.5px; font-weight: 700; border: 0; background: none; color: var(--yellow); cursor: pointer; padding: 3px 4px; }
   .im-list { display: flex; flex-direction: column; }
-  .im-row { padding: 13px 2px; border-top: 1px solid var(--line); }
+  .im-row { padding: 12px 8px; border-top: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
   .im-list > .im-row:first-child { border-top: 0; }
+  .im-row:hover, .im-row:focus-visible { background: rgba(var(--acc-rgb),.05); outline: none; }
   .im-rh { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .im-rh b { font-size: 14.5px; color: var(--strong); }
   .im-yr { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
-  .im-code { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
   .im-st { margin-left: auto; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
   .im-st.good { background: rgba(12,163,12,.1); color: var(--good-ink); }
   .im-st.warn { background: rgba(250,178,25,.14); color: var(--warn-ink); }
   .im-st.na { background: rgba(var(--ov),.06); color: var(--text-3); }
-  .im-meta { margin-top: 4px; font-size: 12.5px; color: var(--text-3); }
-  .im-place { margin-top: 4px; font-size: 12.5px; color: var(--text-2); }
-  .im-txt { margin-top: 7px; font-size: 13.5px; line-height: 1.55; color: var(--text); max-width: 900px; }
+  .im-meta { margin-top: 3px; font-size: 12.5px; color: var(--text-3); }
+  .im-place { margin-top: 3px; font-size: 12.5px; color: var(--text-2); }
+  .im-txt { margin-top: 6px; font-size: 13.5px; line-height: 1.55; color: var(--text); max-width: 900px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .im-row.open .im-txt { display: block; -webkit-line-clamp: unset; }
   .im-txt.none { color: var(--text-3); font-style: italic; }
-  @media (max-width: 600px) {
+  .im-more { margin-top: 8px; font-size: 12.5px; color: var(--text-2); }
+  .im-read { display: inline-block; margin-top: 5px; font-size: 12px; font-weight: 700; color: var(--yellow); }
+  .im-row mark { background: rgba(250,178,25,.35); color: inherit; border-radius: 3px; padding: 0 1px; }
+  .im-empty { padding: 18px 4px; font-size: 13.5px; color: var(--text-2); }
+  @media (max-width: 700px) {
+    .im-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .im-tile b { font-size: 22px; }
     .im-hrow { grid-template-columns: minmax(90px, 120px) minmax(0, 1fr) 30px; gap: 8px; font-size: 12.5px; }
+    .im-sels select { flex: 1 1 140px; max-width: none; }
     .im-st { margin-left: 0; }
+    .im-search .btn { display: none; }
   }
   /* ---------- phones: bottom bar, page chips, shorter lists ----------
      (Anton, 19 Oct 2026: avoid long scrolls, more mobile friendly.) */
@@ -4923,18 +4964,188 @@
   /* ================= impact tab (Operations) ================= */
 
   // The Impact workbook (Anton, 20 Oct 2026): every trip since 2017 and the
-  // community work it did. Overview: the headline figures, trips per year by
-  // region, and by theme / destination. Impact log: every trip, filtered.
-  // Built in lib/tabs/impact.js; counts match the workbook's own Summary.
+  // community work it did. Built in lib/tabs/impact.js; counts match the
+  // workbook's own Summary.
+  //
+  // Made for finding things (Anton, 21 Oct 2026: "easy to navigate and easy
+  // to use and filter ... not too complicated"): two tabs. Overview is the
+  // headline figures and three charts, and EVERY bar, row and figure opens
+  // the matching trips. Find a trip is one search box (school, village,
+  // destination, trip code, officer, or any word of the impact), one-tap
+  // region and status chips, three dropdowns, the active filters as pills
+  // that remove with ×, and a compact list where a row opens to its full
+  // impact text.
   let impData = null;
   let imSub = 'overview';
   const imF = { year: 'all', region: 'all', dest: 'all', theme: 'all', status: 'all' };
+  let imQ = '';
+  const imOpen = new Set();
   // Regions in the validated categorical slots the Leads charts use.
   const IM_COL = { Africa: 'var(--lead-wa)', Asia: 'var(--lead-all)', Other: 'var(--lead-ig)' };
   const IM_ST = { recorded: ['✓ Recorded', 'good'], none: ['○ No impact', 'na'], fill: ['! To fill in', 'warn'], other: ['? Unclear', 'na'] };
   const IM_ST_LABEL = { recorded: 'Recorded', none: 'No impact', fill: 'To fill in' };
   const imDate = (d, withYear) => (d ? new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short', timeZone: 'UTC' }, withYear ? { year: 'numeric' } : {})) : '');
   const imDates = (t) => (t.start && t.end ? `${imDate(t.start)} – ${imDate(t.end, true)}` : t.start ? imDate(t.start, true) : '');
+  const imWords = () => imQ.toLowerCase().split(/\s+/).filter(Boolean);
+  const imHay = (t) => [t.destination, t.code, t.place, t.officer, t.impact, t.theme, t.type, t.client, t.region, String(t.year)].join(' ').toLowerCase();
+
+  // Every way in to the list goes through here: set the filters, open Find.
+  function imGo(filters, q) {
+    Object.keys(imF).forEach((k) => { imF[k] = 'all'; });
+    Object.assign(imF, filters || {});
+    imQ = q || '';
+    imSub = 'find';
+    renderImpact();
+    const w = $('impactWrap');
+    if (w.getBoundingClientRect().top < 0) scrollTo(0, w.getBoundingClientRect().top + scrollY - 70);
+  }
+
+  function imPass(t, skip) {
+    const words = imWords();
+    return (skip === 'year' || imF.year === 'all' || String(t.year) === imF.year)
+      && (skip === 'region' || imF.region === 'all' || t.group === imF.region)
+      && (skip === 'dest' || imF.dest === 'all' || t.destination === imF.dest)
+      && (skip === 'theme' || imF.theme === 'all' || t.theme === imF.theme)
+      && (skip === 'status' || imF.status === 'all' || t.kind === imF.status)
+      && (!words.length || words.every((w) => imHay(t).includes(w)));
+  }
+
+  function imOverview(p) {
+    const T = p.totals;
+    const groups = p.groups || ['Africa', 'Asia', 'Other'];
+    const regionTip = (r, title) => `data-tip="${attr(`<div class="tt">${esc(title)}</div>` + groups.map((g) => `<div class="trow"><span class="tk">${esc(g)}</span><b>${int(r[g])}</b></div>`).join('') + `<div class="trow"><span class="tk">Travellers</span><b>${int(r.travellers)}</b></div><div class="more">Tap to see these trips</div>`)}"`;
+    const legend = `<div class="im-leg">${groups.map((g) => `<span><i style="background:${IM_COL[g]}"></i>${esc(g)}</span>`).join('')}</div>`;
+    const maxYear = Math.max(1, ...p.byYear.map((r) => r.total));
+    const yearCols = p.byYear.map((r) => `<button type="button" class="im-col" data-im-go="year" data-v="${r.key}" ${regionTip(r, String(r.key))}>
+        <span class="v">${int(r.total)}</span>
+        <span class="im-stack" style="height:${((r.total / maxYear) * 100).toFixed(1)}%">${groups.filter((g) => r[g]).map((g) => `<i style="flex:${r[g]};background:${IM_COL[g]}"></i>`).join('')}</span>
+        <span class="y">${r.key}</span>
+      </button>`).join('');
+    const hbars = (list, kind, max) => list.map((r) => `<button type="button" class="im-hrow" data-im-go="${kind}" data-v="${attr(r.key)}" ${regionTip(r, r.key)}>
+        <span class="im-hn">${esc(r.key)}</span>
+        <span class="im-hb"><span style="width:${((r.total / max) * 100).toFixed(1)}%">${groups.filter((g) => r[g]).map((g) => `<i style="flex:${r[g]};background:${IM_COL[g]}"></i>`).join('')}</span></span>
+        <b>${int(r.total)}</b>
+      </button>`).join('');
+    const dests = p.byDestination.filter((r) => r.key !== 'To confirm');
+    return `
+      <div class="panel">
+        <div class="ptitle">Community impact · ${T.firstYear} – ${T.lastYear}</div>
+        <form class="im-search" data-im-search-go>
+          <input type="search" placeholder="Search a school, village, destination or trip code…" aria-label="Search the impact log">
+          <button class="btn" type="submit">Search</button>
+        </form>
+        <div class="im-tiles">
+          <button type="button" class="im-tile" data-im-go="all"><span>Trips</span><b>${int(T.trips)}</b><small>${int(T.recorded)} with impact recorded</small></button>
+          <div class="im-tile"><span>Travellers</span><b>${int(T.travellers)}</b><small>on these trips</small></div>
+          <div class="im-tile"><span>Schools &amp; villages</span><b>${int(T.places)}</b><small>named in the log</small></div>
+          <div class="im-tile"><span>Destinations</span><b>${int(T.destinations)}</b><small>in Africa, Asia and beyond</small></div>
+        </div>
+        <div class="im-rec"><span>Impact recorded</span><div class="abar"><div class="abar-fill" style="width:${((T.recorded / Math.max(1, T.trips)) * 100).toFixed(1)}%;background:var(--q-high)"></div></div><b>${pct(T.recorded / Math.max(1, T.trips))}</b></div>
+        ${T.toFill ? `<button type="button" class="im-fill" data-im-go="status" data-v="fill"><b>${int(T.toFill)} trip${T.toFill === 1 ? '' : 's'} still need${T.toFill === 1 ? 's' : ''} details</b><span>${[T.missingTrips ? `${int(T.missingTrips)} missing from the log` : '', T.missingImpact ? `${int(T.missingImpact)} with no impact written yet` : ''].filter(Boolean).join(', ')}</span><span class="im-arrow">See them ›</span></button>` : ''}
+      </div>
+      <div class="panel">
+        <div class="im-ph"><div class="ptitle">Trips per year</div><span class="im-hint">Tap a bar to see that year's trips</span></div>
+        <div class="im-chart"><div class="im-cols">${yearCols}</div></div>
+        ${legend}
+      </div>
+      <div class="panel">
+        <div class="im-ph"><div class="ptitle">By theme</div><span class="im-hint">Tap a theme to see its trips</span></div>
+        <div class="im-hlist">${hbars(p.byTheme, 'theme', Math.max(1, ...p.byTheme.map((r) => r.total)))}</div>
+        ${legend}
+      </div>
+      <div class="panel">
+        <div class="im-ph"><div class="ptitle">By destination</div><span class="im-hint">Tap a destination to see its trips</span></div>
+        <div class="im-hlist">${hbars(dests, 'dest', Math.max(1, ...dests.map((r) => r.total)))}</div>
+      </div>`;
+  }
+
+  // The filter controls and the results, redrawn as you type or tap, without
+  // touching the search box (so it keeps focus).
+  function imResults(p) {
+    const groups = p.groups || ['Africa', 'Asia', 'Other'];
+    const count = (k, v) => p.trips.filter((t) => imPass(t, k) && (k === 'region' ? t.group === v : t.kind === v)).length;
+    const chips = (k, list, labelOf) => `<div class="im-chips" role="group">${['all', ...list].map((v) => {
+      const n = v === 'all' ? p.trips.filter((t) => imPass(t, k)).length : count(k, v);
+      if (v !== 'all' && !n && imF[k] !== v) return '';
+      return `<button type="button" data-im-chip="${k}" data-v="${attr(v)}" aria-pressed="${imF[k] === v}">${v === 'all' ? 'All' : esc(labelOf(v))} <span class="ecount">${n}</span></button>`;
+    }).join('')}</div>`;
+    const opts = (k, valOf, labelOf, sort) => {
+      const m = new Map();
+      for (const t of p.trips) if (imPass(t, k)) { const v = valOf(t); m.set(v, (m.get(v) || 0) + 1); }
+      if (imF[k] !== 'all' && !m.has(imF[k])) m.set(imF[k], 0);
+      return [...m].sort(sort).map(([v, n]) => `<option value="${attr(v)}"${imF[k] === v ? ' selected' : ''}>${esc(labelOf(v))} (${n})</option>`).join('');
+    };
+    const sel = (k, all, o) => `<select data-im-sel="${k}" aria-label="${all}"><option value="all"${imF[k] === 'all' ? ' selected' : ''}>${all}</option>${o}</select>`;
+    const shown = p.trips.filter((t) => imPass(t));
+    // What's filtering the list right now, each removable on its own.
+    const active = [];
+    if (imQ.trim()) active.push(['q', `“${imQ.trim()}”`]);
+    if (imF.region !== 'all') active.push(['region', imF.region]);
+    if (imF.status !== 'all') active.push(['status', IM_ST_LABEL[imF.status] || imF.status]);
+    if (imF.year !== 'all') active.push(['year', imF.year]);
+    if (imF.dest !== 'all') active.push(['dest', imF.dest]);
+    if (imF.theme !== 'all') active.push(['theme', imF.theme]);
+    const words = imWords();
+    const mark = (s) => {
+      let out = esc(s);
+      for (const w of words) if (w.length > 1) out = out.replace(new RegExp(`(${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>');
+      return out;
+    };
+    const row = (t) => {
+      const [st, cls] = IM_ST[t.kind] || IM_ST.other;
+      const open = imOpen.has(t.id);
+      const theme = [t.type, t.theme].filter((x, i, a) => x && a.indexOf(x) === i && x !== 'To confirm').join(' · ');
+      const detail = [imDates(t), t.code, t.client, t.officer ? `Led by ${t.officer}` : ''].filter(Boolean);
+      const text = t.impact || (t.kind === 'none' ? 'No community impact on this trip.' : 'No impact written yet.');
+      return `<div class="im-row${open ? ' open' : ''}" data-im-row="${attr(t.id)}" role="button" tabindex="0" aria-expanded="${open}">
+        <div class="im-rh"><b>${mark(t.destination)}</b><span class="im-yr">${t.year}</span><span class="im-st ${cls}">${st}</span></div>
+        <div class="im-meta">${[theme, t.travellers ? `${int(t.travellers)} travellers` : ''].filter(Boolean).map(esc).join(' · ')}</div>
+        ${t.place ? `<div class="im-place">📍 ${mark(t.place)}</div>` : ''}
+        <div class="im-txt${t.impact ? '' : ' none'}" dir="auto">${mark(text)}</div>
+        ${open ? `<div class="im-more">${detail.map(mark).join(' · ')}</div>` : ''}
+        ${t.impact && !open ? '<span class="im-read">Read more ▾</span>' : open ? '<span class="im-read">Show less ▴</span>' : ''}
+      </div>`;
+    };
+    return `
+      <div class="im-filters">
+        ${chips('region', groups, (v) => v)}
+        ${chips('status', ['recorded', 'none', 'fill'], (v) => IM_ST_LABEL[v])}
+        <div class="im-sels">
+          ${sel('year', 'Any year', opts('year', (t) => String(t.year), (v) => v, (a, b) => b[0].localeCompare(a[0])))}
+          ${sel('dest', 'Any destination', opts('dest', (t) => t.destination, (v) => v, (a, b) => b[1] - a[1]))}
+          ${sel('theme', 'Any theme', opts('theme', (t) => t.theme, (v) => v, (a, b) => b[1] - a[1]))}
+        </div>
+      </div>
+      <div class="im-count"><b>${int(shown.length)}</b> of ${int(p.trips.length)} trips
+        ${active.map(([k, l]) => `<button type="button" class="im-pill" data-im-x="${k}" aria-label="Remove ${attr(l)}">${esc(l)} <span>×</span></button>`).join('')}
+        ${active.length > 1 ? '<button type="button" class="im-clear" data-im-clear>Clear all</button>' : ''}
+      </div>
+      <div class="im-list">${shown.map(row).join('') || `<div class="im-empty">No trips match${imQ.trim() ? ` “${esc(imQ.trim())}”` : ''}. ${active.length ? '<button type="button" class="im-clear" data-im-clear>Clear the filters</button>' : ''}</div>`}</div>`;
+  }
+
+  function imBindResults(p) {
+    const box = $('imResults');
+    if (!box) return;
+    const redraw = () => { box.innerHTML = imResults(p); bindHelp(box); imBindResults(p); };
+    box.querySelectorAll('[data-im-chip]').forEach((b) => b.addEventListener('click', () => { imF[b.dataset.imChip] = b.dataset.v; redraw(); }));
+    box.querySelectorAll('[data-im-sel]').forEach((el) => el.addEventListener('change', () => { imF[el.dataset.imSel] = el.value; redraw(); }));
+    box.querySelectorAll('[data-im-x]').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.imX;
+      if (k === 'q') { imQ = ''; const inp = $('imQ'); if (inp) inp.value = ''; } else imF[k] = 'all';
+      redraw();
+    }));
+    box.querySelectorAll('[data-im-clear]').forEach((b) => b.addEventListener('click', () => {
+      Object.keys(imF).forEach((k) => { imF[k] = 'all'; });
+      imQ = '';
+      const inp = $('imQ'); if (inp) inp.value = '';
+      redraw();
+    }));
+    box.querySelectorAll('[data-im-row]').forEach((el) => {
+      const flip = () => { const id = el.dataset.imRow; if (imOpen.has(id)) imOpen.delete(id); else imOpen.add(id); redraw(); };
+      el.addEventListener('click', (e) => { if (!window.getSelection || String(window.getSelection()) === '') flip(); });
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+    });
+  }
 
   function renderImpact() {
     const p = impData;
@@ -4943,107 +5154,41 @@
       $('impactWrap').innerHTML = `<div class="msg err">Could not load the impact sheet: ${esc(p.error)}</div>`;
       return;
     }
-    const T = p.totals;
-    const groups = p.groups || ['Africa', 'Asia', 'Other'];
-    const regionTip = (r, title) => `data-tip="${attr(`<div class="tt">${esc(title)}</div>` + groups.map((g) => `<div class="trow"><span class="tk">${esc(g)}</span><b>${int(r[g])}</b></div>`).join('') + `<div class="trow"><span class="tk">Total</span><b>${int(r.total)}</b></div><div class="trow"><span class="tk">Travellers</span><b>${int(r.travellers)}</b></div>`)}"`;
-    const legend = `<div class="im-leg">${groups.map((g) => `<span><i style="background:${IM_COL[g]}"></i>${esc(g)}</span>`).join('')}</div>`;
-
-    // ---- overview ----
-    const maxYear = Math.max(1, ...p.byYear.map((r) => r.total));
-    const yearCols = p.byYear.map((r) => `<div class="im-col" ${regionTip(r, String(r.key))}>
-        <span class="v">${int(r.total)}</span>
-        <div class="im-stack" style="height:${((r.total / maxYear) * 100).toFixed(1)}%">${groups.filter((g) => r[g]).map((g) => `<i style="flex:${r[g]};background:${IM_COL[g]}"></i>`).join('')}</div>
-      </div>`).join('');
-    const yearAxis = p.byYear.map((r) => `<span>${r.key}</span>`).join('');
-    const hbars = (list, max) => list.map((r) => `<div class="im-hrow" ${regionTip(r, r.key)}>
-        <span class="im-hn">${esc(r.key)}</span>
-        <span class="im-hb"><span style="width:${((r.total / max) * 100).toFixed(1)}%">${groups.filter((g) => r[g]).map((g) => `<i style="flex:${r[g]};background:${IM_COL[g]}"></i>`).join('')}</span></span>
-        <b>${int(r.total)}</b>
-      </div>`).join('');
-    const dests = p.byDestination.filter((r) => r.key !== 'To confirm');
-    const overview = `
-      <div class="panel">
-        <div class="ptitle">Community impact · ${T.firstYear} – ${T.lastYear}</div>
-        <div class="bvhero trp-tiles">
-          <div class="bv-side"><div class="bv-lab">Trips</div><div class="bv-n bv-act">${int(T.trips)}</div><div class="bv-s">${int(T.recorded)} with impact recorded</div></div>
-          <div class="bv-side"><div class="bv-lab">Travellers</div><div class="bv-n">${int(T.travellers)}</div><div class="bv-s">on these trips</div></div>
-          <div class="bv-side"><div class="bv-lab">Schools &amp; villages</div><div class="bv-n">${int(T.places)}</div><div class="bv-s">named in the log</div></div>
-          <div class="bv-side"><div class="bv-lab">Destinations</div><div class="bv-n">${int(T.destinations)}</div><div class="bv-s">in Africa, Asia and beyond</div></div>
-        </div>
-        <div class="im-rec"><span>Impact recorded</span><div class="abar"><div class="abar-fill" style="width:${((T.recorded / Math.max(1, T.trips)) * 100).toFixed(1)}%;background:var(--q-high)"></div></div><b>${pct(T.recorded / Math.max(1, T.trips))}</b></div>
-        ${T.toFill ? `<div class="im-fill"><b>${int(T.toFill)} trips still need details</b> · ${int(T.missingTrips)} missing from the log, ${int(T.missingImpact)} with no impact written yet <button class="trp-toggle" type="button" data-im-fill>See them</button></div>` : ''}
-      </div>
-      <div class="panel">
-        <div class="ptitle">Trips per year</div>
-        <div class="im-chart"><div class="im-cols">${yearCols}</div><div class="im-axis">${yearAxis}</div></div>
-        ${legend}
-      </div>
-      <div class="panel">
-        <div class="ptitle">By theme</div>
-        <div class="im-hlist">${hbars(p.byTheme, Math.max(1, ...p.byTheme.map((r) => r.total)))}</div>
-        ${legend}
-      </div>
-      <div class="panel">
-        <div class="ptitle">By destination</div>
-        <div class="im-hlist">${hbars(dests, Math.max(1, ...dests.map((r) => r.total)))}</div>
-      </div>`;
-
-    // ---- impact log: filters built from what exists, each counted given the others ----
-    const pass = (t, skip) => (skip === 'year' || imF.year === 'all' || String(t.year) === imF.year)
-      && (skip === 'region' || imF.region === 'all' || t.group === imF.region)
-      && (skip === 'dest' || imF.dest === 'all' || t.destination === imF.dest)
-      && (skip === 'theme' || imF.theme === 'all' || t.theme === imF.theme)
-      && (skip === 'status' || imF.status === 'all' || t.kind === imF.status);
-    const opts = (k, valOf, labelOf, sort) => {
-      const m = new Map();
-      for (const t of p.trips) if (pass(t, k)) { const v = valOf(t); m.set(v, (m.get(v) || 0) + 1); }
-      if (imF[k] !== 'all' && !m.has(imF[k])) imF[k] = 'all';
-      return [...m].sort(sort).map(([v, n]) => `<option value="${attr(v)}"${imF[k] === v ? ' selected' : ''}>${esc(labelOf(v))} (${n})</option>`).join('');
-    };
-    const yo = opts('year', (t) => String(t.year), (v) => v, (a, b) => b[0].localeCompare(a[0]));
-    const ro = opts('region', (t) => t.group, (v) => v, (a, b) => groups.indexOf(a[0]) - groups.indexOf(b[0]));
-    const dO = opts('dest', (t) => t.destination, (v) => v, (a, b) => b[1] - a[1]);
-    const to = opts('theme', (t) => t.theme, (v) => v, (a, b) => b[1] - a[1]);
-    const so = opts('status', (t) => t.kind, (v) => IM_ST_LABEL[v] || v, (a, b) => a[0].localeCompare(b[0]));
-    const sel = (k, label, all, o) => `<label class="fb-fl"><span>${label}</span><select data-im-sel="${k}"><option value="all"${imF[k] === 'all' ? ' selected' : ''}>${all}</option>${o}</select></label>`;
-    const filtered = Object.values(imF).some((v) => v !== 'all');
-    const shown = p.trips.filter((t) => pass(t));
-    const row = (t) => {
-      const [st, cls] = IM_ST[t.kind] || IM_ST.other;
-      const meta = [imDates(t), t.travellers ? `${int(t.travellers)} travellers` : '', [t.type, t.theme].filter((x, i, a) => x && a.indexOf(x) === i).join(' · '), t.client, t.officer ? `Led by ${t.officer}` : ''].filter(Boolean);
-      return `<div class="im-row">
-        <div class="im-rh"><b>${esc(t.destination)}</b><span class="im-yr">${t.year}</span>${t.code ? `<span class="im-code">${esc(t.code)}</span>` : ''}<span class="im-st ${cls}">${st}</span></div>
-        <div class="im-meta">${meta.map(esc).join(' · ')}</div>
-        ${t.place ? `<div class="im-place">📍 ${esc(t.place)}</div>` : ''}
-        <div class="im-txt${t.impact ? '' : ' none'}" dir="auto">${t.impact ? esc(t.impact) : (t.kind === 'none' ? 'No community impact on this trip.' : 'No impact written yet.')}</div>
-      </div>`;
-    };
-    const log = `
-      <div class="panel">
-        <div class="ptitle">Impact log · ${int(shown.length)} of ${int(p.trips.length)} trips</div>
-        <div class="fb-filters">
-          ${sel('year', 'Year', 'All years', yo)}${sel('region', 'Region', 'All regions', ro)}${sel('dest', 'Destination', 'All destinations', dO)}${sel('theme', 'Theme', 'All themes', to)}${sel('status', 'Status', 'Any status', so)}
-          ${filtered ? '<button class="btn" type="button" data-im-clear>Clear</button>' : ''}
-        </div>
-        <div class="im-list">${shown.map(row).join('') || '<div class="pnote">No trips match these filters.</div>'}</div>
-      </div>`;
-
     const subtabs = `
       <div class="seg subtabs" role="tablist" aria-label="Impact sections">
         <button role="tab" data-im-sub="overview" aria-pressed="${imSub === 'overview'}" aria-selected="${imSub === 'overview'}">Overview</button>
-        <button role="tab" data-im-sub="log" aria-pressed="${imSub === 'log'}" aria-selected="${imSub === 'log'}">Impact log <span class="ecount">${int(p.trips.length)}</span></button>
+        <button role="tab" data-im-sub="find" aria-pressed="${imSub === 'find'}" aria-selected="${imSub === 'find'}">Find a trip <span class="ecount">${int(p.trips.length)}</span></button>
+      </div>`;
+    const find = `
+      <div class="panel">
+        <div class="im-search">
+          <input id="imQ" type="search" value="${attr(imQ)}" placeholder="Search a school, village, destination, trip code, officer or any word…" aria-label="Search the impact log" autocomplete="off">
+        </div>
+        <div id="imResults">${imResults(p)}</div>
       </div>`;
     $('impactWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'SharePoint unreachable')}</div>` : ''}
       ${subtabs}
-      ${imSub === 'log' ? log : overview}`;
-    bindHelp($('impactWrap'));
-    $('impactWrap').querySelectorAll('[data-im-sub]').forEach((b) => b.addEventListener('click', () => { if (imSub !== b.dataset.imSub) { imSub = b.dataset.imSub; renderImpact(); } }));
-    $('impactWrap').querySelectorAll('[data-im-sel]').forEach((el) => el.addEventListener('change', () => { imF[el.dataset.imSel] = el.value; renderImpact(); }));
-    const clr = $('impactWrap').querySelector('[data-im-clear]');
-    if (clr) clr.addEventListener('click', () => { Object.keys(imF).forEach((k) => { imF[k] = 'all'; }); renderImpact(); });
-    const fill = $('impactWrap').querySelector('[data-im-fill]');
-    if (fill) fill.addEventListener('click', () => { Object.keys(imF).forEach((k) => { imF[k] = 'all'; }); imF.status = 'fill'; imSub = 'log'; renderImpact(); });
+      ${imSub === 'find' ? find : imOverview(p)}`;
+    const w = $('impactWrap');
+    bindHelp(w);
+    w.querySelectorAll('[data-im-sub]').forEach((b) => b.addEventListener('click', () => { if (imSub !== b.dataset.imSub) { imSub = b.dataset.imSub; renderImpact(); } }));
+    // Overview: every bar, row and figure opens the matching trips.
+    w.querySelectorAll('[data-im-go]').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.imGo;
+      imGo(k === 'all' ? {} : { [k]: b.dataset.v });
+    }));
+    const go = w.querySelector('[data-im-search-go]');
+    if (go) go.addEventListener('submit', (e) => { e.preventDefault(); imGo({}, go.querySelector('input').value); setTimeout(() => { const i = $('imQ'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 0); });
+    const q = $('imQ');
+    if (q) {
+      let timer = null;
+      q.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { imQ = q.value; const box = $('imResults'); box.innerHTML = imResults(p); bindHelp(box); imBindResults(p); }, 150);
+      });
+    }
+    imBindResults(p);
   }
 
   async function loadImpact(force) {

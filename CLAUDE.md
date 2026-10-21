@@ -823,17 +823,25 @@ only; the repo is public). `lib/tabs/impact.js`, served as
 - Dates come both as real dates and typed "21/10/2023" / "28/8/24"; dates
   before 2015 (typos like 2002-07-09) are dropped, not shown. Destinations
   "To confirm" are counted but left out of By destination.
-- UI, two sub-tabs (`imSub`): **Overview**: tiles (Trips 193 / Travellers
-  3,728 / Schools & villages 97, distinct names / Destinations 16), an
-  "Impact recorded 90.2%" bar, an amber "19 trips still need details" line
-  with **See them** (opens the log filtered to To fill in), Trips per year
-  stacked by region (Africa / Asia / Other in the validated `--lead-wa` /
-  `--lead-all` / `--lead-ig` slots), By theme and By destination as stacked
-  horizontal bars, region counts on hover. **Impact log**: Year / Region /
-  Destination / Theme / Status filters (only what exists, counted given the
-  others, Clear), then every trip newest first: destination, year, code,
-  status pill, dates · travellers · type / theme · client · "Led by …",
-  📍 school or village, and the impact text verbatim (10 shown, Show all).
+- UI, rebuilt for finding things (Anton, 21 Oct 2026: "easy to navigate and
+  easy to use and filter ... not too complicated"). Two sub-tabs (`imSub`):
+  **Overview**: a search box (Enter opens Find with that search), four tiles
+  (Trips opens every trip), an "Impact recorded" bar, an amber "N trips
+  still need details · See them ›" button, then Trips per year (stacked by
+  region, `--lead-wa` / `--lead-all` / `--lead-ig`), By theme and By
+  destination. **Every bar, row and tile there is a button that opens Find
+  a trip filtered to it** (`imGo()`), with "Tap a bar to see …" hints.
+  **Find a trip**: one search box (`imQ`, every word must match the
+  destination, trip code, school / village, officer, theme, type, client,
+  year or impact text; matches highlighted), one-tap **Region** and
+  **Status** chips with counts (a chip with nothing left hides), Year /
+  Destination / Theme dropdowns (counted given everything else), then "N of
+  193 trips" with each active filter as a pill that removes with × and Clear
+  all. Rows are compact (destination, year, status, type · theme ·
+  travellers, 📍 place, two lines of impact) and open on tap to the full
+  text plus dates · trip code · client · "Led by …" (`imOpen`). Typing
+  redraws only `#imResults`, so the search box keeps focus. 10 rows, then
+  Show all (the shared fold).
 - Also in the Claude connector (`get_impact`, year / destination filters)
   and the AI Adviser's snapshot.
 - **Officer in Charge names are shown** (as Feedback shows staff names);
