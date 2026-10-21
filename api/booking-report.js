@@ -157,41 +157,8 @@ async function build() {
   };
 }
 
-// TEMPORARY (21 Oct 2026, "1 booking today isn't showing"): every order
-// created in the last 2 days across ALL trips, payment links included, with
-// counts and status only (no names, emails or amounts). Secret-gated; remove
-// once the missing booking is explained.
-async function audit(hours) {
-  const since = Date.now() - hours * 3600e3;
-  const trips = (await apiGet('/draft_trips?per_page=1000&page=1')).data || [];
-  const recent = trips.filter((t) => !t.end_date || dayKey(t.end_date) >= '2026-01-01' || /payment/i.test(t.title || ''));
-  const out = [];
-  await mapWithConcurrency(recent, 4, async (trip) => {
-    let orders = [];
-    try { orders = await fetchOrders(trip.uuid); } catch (e) { out.push({ trip: trip.title, uuid: trip.uuid, error: e.message }); return; }
-    for (const o of orders) {
-      const at = Date.parse(o.created_at);
-      if (!(at >= since)) continue;
-      out.push({
-        trip: trip.title, uuid: trip.uuid, paymentLink: !!(trip.is_payment_link || trip.payment_link || /payment/i.test(trip.title || '')),
-        scannedByReport: !SKIP.has(String(trip.uuid)),
-        created_at: o.created_at, active: o.active_count, cancelled: o.cancelled_count, rebooked: o.rebooked_count,
-        status: o.status || o.state || null, payment_status: o.payment_status || null,
-        fields: Object.keys(o).filter((k) => !/name|email|phone|address|passport|birth|amount|price|total|paid|balance|note/i.test(k)),
-      });
-    }
-  });
-  const flags = trips.slice(0, 1).map((t) => Object.keys(t));
-  return { hours, tripsListed: trips.length, tripsChecked: recent.length, tripFields: flags[0], orders: out.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))) };
-}
-
 module.exports = async (req, res) => {
   try {
-    if (req.query && req.query.audit === '1') {
-      const secret = (process.env.CAMPAIGN_ALERT_SECRET || '').trim();
-      if (!secret || req.headers.authorization !== `Bearer ${secret}`) return res.status(401).json({ error: 'secret required' });
-      return res.status(200).json(await audit(Math.min(240, Number(req.query.hours) || 48)));
-    }
     const fresh = req.query && req.query.refresh === '1';
     if (!fresh && cache.payload && Date.now() - cache.at < CACHE_TTL_MS) {
       res.setHeader('X-Cache', 'HIT');
