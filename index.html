@@ -3438,6 +3438,65 @@
   // ManyChat's automatic count (lib/manychat.js), shown beside Marina's sheet
   // until the two agree (Anton, 21 Oct 2026).
   let mcData = null;
+  // Which numbers the Leads tab draws: Marina's sheet, or ManyChat's
+  // automatic count in the very same charts and table (Anton, 22 Oct 2026:
+  // "make it look like the one I built for Marina's sheet").
+  let leadsSrc = 'sheet';
+
+  // ManyChat's daily counts reshaped exactly like the sheet's payload (weeks
+  // of Sunday to Saturday days, per project), so renderLeads() draws them
+  // unchanged. Days before the first event aren't "logged"; today counts live.
+  function mcAsLeads() {
+    if (!mcData || !mcData.first || !mcData.days) return null;
+    const today = ovToday();
+    const byDate = new Map(mcData.days.map((d) => [d.date, d]));
+    const first = mcData.first;
+    const sumProjects = (list) => {
+      const m = new Map();
+      for (const pr of list) {
+        const r = m.get(pr.code) || { code: pr.code, ig: 0, wa: 0, total: 0, hp: 0, hpIg: 0, hpWa: 0 };
+        for (const k of ['ig', 'wa', 'total', 'hp', 'hpIg', 'hpWa']) r[k] += pr[k] || 0;
+        m.set(pr.code, r);
+      }
+      return [...m.values()].sort((a, b) => b.total - a.total || a.code.localeCompare(b.code));
+    };
+    const weeks = [];
+    const lastWs = ovWeekStart(today);
+    for (let ws = ovWeekStart(first); ws <= lastWs; ws = ovAdd(ws, 7)) {
+      const days = [];
+      for (let i = 0; i < 7; i += 1) {
+        const date = ovAdd(ws, i);
+        const m = byDate.get(date);
+        const future = date > today;
+        const rec = !future && date >= first;
+        const v = (k) => (rec ? (m ? m[k] : 0) : null);
+        days.push({
+          date, recorded: rec, future,
+          total: v('leads'), ig: v('ig'), wa: v('wa'), hp: v('hp'), hpIg: v('hpIg'), hpWa: v('hpWa'), hpOther: rec ? 0 : null,
+          projects: m ? Object.entries(m.projects || {}).filter(([, x]) => x.leads || x.hp).map(([code, x]) => ({ code, ig: x.ig || 0, wa: x.wa || 0, total: x.leads, hp: x.hp, hpIg: x.hpIg || 0, hpWa: x.hpWa || 0 })) : [],
+        });
+      }
+      const rd = days.filter((d) => d.recorded);
+      const sum = (k) => rd.reduce((a, d) => a + (d[k] || 0), 0);
+      weeks.push({
+        label: `${ovDate(ws)} – ${ovDate(ovAdd(ws, 6))}`, start: ws, end: ovAdd(ws, 6), current: ws === lastWs, source: 'daily',
+        total: sum('total'), ig: sum('ig'), wa: sum('wa'), days, daysRecorded: rd.length, dailyTotal: sum('total'),
+        hp: sum('hp'), hpIg: sum('hpIg'), hpWa: sum('hpWa'), hpOther: 0,
+        projects: sumProjects(rd.flatMap((d) => d.projects)), issues: [],
+      });
+    }
+    return { source: 'manychat', today, year: Number(today.slice(0, 4)), first, totals: { leads: weeks.reduce((a, w) => a + w.total, 0) }, weeks };
+  }
+  const leadsSrcBar = () => `<div class="seg subtabs" role="tablist" aria-label="Where the numbers come from">
+      <button role="tab" data-lsrc="sheet" aria-pressed="${leadsSrc === 'sheet'}" aria-selected="${leadsSrc === 'sheet'}">Marina's sheet</button>
+      <button role="tab" data-lsrc="mc" aria-pressed="${leadsSrc === 'mc'}" aria-selected="${leadsSrc === 'mc'}">ManyChat · automatic</button>
+    </div>`;
+  const bindLeadsSrc = () => $('leadsWrap').querySelectorAll('[data-lsrc]').forEach((b) => b.addEventListener('click', () => {
+    if (leadsSrc === b.dataset.lsrc) return;
+    leadsSrc = b.dataset.lsrc;
+    leadsDay = null;
+    renderLeads();
+  }));
   // The week on screen, by its start date. Null means "whichever week is
   // current", so the tab rolls into the next week on its own, which is the
   // behaviour Muatasam asked for.
@@ -3622,8 +3681,13 @@
   }
 
   function renderLeads() {
-    const p = leads;
-    if (!p) return;
+    if (!leads) return;
+    const p = leadsSrc === 'mc' ? mcAsLeads() : leads;
+    if (!p) {
+      $('leadsWrap').innerHTML = `${leadsSrcBar()}<div class="panel"><div class="msg">${mcData ? 'ManyChat hasn\'t sent any leads yet.' : 'Loading ManyChat…'}</div></div>`;
+      bindLeadsSrc();
+      return;
+    }
     if (p.error && !p.weeks) {
       $('leadsWrap').innerHTML = `<div class="msg err">Could not load leads: ${esc(p.error)}</div>`;
       return;
@@ -3730,12 +3794,15 @@
 
     const anyCombined = weeks.some((w) => w.total && !splits(w.total, w.ig, w.wa));
 
+    const fromMc = p.source === 'manychat';
+    const mcSince = fromMc ? ovDate(p.first) : '';
     $('leadsWrap').innerHTML = `
+      ${leadsSrcBar()}
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
 
       <div class="panel">
         <div class="lhead">
-          <div class="ptitle">Daily leads · ${esc(sel.label)}${sel.current ? ' · this week' : ''}</div>
+          <div class="ptitle">Daily leads · ${esc(sel.label)}${sel.current ? ' · this week' : ''}${fromMc ? ' · ManyChat' : ''}</div>
           <div class="efilter"><span class="efl">Week</span><select class="fselect" id="leadsWeekSel" aria-label="Choose a week">${weekOptions}</select></div>
         </div>
         <div class="bvhero">
@@ -3800,7 +3867,7 @@
       </div>
 
       <div class="panel">
-        <div class="ptitle">Weekly leads · ${esc(String(p.year))} · ${int(p.totals.leads)} so far</div>
+        <div class="ptitle">Weekly leads · ${fromMc ? `ManyChat since ${esc(mcSince)}` : esc(String(p.year))} · ${int(p.totals.leads)} so far</div>
         ${weeklyChart(weeks, sel)}
         <div class="lleg">
           <span><i style="background:var(--lead-wa)"></i>WhatsApp</span>
@@ -3808,7 +3875,7 @@
           ${anyCombined ? '<span><i style="background:var(--lead-all)"></i>WhatsApp + Instagram together (the sheet has no clean split)</span>' : ''}
         </div>
       </div>
-      ${mcCheckPanel(weeks)}`;
+      ${mcCheckPanel(leads.weeks || [])}`;
 
     // On a phone the weekly chart scrolls sideways and opened on January,
     // with the week that matters off to the right. Bring the selected week
@@ -3828,6 +3895,7 @@
     bindHelp($('leadsWrap'));
 
     // A new week always opens on its whole-week breakdown.
+    bindLeadsSrc();
     $('leadsWrap').querySelectorAll('[data-week]').forEach((b) => {
       b.addEventListener('click', () => { leadsWeek = b.dataset.week; leadsDay = null; renderLeads(); });
     });

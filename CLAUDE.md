@@ -640,6 +640,17 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   vs automatic vs difference for leads and HP (within 1 = ✓), plus the
   automatic WA / IG split; before any event it says "Not receiving from
   ManyChat yet".
+- **Source switch on the Leads tab (22 Oct 2026**, Anton: "make the looks
+  like the one I initially built for Marina's sheet"): `Marina's sheet |
+  ManyChat · automatic` at the top (`leadsSrc`, default sheet). ManyChat mode
+  reshapes `mcData` into the sheet's payload shape (`mcAsLeads()`: Sunday–
+  Saturday weeks from the first event, days before it unlogged, today live,
+  per-project WA / IG / HP), so `renderLeads()` draws it with the same
+  tiles, daily chart and targets, project table, conversion and weekly
+  charts. `lib/manychat.js` `load()` now returns per-project wa / ig / hpWa /
+  hpIg for that. The ManyChat check panel always compares against the
+  sheet (`leads.weeks`), in either mode. The Dashboard, KPIs and the lead
+  alert still read the sheet.
 - **Next, once they agree for 1–2 weeks**: switch the Leads tab (and the
   Dashboard / KPIs / alerts that read it) to the automatic count, keeping the
   sheet for anything ManyChat can't see.
