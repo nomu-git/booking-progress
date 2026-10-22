@@ -636,10 +636,8 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   `mc:last`, `mc:events:<date>`.
 - **Read side**: `/api/sheets?name=manychat` (`lib/tabs/manychat.js`, 30 s
   cache) → per-day leads / HP / WA / IG / per project since the first event.
-  The panel (`mcCheckPanel()`, classes `mc-`) shows the last 14 days: sheet
-  vs automatic vs difference for leads and HP (within 1 = ✓), plus the
-  automatic WA / IG split; before any event it says "Not receiving from
-  ManyChat yet".
+  The side-by-side "ManyChat check" panel was **removed** (Anton, 22 Oct
+  2026); compare by flipping the source switch below.
 - **Source switch on the Leads tab (22 Oct 2026**, Anton: "make the looks
   like the one I initially built for Marina's sheet"): `Marina's sheet |
   ManyChat · automatic` at the top (`leadsSrc`, default sheet). ManyChat mode
@@ -648,9 +646,18 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   per-project WA / IG / HP), so `renderLeads()` draws it with the same
   tiles, daily chart and targets, project table, conversion and weekly
   charts. `lib/manychat.js` `load()` now returns per-project wa / ig / hpWa /
-  hpIg for that. The ManyChat check panel always compares against the
-  sheet (`leads.weeks`), in either mode. The Dashboard, KPIs and the lead
-  alert still read the sheet.
+  hpIg for that. The Dashboard, KPIs and the lead alert still read the sheet.
+- **Conversion uses the same days for bookings as for leads (22 Oct 2026**,
+  Anton: "make sure that the Conversion % is accurate"): bookings are only
+  counted on the days whose leads are counted (`leadBookings(start, end,
+  only)` with `leadDaysOf(w)` on the Leads tab, `ovLeads().dates` on the
+  Dashboard, `bookingsFor(..., only)` in `lib/kpis.js`); a weekly-report-only
+  week uses all its days. Before, a week's bookings to date were divided by
+  the leads of the logged days only, so today's bookings (Marina logs to
+  yesterday) and, in ManyChat mode, the days before it started were counted
+  against no leads (ManyChat this week read 25% instead of 0%). Checked
+  against an independent calculation: this week 1 ÷ 9 = 11.1%, last week
+  2 ÷ 38 = 5.3%, October 12 ÷ 180 = 6.7%.
 - **Next, once they agree for 1–2 weeks**: switch the Leads tab (and the
   Dashboard / KPIs / alerts that read it) to the automatic count, keeping the
   sheet for anything ManyChat can't see.
