@@ -1727,6 +1727,11 @@
     .fb-score .abar, .fb-low .fb-score .abar { width: 70px; }
     #feedbackWrap .ctable td.cname { min-width: 150px; }
   }
+  /* Leads › New vs repeat: on a phone the year table keeps the repeat % and drops its bar */
+  @media (max-width: 700px) {
+    .nvr-table .abar { display: none; }
+    .nvr-table th, .nvr-table td { padding-left: 6px; padding-right: 6px; }
+  }
 </style>
 </head>
 <body>
@@ -3419,6 +3424,7 @@
       previousTrips = p;
       renderPreviousTrips();
       ovSoon();
+      if (view === 'leads' && leads) renderLeads(); // Leads › New vs repeat reads it
     } catch (err) {
       if (!previousTrips) {
         $('previousWrap').innerHTML = `<div class="msg err">Could not load previous projects: ${esc(err.message)}</div>`;
@@ -3691,6 +3697,86 @@
     return out;
   }
 
+  // Leads › New vs repeat (Anton, 25 Oct 2026): the same WeTravel buyer split
+  // as the Dashboard (api/previous-trips sales: rep / repByDay, a repeat =
+  // a buyer who booked with us 30+ days before), for the week picked on the
+  // Leads tab, this month and this year, the last 12 months and each year.
+  function nvrSum(start, end) {
+    const months = previousTrips && previousTrips.sales && previousTrips.sales.months;
+    if (!months) return null;
+    let n = 0, rp = 0;
+    for (let d = start; d <= end; d = ovAdd(d, 1)) {
+      const m = months[d.slice(0, 7)];
+      if (!m) continue;
+      const i = Number(d.slice(8, 10)) - 1;
+      n += (m.byDay && m.byDay[i]) || 0;
+      rp += (m.repByDay && m.repByDay[i]) || 0;
+    }
+    return { n, rp };
+  }
+  function nvrPanel(sel) {
+    const head = `<div class="ptitle"><span ${hlp('ovRepeat')}>New vs repeat customers · bookings</span></div>`;
+    const months = previousTrips && previousTrips.sales && previousTrips.sales.months;
+    if (!months) return `<div class="panel">${head}<div class="msg">Loading bookings…</div></div>`;
+    const today = ovToday();
+    const share = (x) => (x && x.n ? `${Math.round((x.rp / x.n) * 100)}% repeat` : 'no bookings');
+    const tile = (label, x) => `<div class="bv-side">
+        <div class="bv-lab">${esc(label)}</div>
+        <div class="bv-n">${x ? int(x.n) : '—'}</div>
+        <div class="bv-s">${!x ? '' : x.n ? `${int(x.n - x.rp)} new · ${int(x.rp)} repeat · ${share(x)}` : 'No bookings yet'}</div>
+      </div>`;
+    const wk = nvrSum(sel.start, sel.end < today ? sel.end : today);
+    const mo = nvrSum(today.slice(0, 7) + '-01', today);
+    const yr = nvrSum(today.slice(0, 4) + '-01-01', today);
+    // Last 12 months, stacked new / repeat (the Dashboard chart's classes).
+    const list = [];
+    for (let ym = today.slice(0, 7), i = 0; i < 12; i += 1, ym = ovAdd(ym + '-01', -1).slice(0, 7)) list.unshift(ym);
+    const rows = list.map((k) => ({ k, n: (months[k] || {}).n || 0, rp: (months[k] || {}).rep || 0 }));
+    const max = Math.max(1, ...rows.map((r) => r.n));
+    const cols = rows.map((r) => {
+      const now = r.k === today.slice(0, 7);
+      const tip = `<div class="tt">${esc(ovMon(r.k, true))} ${r.k.slice(0, 4)}${now ? ' · so far' : ''}</div><div class="trow"><span class="tk">New customers</span><b>${int(r.n - r.rp)}</b></div><div class="trow"><span class="tk">Repeat customers</span><b>${int(r.rp)}</b></div><div class="more">${int(r.n)} bookings · ${share(r)}</div>`;
+      return `<div class="ov-col" data-tip="${attr(tip)}"><span class="v">${r.n ? int(r.n) : ''}</span><span class="b${now ? ' now' : ''}" style="height:${((r.n / max) * 100).toFixed(1)}%">${r.rp ? `<u class="rp" style="flex:${r.rp}"></u>` : ''}${r.n - r.rp > 0 ? `<u class="nw" style="flex:${r.n - r.rp}"></u>` : ''}</span></div>`;
+    }).join('');
+    const axis = rows.map((r) => `<span>${esc(ovMon(r.k))}${r.k.slice(5) === '01' || r.k === rows[0].k ? `<small>${r.k.slice(0, 4)}</small>` : ''}</span>`).join('');
+    // Each year: bookings, new, repeat and the repeat share with a bar.
+    const byYear = new Map();
+    for (const [k, m] of Object.entries(months)) {
+      const y = k.slice(0, 4);
+      const a = byYear.get(y) || { n: 0, rp: 0 };
+      a.n += m.n || 0; a.rp += m.rep || 0;
+      byYear.set(y, a);
+    }
+    const years = [...byYear.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    const yearRows = years.map(([y, a]) => {
+      const r = a.n ? a.rp / a.n : 0;
+      return `<tr><td class="cname">${y}${y === today.slice(0, 4) ? ' <span class="trp-sub">so far</span>' : ''}</td><td class="num">${int(a.n)}</td><td class="num">${int(a.n - a.rp)}</td><td class="num">${int(a.rp)}</td>
+        <td class="abar-cell"><div class="abar"><div class="abar-fill" style="width:${(r * 100).toFixed(1)}%;background:var(--lead-all)"></div></div><span class="abar-pct">${a.n ? `${Math.round(r * 100)}%` : '—'}</span></td></tr>`;
+    }).join('');
+    return `<div class="panel">
+      ${head}
+      <div class="bvhero">
+        ${tile(sel.current ? 'This week' : sel.label, wk)}
+        ${tile(`${ovMon(today.slice(0, 7), true)} so far`, mo)}
+        ${tile(`${today.slice(0, 4)} so far`, yr)}
+      </div>
+      <div class="ov-chart"><div class="ov-chart-in">
+        <div class="ov-cols">${cols}</div>
+        <div class="ov-axis">${axis}</div>
+      </div></div>
+      <div class="ov-legend">
+        <span><i style="background:var(--fill)"></i>New customers</span>
+        <span><i style="background:var(--lead-all)"></i>Repeat customers</span>
+        <span><i style="background:repeating-linear-gradient(135deg,var(--fill) 0 4px,rgba(var(--fill-rgb),.4) 4px 8px)"></i>This month so far</span>
+      </div>
+      <div class="tscroll" style="margin-top:14px"><table class="ctable nvr-table">
+        <thead><tr><th>Year</th><th>Bookings</th><th>New</th><th>Repeat</th><th>Repeat share</th></tr></thead>
+        <tbody>${yearRows}</tbody>
+      </table></div>
+      <div class="pnote">From WeTravel's booking history: a booking is repeat when the same buyer had booked with us at least 30 days before, on any trip since 2019. Charters are left out.</div>
+    </div>`;
+  }
+
   function renderLeads() {
     if (!leads) return;
     const p = leadsView();
@@ -3877,7 +3963,8 @@
           <span><i style="background:var(--lead-ig)"></i>Instagram</span>
           ${anyCombined ? '<span><i style="background:var(--lead-all)"></i>WhatsApp + Instagram together (the sheet has no clean split)</span>' : ''}
         </div>
-      </div>`;
+      </div>
+      ${nvrPanel(sel)}`;
 
     // On a phone the weekly chart scrolls sideways and opened on January,
     // with the week that matters off to the right. Bring the selected week
@@ -6317,7 +6404,7 @@
   //  2. Long lists show their first rows and a "Show all" button.
   const PHONE = matchMedia('(max-width: 700px)');
   const PV = {
-    leadsWrap: { always: true, groups: [['This week', [0, 1]], ['Trends', [2, 3]]] },
+    leadsWrap: { always: true, groups: [['This week', [0, 1]], ['Trends', [2, 3]], ['New vs repeat', [4]]] },
     previousWrap: { always: true, groups: [['Charts', [0, 1]], ['Projects', [2, 3]]] },
     campaignsWrap: { groups: [['Budget', [0]], ['Lead quality', [1]], ['Campaigns', [2]]] },
     overviewWrap: { sel: [['KPIs', '.ovk'], ['At a glance', '.ov-sec, .ov-grid'], ['Bookings', '.ov-low']] },
@@ -6528,6 +6615,7 @@
     if (view === 'leads') {
       if (!leads) $('leadsWrap').innerHTML = '<div class="msg">Loading leads…</div>';
       loadLeads(false);
+      if (!previousTrips) loadPreviousTrips(false);
     }
     if (view === 'engagements') {
       if (!engagements) $('engagementsWrap').innerHTML = '<div class="msg">Loading engagements…</div>';

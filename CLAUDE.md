@@ -256,6 +256,20 @@ Instead, repeat **bookings** come from WeTravel's own buyer history:
   cells end "· N new, N repeat" (`ovRepeat()` sums `repByDay` over any
   dates). Also in the AI Adviser snapshot (per year and last 12 months) and
   the connector's `get_sales_history`.
+- **Leads › New vs repeat chip** (Anton, 25 Oct 2026: "make it show in
+  leads as a new tab called new vs repeat ... keep what you have put
+  initially", so the Dashboard split stays too): a third chip on the Leads
+  page (`PV` `leadsWrap` group `['New vs repeat', [4]]`), panel
+  `nvrPanel(sel)` in `index.html`, drawn last in `renderLeads()`. Tiles for
+  the week picked on the Leads tab, this month so far and this year so far
+  (bookings, N new · N repeat · N% repeat; "No bookings yet" when 0), the
+  last 12 months stacked new / repeat (the Dashboard chart's `ov-col`
+  classes, current month hatched), and a year table (Year | Bookings | New |
+  Repeat | Repeat share with a bar; on a phone the bar hides, `.nvr-table`).
+  It reads `previousTrips.sales`, so opening Leads now also loads
+  `/api/previous-trips` and `loadPreviousTrips` re-renders Leads when it
+  lands. Checked against an independent sum: every year row matches, Oct
+  2026 = 12 bookings, 3 repeat. Contrast audit clean in both themes.
 - Limit: a returning customer who books under a different WeTravel account
   or email reads as new.
 
@@ -1576,7 +1590,7 @@ so no page's own render code changed:
   chips never appeared in testing). Its own bars and buttons are ignored, so
   it doesn't loop.
 - **Page chips** (`PV`, `.pv-bar`): a page made of several panels shows one
-  part at a time. **Every screen**: Leads (This week | Trends) and Previous
+  part at a time. **Every screen**: Leads (This week | Trends | New vs repeat) and Previous
   Sales (Charts | Projects). **Phones only (≤ 700px)**: Dashboard (KPIs | At
   a glance | Bookings), Campaign Ads (Budget | Lead quality | Campaigns), and
   `auto` on Report, History, Engagements, Trips, Feedback, Revenue, KPIs (one
