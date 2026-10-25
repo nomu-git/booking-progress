@@ -646,7 +646,10 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   per-project WA / IG / HP), so `renderLeads()` draws it with the same
   tiles, daily chart and targets, project table, conversion and weekly
   charts. `lib/manychat.js` `load()` now returns per-project wa / ig / hpWa /
-  hpIg for that. The Dashboard, KPIs and the lead alert still read the sheet.
+  hpIg for that. **The KPIs (tab, 8 AM Slack message, Dashboard's "All KPI
+  checks" card) read ManyChat since 25 Oct 2026**; the Dashboard scorecard,
+  the Leads tab's default view, Campaign Ads' lead quality panel and the
+  11:30 PM lead alert still read the sheet.
 - **Conversion uses the same days for bookings as for leads (22 Oct 2026**,
   Anton: "make sure that the Conversion % is accurate"): bookings are only
   counted on the days whose leads are counted (`leadBookings(start, end,
@@ -1174,7 +1177,17 @@ artwork that isn't ready a week before its post.
 - **KPIs and targets** (`T` at the top of `lib/kpis.js`; env overrides):
   Sales: bookings this week on pace for 12 (12 ÷ 7 × days gone, as the
   Report), leads per day ≥ 20, HP per day ≥ 5, conversion ≥ 10% (bookings ÷
-  leads, as the Leads tab), leads sheet up to date (yesterday logged).
+  leads). **Since 25 Oct 2026 the three lead KPIs read ManyChat's automatic
+  count, not Marina's sheet** (Anton: "refer ... to the Manychat Automatic
+  tabs and not anymore to Marina's sheet"): `mcWeek()` in `lib/kpis.js`
+  takes this week (Sun–Sat, Muscat) once it has 3 finished days, else last
+  week, finished days only (not today), only days since ManyChat started;
+  conversion = bookings on exactly those days ÷ their leads. `load()` now
+  reads `manychat.load()` and no longer fetches the leads sheet. **"Leads
+  sheet up to date" was removed** the same day (automatic data is always up
+  to date). With no ManyChat day yet, the three read "Not checked". First
+  live read: 21–24 Oct, 10 leads / 4 days = 2.5 a day, 0 HP (nobody tagging
+  HP in ManyChat yet), 0 bookings = 0.0%.
   Marketing: **cost per result per running campaign** ≤ SAR 25 (one KPI per
   campaign, `cprOver`, judged from 5 results), no running campaign rated Bad
   on lead quality, no running campaign over budget (engagement rate ≥ 1% was here until
