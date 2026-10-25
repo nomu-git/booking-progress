@@ -2691,20 +2691,19 @@
     impressions: ['Impressions', 'How many times the ads were shown. The same person seeing an ad twice counts twice, so this runs higher than the number of people reached.'],
     spendVsBudget: ['Spend vs Budget', 'Spend as a percentage of budget. The bar fills as it gets closer, turns amber from 85%, and red once it is past 100%.'],
     actualSpend: ['Actual spend', 'Total spent across every campaign below, live from Meta, against the total budget beside it.'],
-    leadsWeek: ['Leads', "Everyone who messaged us this week on WhatsApp or Instagram, from Marina's Leads Feedback & Report sheet. The weekly report's number where Marina has filled it in; otherwise the sum of the days logged so far."],
-    leadsToday: ['Today', "Leads logged in the sheet for today. Reads 'not logged yet' until Marina enters the day, not zero."],
+    leadsWeek: ['Leads', "Everyone who messaged us this week on WhatsApp or Instagram. Counted automatically by ManyChat from 21 Oct 2026 (each new contact, once per 30 days); before that, from Marina's Leads Feedback & Report sheet. The weekly report's number where Marina has filled it in; otherwise the sum of the days logged so far."],
+    leadsToday: ['Today', "Today's leads so far, counted live by ManyChat."],
     leadsBest: ['Busiest day', 'The day with the most leads in this week.'],
     leadsAvg: ['Per day', 'Average leads per day: the days logged so far this week, or the whole week once it has passed.'],
     project: ['Project', 'The trip the lead asked about, as Marina tagged it. NA means they messaged without naming a trip.'],
     leadsIg: ['Instagram', 'Leads who came in through an Instagram DM.'],
     leadsWa: ['WhatsApp', 'Leads who came in through WhatsApp.'],
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
-    leadsHpWa: ['High potential · WhatsApp', 'High-potential leads Marina marked on the WhatsApp row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
-    leadsHpIg: ['High potential · Instagram', 'High-potential leads Marina marked on the Instagram row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
+    leadsHpWa: ['High potential · WhatsApp', "High-potential leads on WhatsApp: tagged HP in ManyChat from 21 Oct 2026; before that, from the WhatsApp row of Marina's sheet."],
+    leadsHpIg: ['High potential · Instagram', "High-potential leads on Instagram: tagged HP in ManyChat from 21 Oct 2026; before that, from the Instagram row of Marina's sheet."],
     ovRepeat: ['Repeat customers', 'A booking from someone who had already booked with NomuHub at least 30 days before, on any trip since 2019 (from WeTravel\'s own buyer history). Everyone else is a new customer. Someone booking under a different account or email would count as new.'],
-    leadsRet: ['Returning', 'Leads from people who already had a ManyChat contact and wrote again after at least 30 days (or wrote for the first time since ManyChat started counting). New = first-time contacts. Each person counts once per 30 days, as new or returning.'],
     leadsConvAll: ['Conversion (overall)', 'All bookings taken in the week divided by all leads that week, every project and channel together.'],
-    leadsHp: ['High potential', "Leads Marina marked HP (high potential) in the sheet: the Status column of the per-lead logs (to 21 Jul) and the HP column of the daily sheet (from 23 Sep). Weeks covered only by the weekly reports (late Jul to mid Sep) have no HP recorded, so they show a dash."],
+    leadsHp: ['High potential', "High potential (HP) leads. From 21 Oct 2026: contacts tagged HP in ManyChat by whoever is chatting, on the day the tag is added. Before that: as Marina marked them in the leads sheet."],
     leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
     leadsConv: ['Conversion', "Bookings divided by leads, for the same project in the same week or day. They aren't necessarily the same people: someone who books this week may have messaged weeks ago, so a project can read over 100%. NA leads named no trip, so they have no rate."],
     engPosts: ['Posts', "Instagram posts in Maryam's Social Media sheet for the period picked above."],
@@ -3432,65 +3431,74 @@
   // ManyChat's automatic count (lib/manychat.js), shown beside Marina's sheet
   // until the two agree (Anton, 21 Oct 2026).
   let mcData = null;
-  // Which numbers the Leads tab draws: Marina's sheet, or ManyChat's
-  // automatic count in the very same charts and table (Anton, 22 Oct 2026:
-  // "make it look like the one I built for Marina's sheet").
-  let leadsSrc = 'sheet';
-
-  // ManyChat's daily counts reshaped exactly like the sheet's payload (weeks
-  // of Sunday to Saturday days, per project), so renderLeads() draws them
-  // unchanged. Days before the first event aren't "logged"; today counts live.
-  function mcAsLeads() {
-    if (!mcData || !mcData.first || !mcData.days) return null;
+  // One Leads view (Anton, 25 Oct 2026: "remove the marina sheet and show only
+  // the Manychat Automatic but rename it as leads, but still keep ... Marina
+  // so it still reads the previous data"): ManyChat's automatic count from the
+  // day it started (mcData.first, 21 Oct 2026), Marina's sheet for every day
+  // before, in the sheet's own payload shape so renderLeads() draws it
+  // unchanged. Weeks wholly before ManyChat's first week are the sheet's (her
+  // weekly-report weeks keep their dates); from that week on, weeks run Sunday
+  // to Saturday, each day from the sheet before the cut-over and from ManyChat
+  // after it (today live). If ManyChat can't be read, the sheet alone.
+  function leadsView() {
+    if (!leads || !leads.weeks) return leads;
+    const mcFirst = mcData && mcData.first && Array.isArray(mcData.days) ? mcData.first : null;
+    if (!mcFirst) return leads;
     const today = ovToday();
-    const byDate = new Map(mcData.days.map((d) => [d.date, d]));
-    const first = mcData.first;
+    const mcBy = new Map(mcData.days.map((d) => [d.date, d]));
+    const sheetDay = new Map();
+    for (const w of leads.weeks) for (const d of w.days || []) sheetDay.set(d.date, d);
+    const firstWs = ovWeekStart(mcFirst);
+    const keep = leads.weeks.filter((w) => w.end < firstWs);
+    const dayOf = (date) => {
+      const future = date > today;
+      if (date < mcFirst) {
+        const d = sheetDay.get(date);
+        return d ? { ...d, future } : { date, recorded: false, future, total: null, ig: null, wa: null, hp: null, hpIg: null, hpWa: null, hpOther: null, projects: [] };
+      }
+      const m = mcBy.get(date);
+      const rec = !future;
+      const v = (k) => (rec ? (m ? m[k] || 0 : 0) : null);
+      return {
+        date, recorded: rec, future,
+        total: v('leads'), ig: v('ig'), wa: v('wa'), hp: v('hp'), hpIg: v('hpIg'), hpWa: v('hpWa'), hpOther: rec ? 0 : null,
+        projects: m ? Object.entries(m.projects || {}).filter(([, x]) => x.leads || x.hp).map(([code, x]) => ({ code, ig: x.ig || 0, wa: x.wa || 0, total: x.leads, hp: x.hp, hpIg: x.hpIg || 0, hpWa: x.hpWa || 0 })) : [],
+      };
+    };
+    // A project total that any day lacks (no channel split, no HP) stays null,
+    // as in the sheet's own weeks.
     const sumProjects = (list) => {
       const m = new Map();
       for (const pr of list) {
         const r = m.get(pr.code) || { code: pr.code, ig: 0, wa: 0, total: 0, hp: 0, hpIg: 0, hpWa: 0 };
-        for (const k of ['ig', 'wa', 'total', 'hp', 'hpIg', 'hpWa']) r[k] += pr[k] || 0;
+        for (const k of ['ig', 'wa', 'total', 'hp', 'hpIg', 'hpWa']) {
+          if (pr[k] == null) r[k] = null; else if (r[k] != null) r[k] += pr[k];
+        }
         m.set(pr.code, r);
       }
-      return [...m.values()].sort((a, b) => b.total - a.total || a.code.localeCompare(b.code));
+      return [...m.values()].sort((a, b) => (b.total || 0) - (a.total || 0) || a.code.localeCompare(b.code));
     };
-    const weeks = [];
+    const built = [];
     const lastWs = ovWeekStart(today);
-    for (let ws = ovWeekStart(first); ws <= lastWs; ws = ovAdd(ws, 7)) {
+    for (let ws = firstWs; ws <= lastWs; ws = ovAdd(ws, 7)) {
       const days = [];
-      for (let i = 0; i < 7; i += 1) {
-        const date = ovAdd(ws, i);
-        const m = byDate.get(date);
-        const future = date > today;
-        const rec = !future && date >= first;
-        const v = (k) => (rec ? (m ? m[k] : 0) : null);
-        days.push({
-          date, recorded: rec, future,
-          total: v('leads'), ig: v('ig'), wa: v('wa'), hp: v('hp'), hpIg: v('hpIg'), hpWa: v('hpWa'), hpOther: rec ? 0 : null, ret: v('ret'),
-          projects: m ? Object.entries(m.projects || {}).filter(([, x]) => x.leads || x.hp).map(([code, x]) => ({ code, ig: x.ig || 0, wa: x.wa || 0, total: x.leads, hp: x.hp, hpIg: x.hpIg || 0, hpWa: x.hpWa || 0 })) : [],
-        });
-      }
-      const rd = days.filter((d) => d.recorded);
-      const sum = (k) => rd.reduce((a, d) => a + (d[k] || 0), 0);
-      weeks.push({
+      for (let i = 0; i < 7; i += 1) days.push(dayOf(ovAdd(ws, i)));
+      const rd = days.filter((d) => d.recorded && !d.future);
+      const sum = (k) => (rd.some((d) => d[k] == null) ? null : rd.reduce((a, d) => a + (d[k] || 0), 0));
+      const total = rd.reduce((a, d) => a + (d.total || 0), 0);
+      built.push({
         label: `${ovDate(ws)} – ${ovDate(ovAdd(ws, 6))}`, start: ws, end: ovAdd(ws, 6), current: ws === lastWs, source: 'daily',
-        total: sum('total'), ig: sum('ig'), wa: sum('wa'), days, daysRecorded: rd.length, dailyTotal: sum('total'),
-        hp: sum('hp'), hpIg: sum('hpIg'), hpWa: sum('hpWa'), hpOther: 0, ret: sum('ret'),
-        projects: sumProjects(rd.flatMap((d) => d.projects)), issues: [],
+        total, ig: sum('ig'), wa: sum('wa'), days, daysRecorded: rd.length, dailyTotal: total,
+        hp: rd.some((d) => d.hp != null) ? rd.reduce((a, d) => a + (d.hp || 0), 0) : null, hpIg: sum('hpIg'), hpWa: sum('hpWa'),
+        hpOther: rd.reduce((a, d) => a + (d.hpOther || 0), 0),
+        projects: sumProjects(rd.flatMap((d) => d.projects || [])), issues: [],
       });
     }
-    return { source: 'manychat', today, year: Number(today.slice(0, 4)), first, totals: { leads: weeks.reduce((a, w) => a + w.total, 0) }, weeks };
+    const weeks = keep.concat(built);
+    const year = Number(today.slice(0, 4));
+    const leadsThisYear = weeks.filter((w) => w.start.slice(0, 4) === String(year)).reduce((a, w) => a + (w.total || 0), 0);
+    return { ...leads, today, year, weeks, totals: { ...(leads.totals || {}), leads: leadsThisYear } };
   }
-  const leadsSrcBar = () => `<div class="seg subtabs" role="tablist" aria-label="Where the numbers come from">
-      <button role="tab" data-lsrc="sheet" aria-pressed="${leadsSrc === 'sheet'}" aria-selected="${leadsSrc === 'sheet'}">Marina's sheet</button>
-      <button role="tab" data-lsrc="mc" aria-pressed="${leadsSrc === 'mc'}" aria-selected="${leadsSrc === 'mc'}">ManyChat · automatic</button>
-    </div>`;
-  const bindLeadsSrc = () => $('leadsWrap').querySelectorAll('[data-lsrc]').forEach((b) => b.addEventListener('click', () => {
-    if (leadsSrc === b.dataset.lsrc) return;
-    leadsSrc = b.dataset.lsrc;
-    leadsDay = null;
-    renderLeads();
-  }));
   // The week on screen, by its start date. Null means "whichever week is
   // current", so the tab rolls into the next week on its own, which is the
   // behaviour Muatasam asked for.
@@ -3684,12 +3692,7 @@
 
   function renderLeads() {
     if (!leads) return;
-    const p = leadsSrc === 'mc' ? mcAsLeads() : leads;
-    if (!p) {
-      $('leadsWrap').innerHTML = `${leadsSrcBar()}<div class="panel"><div class="msg">${mcData ? 'ManyChat hasn\'t sent any leads yet.' : 'Loading ManyChat…'}</div></div>`;
-      bindLeadsSrc();
-      return;
-    }
+    const p = leadsView();
     if (p.error && !p.weeks) {
       $('leadsWrap').innerHTML = `<div class="msg err">Could not load leads: ${esc(p.error)}</div>`;
       return;
@@ -3796,15 +3799,12 @@
 
     const anyCombined = weeks.some((w) => w.total && !splits(w.total, w.ig, w.wa));
 
-    const fromMc = p.source === 'manychat';
-    const mcSince = fromMc ? ovDate(p.first) : '';
     $('leadsWrap').innerHTML = `
-      ${leadsSrcBar()}
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
 
       <div class="panel">
         <div class="lhead">
-          <div class="ptitle">Daily leads · ${esc(sel.label)}${sel.current ? ' · this week' : ''}${fromMc ? ' · ManyChat' : ''}</div>
+          <div class="ptitle">Daily leads · ${esc(sel.label)}${sel.current ? ' · this week' : ''}</div>
           <div class="efilter"><span class="efl">Week</span><select class="fselect" id="leadsWeekSel" aria-label="Choose a week">${weekOptions}</select></div>
         </div>
         <div class="bvhero">
@@ -3813,11 +3813,6 @@
             <div class="bv-n bv-act">${int(sel.total)}</div>
             <div class="bv-s">${split ? `WhatsApp ${int(sel.wa)} · Instagram ${int(sel.ig)}` : 'WhatsApp + Instagram'}</div>
           </div>
-          ${fromMc ? `<div class="bv-side">
-            <div class="bv-lab"><span ${hlp('leadsRet')}>Returning</span></div>
-            <div class="bv-n">${int(sel.ret || 0)}</div>
-            <div class="bv-s">${int(sel.total - (sel.ret || 0))} new · ${int(sel.ret || 0)} returning</div>
-          </div>` : ''}
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('leadsHp')}>High potential</span></div>
             <div class="bv-n">${sel.hp == null ? '—' : int(sel.hp)}</div>
@@ -3874,7 +3869,7 @@
       </div>
 
       <div class="panel">
-        <div class="ptitle">Weekly leads · ${fromMc ? `ManyChat since ${esc(mcSince)}` : esc(String(p.year))} · ${int(p.totals.leads)} so far</div>
+        <div class="ptitle">Weekly leads · ${esc(String(p.year))} · ${int(p.totals.leads)} so far</div>
         ${weeklyChart(weeks, sel)}
         <div class="lleg">
           <span><i style="background:var(--lead-wa)"></i>WhatsApp</span>
@@ -3901,7 +3896,6 @@
     bindHelp($('leadsWrap'));
 
     // A new week always opens on its whole-week breakdown.
-    bindLeadsSrc();
     $('leadsWrap').querySelectorAll('[data-week]').forEach((b) => {
       b.addEventListener('click', () => { leadsWeek = b.dataset.week; leadsDay = null; renderLeads(); });
     });

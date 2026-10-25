@@ -685,6 +685,21 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   cache) → per-day leads / HP / WA / IG / per project since the first event.
   The side-by-side "ManyChat check" panel was **removed** (Anton, 22 Oct
   2026); compare by flipping the source switch below.
+- **One Leads view, no switch (25 Oct 2026**, Anton: "remove the marina
+  sheet and show only the Manychat Automatic but rename it as leads, but
+  still keep in the backend ... Marina so it still reads the previous data
+  leads"): `leadsView()` replaces the switch and `mcAsLeads()`. It returns
+  the sheet's payload shape with every day from `mcData.first` (21 Oct 2026)
+  on taken from ManyChat (today live) and every earlier day from Marina's
+  sheet; weeks wholly before ManyChat's first week are the sheet's own (her
+  report weeks keep their dates), and from that week on weeks are rebuilt
+  Sunday–Saturday. Year total recomputed. No ManyChat data = sheet only.
+  "ManyChat" is gone from the labels; the Returning tile was removed (no
+  ManyChat rule sends returning leads). Help texts for Leads / Today / HP say
+  ManyChat from 21 Oct, the sheet before. Checked 25 Oct: this week 1 lead
+  (today), last week 19 leads / 3 HP / 5.3% (sheet 18–20 + ManyChat 21–24),
+  27 Sep week untouched (76 / 9), year 1,599. The paragraph below describes
+  the switch it replaced.
 - **Source switch on the Leads tab (22 Oct 2026**, Anton: "make the looks
   like the one I initially built for Marina's sheet"): `Marina's sheet |
   ManyChat · automatic` at the top (`leadsSrc`, default sheet). ManyChat mode
