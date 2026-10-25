@@ -634,6 +634,21 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   ManyChat id is HMAC-hashed with the secret, nothing personal stored),
   `mc:d:<date>` hash of `lead|wa|ZNZ|BL` / `hp|ig|NA` counters, `mc:first`,
   `mc:last`, `mc:events:<date>`.
+- **New vs returning (25 Oct 2026**, Anton: "most our customers are come
+  back customers ... separate the count of new lead and the repeated
+  customer ... keep the 30days function"): a second event, **`message`**, sent
+  by ManyChat rules on an existing contact writing again, counts a
+  **returning** lead if that person hasn't been counted in the last 30 days
+  (contacts from before go-live count as returning the first time they
+  write); `lead` (New contact created) is a **new** lead. Every lead counts
+  in the totals; returning is a subset, counter `ret|<ch>|<project>` beside
+  `lead|…`, so new = leads − returning (`load()` sends `ret`, `retWa`,
+  `retIg`, per-project `ret`). If a brand-new contact's first `message`
+  arrives before its `lead` event, it's counted returning and flipped to new
+  when the `lead` event comes the same or next day. A returning lead after
+  30+ days starts a fresh cycle (trip back to NA until re-tagged). Tested 11
+  cases locally. Leads tab, ManyChat mode: a **Returning** tile ("N new · N
+  returning", `leadsRet` help). KPIs count all leads (new + returning).
 - **Read side**: `/api/sheets?name=manychat` (`lib/tabs/manychat.js`, 30 s
   cache) → per-day leads / HP / WA / IG / per project since the first event.
   The side-by-side "ManyChat check" panel was **removed** (Anton, 22 Oct

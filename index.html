@@ -2697,6 +2697,7 @@
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
     leadsHpWa: ['High potential · WhatsApp', 'High-potential leads Marina marked on the WhatsApp row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
     leadsHpIg: ['High potential · Instagram', 'High-potential leads Marina marked on the Instagram row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
+    leadsRet: ['Returning', 'Leads from people who already had a ManyChat contact and wrote again after at least 30 days (or wrote for the first time since ManyChat started counting). New = first-time contacts. Each person counts once per 30 days, as new or returning.'],
     leadsConvAll: ['Conversion (overall)', 'All bookings taken in the week divided by all leads that week, every project and channel together.'],
     leadsHp: ['High potential', "Leads Marina marked HP (high potential) in the sheet: the Status column of the per-lead logs (to 21 Jul) and the HP column of the daily sheet (from 23 Sep). Weeks covered only by the weekly reports (late Jul to mid Sep) have no HP recorded, so they show a dash."],
     leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
@@ -3460,7 +3461,7 @@
         const v = (k) => (rec ? (m ? m[k] : 0) : null);
         days.push({
           date, recorded: rec, future,
-          total: v('leads'), ig: v('ig'), wa: v('wa'), hp: v('hp'), hpIg: v('hpIg'), hpWa: v('hpWa'), hpOther: rec ? 0 : null,
+          total: v('leads'), ig: v('ig'), wa: v('wa'), hp: v('hp'), hpIg: v('hpIg'), hpWa: v('hpWa'), hpOther: rec ? 0 : null, ret: v('ret'),
           projects: m ? Object.entries(m.projects || {}).filter(([, x]) => x.leads || x.hp).map(([code, x]) => ({ code, ig: x.ig || 0, wa: x.wa || 0, total: x.leads, hp: x.hp, hpIg: x.hpIg || 0, hpWa: x.hpWa || 0 })) : [],
         });
       }
@@ -3469,7 +3470,7 @@
       weeks.push({
         label: `${ovDate(ws)} – ${ovDate(ovAdd(ws, 6))}`, start: ws, end: ovAdd(ws, 6), current: ws === lastWs, source: 'daily',
         total: sum('total'), ig: sum('ig'), wa: sum('wa'), days, daysRecorded: rd.length, dailyTotal: sum('total'),
-        hp: sum('hp'), hpIg: sum('hpIg'), hpWa: sum('hpWa'), hpOther: 0,
+        hp: sum('hp'), hpIg: sum('hpIg'), hpWa: sum('hpWa'), hpOther: 0, ret: sum('ret'),
         projects: sumProjects(rd.flatMap((d) => d.projects)), issues: [],
       });
     }
@@ -3807,6 +3808,11 @@
             <div class="bv-n bv-act">${int(sel.total)}</div>
             <div class="bv-s">${split ? `WhatsApp ${int(sel.wa)} · Instagram ${int(sel.ig)}` : 'WhatsApp + Instagram'}</div>
           </div>
+          ${fromMc ? `<div class="bv-side">
+            <div class="bv-lab"><span ${hlp('leadsRet')}>Returning</span></div>
+            <div class="bv-n">${int(sel.ret || 0)}</div>
+            <div class="bv-s">${int(sel.total - (sel.ret || 0))} new · ${int(sel.ret || 0)} returning</div>
+          </div>` : ''}
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('leadsHp')}>High potential</span></div>
             <div class="bv-n">${sel.hp == null ? '—' : int(sel.hp)}</div>
