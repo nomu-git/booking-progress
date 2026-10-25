@@ -42,6 +42,22 @@ no framework.
   / Leads; Marketing = Campaign Ads / Campaign History / Engagements;
   Operations = Trips & R&D / Feedback / Trip Revenue / Impact; Corporate = KPIs /
   Monday Tasks. A section reopens on the page it last showed (`secLast`).
+  **Tabs regrouped 25 Oct 2026** (Muatasam: "Make the tabs here: bookings,
+  leads then reports. Add previous sales under reports tab. Change its
+  title" / "Here Campaigns and Engagement" / "Here Performance, Products,
+  Feedback and Impact"): each `SECTIONS` entry is `[view, label, tab]`, and
+  views sharing a tab show as pill sub-tabs under it (`#secSub`, `.sec-sub`,
+  each tab remembers its last sub-page in `tabLast`). Now: **Sales** =
+  Bookings (`board`) / Leads / Reports (sub-tabs Bookings report (`report`) |
+  Previous Sales (`previous`)); **Marketing** = Campaigns (This year
+  (`campaigns`) | Past years (`history`)) / Engagement; **Operations** =
+  Performance (`revenue`, Trip Revenue) / Products (`trips`, Trips & R&D) /
+  Feedback / Impact; Corporate unchanged. Assumptions flagged to Anton:
+  "change its title" read as renaming the tabs (Booking → Bookings, Report →
+  Reports, the old Report page = "Bookings report"); Performance = Trip
+  Revenue, Products = Trips & R&D. The AI Adviser snapshot and the
+  connector's tool descriptions use the new names. The paragraph above
+  describes the layout before this.
   The old `#bookSub` / `#adsSub` bars are gone (the section tabs replace
   them); pages with their own pill sub-tabs inside (Trips, Feedback,
   Revenue, Engagements) keep them. **The header title is the section name**

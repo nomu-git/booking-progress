@@ -278,7 +278,7 @@
   @media (max-width: 360px) { .ov-grid { grid-template-columns: minmax(0, 1fr); } }
   /* Download PDF prints the page: just the overview, on white. */
   @media print {
-    .sidebar, .sb-backdrop, .head .headright, .sb-menu, #adv, .sec-tabs, .ov-pdf, .ov-filters, .ov-more { display: none !important; }
+    .sidebar, .sb-backdrop, .head .headright, .sb-menu, #adv, .sec-tabs, .sec-sub, .ov-pdf, .ov-filters, .ov-more { display: none !important; }
     .shell { margin-left: 0 !important; padding: 0 !important; }
     body { background: #fff; }
     .ov-card, .ov-low .panel { break-inside: avoid; box-shadow: none !important; }
@@ -1140,6 +1140,9 @@
   .sec-tabs button { flex: none; background: none; border: 0; border-bottom: 2.5px solid transparent; margin-bottom: -1px; padding: 9px 14px 10px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--text-3); cursor: pointer; white-space: nowrap; }
   .sec-tabs button:hover { color: var(--text); }
   .sec-tabs button[aria-selected="true"] { color: var(--yellow); border-bottom-color: var(--yellow); }
+  /* A tab holding two pages (Reports, Campaigns) shows them as pills under it. */
+  .sec-sub { display: flex; width: fit-content; max-width: 100%; overflow-x: auto; margin: -8px 0 16px; }
+  .sec-sub button { white-space: nowrap; }
   .seg.subtabs button { font-size: 13px; font-weight: 600; padding: 7px 16px; }
   /* Top-aligned: the quality tiles carry a "trips" line the first two don't, and
      bottom alignment left their labels on different lines. */
@@ -1798,6 +1801,7 @@
   </div>
 
   <div class="sec-tabs" id="secTabs" role="tablist" aria-label="Pages in this section" hidden></div>
+  <div class="seg subtabs sec-sub" id="secSub" role="tablist" aria-label="Pages in this tab" hidden></div>
 
   <div class="announce-list" id="announce" hidden></div>
 
@@ -2709,7 +2713,7 @@
     ovRepeat: ['Repeat customers', 'A booking from someone who had already booked with NomuHub at least 30 days before, on any trip since 2019 (from WeTravel\'s own buyer history). Everyone else is a new customer. Someone booking under a different account or email would count as new.'],
     leadsConvAll: ['Conversion (overall)', 'All bookings taken in the week divided by all leads that week, every project and channel together.'],
     leadsHp: ['High potential', "High potential (HP) leads. From 21 Oct 2026: contacts tagged HP in ManyChat by whoever is chatting, on the day the tag is added. Before that: as Marina marked them in the leads sheet."],
-    leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Report tab. Charters are left out, as on the Report.'],
+    leadsBooked: ['Bookings', 'Bookings taken for this project in the same week (or the day picked), from the Reports tab. Charters are left out, as on the Reports tab.'],
     leadsConv: ['Conversion', "Bookings divided by leads, for the same project in the same week or day. They aren't necessarily the same people: someone who books this week may have messaged weeks ago, so a project can read over 100%. NA leads named no trip, so they have no rate."],
     engPosts: ['Posts', "Instagram posts in Maryam's Social Media sheet for the period picked above."],
     engViews: ['Views', 'How many times the post was viewed, as Maryam recorded it from Instagram.'],
@@ -6118,8 +6122,8 @@
 
   function ovGlance(today) {
     const cards = [];
-    const cp = { go: 'campaigns', tab: 'Campaign Ads', icon: 'target', title: 'Cost per result', pill: 'Running', tone: 'mkt' };
-    const bu = { go: 'campaigns', tab: 'Campaign Ads', icon: 'wallet', title: 'Ad budget used', pill: 'Year', tone: 'mkt' };
+    const cp = { go: 'campaigns', tab: 'Campaigns', icon: 'target', title: 'Cost per result', pill: 'Running', tone: 'mkt' };
+    const bu = { go: 'campaigns', tab: 'Campaigns', icon: 'wallet', title: 'Ad budget used', pill: 'Year', tone: 'mkt' };
     if (!campaigns || !campaigns.campaigns) cards.push(ovWait(cp, 'Meta'), ovWait(bu, 'Meta'));
     else {
       const cur = campaigns.currency || 'SAR';
@@ -6164,7 +6168,7 @@
     }
 
     // Margin only: no amount leaves the API for Trip Revenue.
-    const mg = { go: 'revenue', tab: 'Trip Revenue', icon: 'percent', title: 'Trip margin', pill: 'Year', tone: 'ops' };
+    const mg = { go: 'revenue', tab: 'Performance', icon: 'percent', title: 'Trip margin', pill: 'Year', tone: 'ops' };
     if (!revData || !revData.totals) cards.push(ovWait(mg, 'trip revenue'));
     else {
       const m = revData.totals.margin;
@@ -6532,16 +6536,24 @@
   // The sidebar is the Dashboard plus four sections; each section's pages
   // are tabs across its top. Every page keeps its own view name and #hash,
   // so old links still land where they did.
+  // Each entry is [view, label, tab]: views sharing a tab sit under it as
+  // pill sub-tabs (#secSub). Muatasam, 25 Oct 2026: Sales = Bookings, Leads,
+  // Reports (Previous Sales under Reports); Marketing = Campaigns (this year
+  // and past years) and Engagement; Operations = Performance (Trip Revenue),
+  // Products (Trips & R&D), Feedback, Impact.
   const SECTIONS = [
     { key: 'overview', name: 'Dashboard', views: [['overview', 'Dashboard']] },
-    { key: 'sales', name: 'Sales', views: [['board', 'Booking'], ['previous', 'Previous Sales'], ['report', 'Report'], ['leads', 'Leads']] },
-    { key: 'marketing', name: 'Marketing', views: [['campaigns', 'Campaign Ads'], ['history', 'Campaign History'], ['engagements', 'Engagements']] },
-    { key: 'operations', name: 'Operations', views: [['trips', 'Trips & R&D'], ['feedback', 'Feedback'], ['revenue', 'Trip Revenue'], ['impact', 'Impact']] },
+    { key: 'sales', name: 'Sales', views: [['board', 'Bookings'], ['leads', 'Leads'], ['report', 'Bookings report', 'Reports'], ['previous', 'Previous Sales', 'Reports']] },
+    { key: 'marketing', name: 'Marketing', views: [['campaigns', 'This year', 'Campaigns'], ['history', 'Past years', 'Campaigns'], ['engagements', 'Engagement']] },
+    { key: 'operations', name: 'Operations', views: [['revenue', 'Performance'], ['trips', 'Products'], ['feedback', 'Feedback'], ['impact', 'Impact']] },
     { key: 'corporate', name: 'Corporate', views: [['kpis', 'KPIs'], ['pending', 'Monday Tasks']] },
   ];
   const sectionOf = (v) => SECTIONS.find((sec) => sec.views.some(([k]) => k === v)) || SECTIONS[0];
-  // The page each section last showed, so going back to it lands there.
+  const tabOf = (entry) => entry[2] || entry[1];
+  // The page each section (and each tab with sub-tabs) last showed, so going
+  // back to it lands there.
   const secLast = {};
+  const tabLast = {};
 
   function setView(next) {
     view = next;
@@ -6551,9 +6563,18 @@
       b.setAttribute('aria-pressed', String(b.dataset.section === sec.key));
     });
     $('pageTitle').textContent = sec.name;
-    $('secTabs').hidden = sec.views.length < 2;
-    $('secTabs').innerHTML = sec.views.map(([k, label]) => `<button role="tab" data-sec-view="${k}" aria-selected="${k === view}">${esc(label)}</button>`).join('');
-    $('secTabs').querySelectorAll('[data-sec-view]').forEach((b) => b.addEventListener('click', () => {
+    const cur = sec.views.find(([k]) => k === view) || sec.views[0];
+    const tabs = [...new Set(sec.views.map(tabOf))];
+    tabLast[sec.key + '|' + tabOf(cur)] = view;
+    $('secTabs').hidden = tabs.length < 2;
+    $('secTabs').innerHTML = tabs.map((t) => {
+      const go = tabLast[sec.key + '|' + t] || sec.views.find((e) => tabOf(e) === t)[0];
+      return `<button role="tab" data-sec-view="${go}" aria-selected="${t === tabOf(cur)}">${esc(t)}</button>`;
+    }).join('');
+    const subs = sec.views.filter((e) => tabOf(e) === tabOf(cur));
+    $('secSub').hidden = subs.length < 2;
+    $('secSub').innerHTML = subs.length < 2 ? '' : subs.map(([k, label]) => `<button type="button" role="tab" data-sec-view="${k}" aria-pressed="${k === view}">${esc(label)}</button>`).join('');
+    document.querySelectorAll('#secTabs [data-sec-view], #secSub [data-sec-view]').forEach((b) => b.addEventListener('click', () => {
       if (view !== b.dataset.secView) setView(b.dataset.secView);
     }));
     // The booking figures in the header belong to the sales pages.
