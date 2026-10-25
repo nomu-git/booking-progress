@@ -175,9 +175,15 @@ async function loadTripDetail(trip) {
 // cats splits each month by project ("TH|WL", "ZNZ", or "Other" when the
 // title names no destination), so the overview's bookings chart can be
 // filtered to one destination or programme (Shakir's suggestion, Oct 2026).
+//
+// New vs repeat (Anton, 25 Oct 2026): rep / repByDay / repCats are the part of
+// n / byDay / cats that came from a buyer who had booked at least
+// REPEAT_GAP_DAYS earlier (lib/repeat.js), so new = n - rep.
+const REPEAT_GAP_DAYS = Number(process.env.REPEAT_GAP_DAYS || 30);
 function salesByMonth(tripOrders, nowMs) {
   const months = {};
   let charterExcluded = 0;
+  const { repeat, buyers } = repeatOrders(tripOrders, nowMs, REPEAT_GAP_DAYS);
   for (const { trip, orders } of tripOrders) {
     const charter = CHARTERS.has(String(trip.uuid));
     const proj = leadProject(trip);
@@ -191,13 +197,18 @@ function salesByMonth(tripOrders, nowMs) {
       const oman = new Date(at + OMAN_OFFSET_MS).toISOString();
       const key = oman.slice(0, 7);
       const day = Number(oman.slice(8, 10));
-      const m = months[key] || (months[key] = { n: 0, byDay: new Array(31).fill(0), cats: {} });
+      const m = months[key] || (months[key] = { n: 0, byDay: new Array(31).fill(0), cats: {}, rep: 0, repByDay: new Array(31).fill(0), repCats: {} });
       m.n += n;
       m.byDay[day - 1] += n;
       m.cats[cat] = (m.cats[cat] || 0) + n;
+      if (repeat.has(`${trip.uuid}:${order.id}`)) {
+        m.rep += n;
+        m.repByDay[day - 1] += n;
+        m.repCats[cat] = (m.repCats[cat] || 0) + n;
+      }
     }
   }
-  return { months, charterExcluded };
+  return { months, charterExcluded, repeatGapDays: REPEAT_GAP_DAYS, buyers };
 }
 
 async function build() {
@@ -229,27 +240,11 @@ async function build() {
       return [];
     })),
   ]);
-  // TEMPORARY (25 Oct 2026): how many bookings would read as repeat under
-  // different "earlier booking at least N days before" rules, counts only.
   const allTripOrders = [
     ...candidates.map((trip, i) => ({ trip, orders: loaded[i] ? loaded[i].orders : [] })),
     ...upcoming.map((trip, i) => ({ trip, orders: upcomingOrders[i] })),
   ];
-  const buyerDebug = {};
-  for (const g of [0, 1, 7, 30, 90, 180]) {
-    const r = repeatOrders(allTripOrders, Date.now(), g);
-    const perYear = {};
-    for (const { trip, orders } of allTripOrders) for (const o of orders || []) {
-      if (!(o.active_count > 0) || !r.repeat.has(`${trip.uuid}:${o.id}`)) continue;
-      const y = String(o.created_at).slice(0, 4);
-      perYear[y] = (perYear[y] || 0) + o.active_count;
-    }
-    buyerDebug[`gap${g}`] = { repeatOrders: r.repeat.size, unknownBuyer: r.unknown, buyers: r.buyers, repeatTravellersByYear: perYear };
-  }
-  const sales = salesByMonth([
-    ...candidates.map((trip, i) => ({ trip, orders: loaded[i] ? loaded[i].orders : [] })),
-    ...upcoming.map((trip, i) => ({ trip, orders: upcomingOrders[i] })),
-  ], Date.now());
+  const sales = salesByMonth(allTripOrders, Date.now());
 
   const trips = [];
   candidates.forEach((trip, i) => {
@@ -332,7 +327,6 @@ async function build() {
     today: todayKey,
     years,
     sales,
-    buyerDebug,
     totals: {
       trips: trips.length,
       coded: trips.filter((t) => t.code).length,

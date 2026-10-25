@@ -231,8 +231,12 @@
   .ov-cols { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 190px; padding-top: 16px; border-bottom: 1px solid var(--line); }
   .ov-col { flex: 1 1 0; min-width: 0; height: 100%; position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
   .ov-col .v { font-size: 10.5px; font-weight: 700; color: var(--text-2); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
-  .ov-col .b { width: 72%; max-width: 34px; border-radius: 4px 4px 0 0; background: var(--fill); min-height: 2px; }
-  .ov-col .b.now { background: repeating-linear-gradient(135deg, var(--fill) 0 6px, rgba(var(--fill-rgb),.4) 6px 12px); }
+  .ov-col .b { width: 72%; max-width: 34px; display: flex; flex-direction: column; gap: 2px; border-radius: 4px 4px 0 0; overflow: hidden; min-height: 2px; }
+  .ov-col .b u { display: block; text-decoration: none; min-height: 2px; }
+  .ov-col .b .nw { background: var(--fill); }
+  .ov-col .b .rp { background: var(--lead-all); }
+  .ov-col .b.now .nw { background: repeating-linear-gradient(135deg, var(--fill) 0 6px, rgba(var(--fill-rgb),.4) 6px 12px); }
+  .ov-col .b.now .rp { background: repeating-linear-gradient(135deg, var(--lead-all) 0 6px, rgba(57,135,229,.4) 6px 12px); }
   .ov-col .t { position: absolute; left: 6%; right: 6%; height: 0; border-top: 2px dashed var(--target); }
   .ov-axis { display: flex; gap: 6px; margin-top: 5px; }
   .ov-axis span { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; font-size: 10.5px; color: var(--text-3); white-space: nowrap; line-height: 1.25; }
@@ -2697,6 +2701,7 @@
     leadsTotal: ['Leads', 'Everyone who messaged about this project this week, WhatsApp and Instagram together.'],
     leadsHpWa: ['High potential · WhatsApp', 'High-potential leads Marina marked on the WhatsApp row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
     leadsHpIg: ['High potential · Instagram', 'High-potential leads Marina marked on the Instagram row of the daily sheet (the per-lead logs, to 21 Jul, use each lead\'s Source).'],
+    ovRepeat: ['Repeat customers', 'A booking from someone who had already booked with NomuHub at least 30 days before, on any trip since 2019 (from WeTravel\'s own buyer history). Everyone else is a new customer. Someone booking under a different account or email would count as new.'],
     leadsRet: ['Returning', 'Leads from people who already had a ManyChat contact and wrote again after at least 30 days (or wrote for the first time since ManyChat started counting). New = first-time contacts. Each person counts once per 30 days, as new or returning.'],
     leadsConvAll: ['Conversion (overall)', 'All bookings taken in the week divided by all leads that week, every project and channel together.'],
     leadsHp: ['High potential', "Leads Marina marked HP (high potential) in the sheet: the Status column of the per-lead logs (to 21 Jul) and the HP column of the daily sheet (from 23 Sep). Weeks covered only by the weekly reports (late Jul to mid Sep) have no HP recorded, so they show a dash."],
@@ -5799,6 +5804,19 @@
   const ovWeekday = (day) => new Date(day + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   const ovPct = (x, dp) => (Number.isFinite(x) ? (x * 100).toFixed(dp == null ? 0 : dp) + '%' : '—');
 
+  // Of the bookings taken between two days, how many came from repeat
+  // customers (previous-trips' per-day repeat counts, which span any month).
+  function ovRepeat(start, end) {
+    const months = previousTrips && previousTrips.sales && previousTrips.sales.months;
+    if (!months) return null;
+    let n = 0;
+    for (let d = start; d <= end; d = ovAdd(d, 1)) {
+      const m = months[d.slice(0, 7)];
+      if (m && m.repByDay) n += m.repByDay[Number(d.slice(8, 10)) - 1] || 0;
+    }
+    return n;
+  }
+
   // Bookings taken between two days, charters out, as the Report counts them.
   function ovBooked(start, end) {
     if (!report || !report.events) return null;
@@ -5931,8 +5949,10 @@
       const expected = p.key === 'd' || p.done ? target : (W * p.gone) / 7;
       const ok = n >= expected;
       const short = Math.ceil(target - n);
+      const rp = n ? ovRepeat(p.start, p.end) : 0;
+      const split = n && rp != null ? ` · ${int(n - rp)} new, ${int(rp)} repeat` : '';
       return { v: int(n), of: int(target), ok, bar: n / target, mark: p.key === 'd' || p.done ? null : expected / target,
-        note: p.key === 'd' || p.done ? (ok ? 'Target reached' : `${int(short)} short`) : `${ok ? 'On pace' : 'Behind pace'}: ${Math.ceil(expected)} by today` };
+        note: (p.key === 'd' || p.done ? (ok ? 'Target reached' : `${int(short)} short`) : `${ok ? 'On pace' : 'Behind pace'}: ${Math.ceil(expected)} by today`) + split };
     }) });
 
     // Leads and high potential: the daily target times the days logged.
@@ -6143,24 +6163,30 @@
     const W = (report && report.weeklyTarget) || 12;
     const rows = list.map((k) => {
       let n = 0;
+      let rp = 0; // of which from repeat customers (buyer had booked 30+ days earlier)
       for (const mk of monthsOf(k)) {
         const m = months[mk];
         if (!m) continue;
-        if (ovCat === 'all') n += m.n;
-        else for (const [c, v] of Object.entries(m.cats || {})) if (match(c)) n += v;
+        if (ovCat === 'all') { n += m.n; rp += m.rep || 0; }
+        else {
+          for (const [c, v] of Object.entries(m.cats || {})) if (match(c)) n += v;
+          for (const [c, v] of Object.entries(m.repCats || {})) if (match(c)) rp += v;
+        }
       }
       const days = yearly ? ovDiff(k + '-01-01', k + '-12-31') + 1 : ovDiff(k + '-01', ovMonthEnd(k)) + 1;
-      return { k, n, target: ovCat === 'all' ? Math.round((W * days) / 7) : null };
+      return { k, n, rp, target: ovCat === 'all' ? Math.round((W * days) / 7) : null };
     });
     const max = Math.max(1, ...rows.map((x) => Math.max(x.n, x.target || 0)));
     const total = rows.reduce((a, x) => a + x.n, 0);
+    const totalRep = rows.reduce((a, x) => a + x.rp, 0);
+    const repShare = (a, b) => (b ? ` · ${Math.round((a / b) * 100)}% repeat` : '');
     const catLabel = ovCat === 'all' ? '' : ovCat.startsWith('c:') ? ovCatName(ovCat.slice(2)) : ovCat.startsWith('d:') ? OV_DEST[ovCat.slice(2)] || ovCat.slice(2) : OV_PROG[ovCat.slice(2)] || ovCat.slice(2);
     const cols = rows.map((x) => {
       const now = x.k === cur;
-      const tip = `<div class="tt">${yearly ? x.k : `${esc(ovMon(x.k, true))} ${x.k.slice(0, 4)}`}${now ? ' · so far' : ''}</div><div class="more">${int(x.n)} booking${x.n === 1 ? '' : 's'}${catLabel ? ' · ' + esc(catLabel) : ''}${x.target ? ` · target ${int(x.target)} (${W} a week)` : ''}</div>`;
+      const tip = `<div class="tt">${yearly ? x.k : `${esc(ovMon(x.k, true))} ${x.k.slice(0, 4)}`}${now ? ' · so far' : ''}</div><div class="trow"><span class="tk">New customers</span><b>${int(x.n - x.rp)}</b></div><div class="trow"><span class="tk">Repeat customers</span><b>${int(x.rp)}</b></div><div class="more">${int(x.n)} booking${x.n === 1 ? '' : 's'}${repShare(x.rp, x.n)}${catLabel ? ' · ' + esc(catLabel) : ''}${x.target ? ` · target ${int(x.target)} (${W} a week)` : ''}</div>`;
       return `<div class="ov-col" data-tip="${attr(tip)}">
         <span class="v">${x.n ? int(x.n) : ''}</span>
-        <i class="b${now ? ' now' : ''}" style="height:${((x.n / max) * 100).toFixed(1)}%"></i>
+        <span class="b${now ? ' now' : ''}" style="height:${((x.n / max) * 100).toFixed(1)}%">${x.rp ? `<u class="rp" style="flex:${x.rp}"></u>` : ''}${x.n - x.rp > 0 ? `<u class="nw" style="flex:${x.n - x.rp}"></u>` : ''}</span>
         ${x.target ? `<i class="t" style="bottom:${((x.target / max) * 100).toFixed(1)}%"></i>` : ''}
       </div>`;
     }).join('');
@@ -6170,14 +6196,15 @@
     return `<div class="panel">
       ${head(`<div class="ov-filters">${select}${seg}</div>`)}
       <div class="ov-big">${yearly
-        ? `<b>${int(curN)}</b><span>bookings in ${cur} so far${catLabel ? ' · ' + esc(catLabel) : ', charters left out'} · ${int(total)} since ${list[0]}</span>`
-        : `<b>${int(total)}</b><span>bookings in the last ${ovMonths} months${catLabel ? ' · ' + esc(catLabel) : ', charters left out'}</span>`}</div>
+        ? `<b>${int(curN)}</b><span>bookings in ${cur} so far${repShare((rows.find((x) => x.k === cur) || {}).rp || 0, curN)}${catLabel ? ' · ' + esc(catLabel) : ', charters left out'} · ${int(total)} since ${list[0]}${repShare(totalRep, total)}</span>`
+        : `<b>${int(total)}</b><span>bookings in the last ${ovMonths} months${repShare(totalRep, total)}${catLabel ? ' · ' + esc(catLabel) : ', charters left out'}</span>`}</div>
       <div class="ov-chart"><div class="ov-chart-in" ${minW}>
         <div class="ov-cols">${cols}</div>
         <div class="ov-axis">${axis}</div>
       </div></div>
       <div class="ov-legend">
-        <span><i style="background:var(--fill)"></i>Bookings taken</span>
+        <span><i style="background:var(--fill)"></i>New customers</span>
+        <span><i style="background:var(--lead-all)"></i><span ${hlp('ovRepeat')}>Repeat customers</span></span>
         <span><i style="background:repeating-linear-gradient(135deg,var(--fill) 0 4px,rgba(var(--fill-rgb),.4) 4px 8px)"></i>This ${yearly ? 'year' : 'month'} so far</span>
         ${ovCat === 'all' ? `<span><i class="tl"></i>Target (${W} a week)</span>` : ''}
       </div>
