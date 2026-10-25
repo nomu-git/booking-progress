@@ -2818,8 +2818,9 @@
   /* ================= campaigns tab ================= */
 
   // Lead quality of the running campaigns (api/campaigns.js leadQuality):
-  // each campaign's project leads and high potential leads from Marina's
-  // sheet since it started, beside its cost per result. Best first.
+  // each campaign's project leads and high potential leads since it started
+  // (ManyChat from 21 Oct 2026 by Trip tag, Marina's sheet before), beside its
+  // cost per result. Best first.
   const LQ_ORDER = { Good: 0, Watch: 1, Bad: 2 };
   const LQ_GLYPH = { Good: '▲', Watch: '■', Bad: '▼' };
   function lqPanel(p, rows) {
@@ -2853,10 +2854,10 @@
         <td class="num">${show(q.costPerHp, money)}</td>
       </tr>`;
     }).join('');
-    const rule = `Good: at least 1 high potential lead and cost per high potential lead at or below the running average (${g.avgCostPerHp == null ? 'none yet' : `${p.currency || 'SAR'} ${money(g.avgCostPerHp)}`}). Watch: under ${g.minLeads || 5} leads so far, or above that average. Bad: ${g.minLeads || 5}+ leads and no high potential, or a high potential rate under ${Math.round((g.minHpRate || 0.1) * 100)}%. Leads are matched to a campaign by the project in its name (EB-ZNZ-EX -> ZNZ|EX), counted from its start, so they include the project's leads from any source.`;
+    const rule = `Good: at least 1 high potential lead and cost per high potential lead at or below the running average (${g.avgCostPerHp == null ? 'none yet' : `${p.currency || 'SAR'} ${money(g.avgCostPerHp)}`}). Watch: under ${g.minLeads || 5} leads so far, or above that average. Bad: ${g.minLeads || 5}+ leads and no high potential, or a high potential rate under ${Math.round((g.minHpRate || 0.1) * 100)}%. Leads are matched to a campaign by the project in its name (EB-ZNZ-EX -> ZNZ|EX), counted from its start, so they include the project's leads from any source. From 21 Oct 2026 they come from ManyChat and only count when the lead has a Trip tag (e.g. Trip: ZNZ|EX); before that, from Marina's sheet.`;
     return `<div class="panel">
         <div class="ptitle"><span ${tip('Lead quality', rule)}>Running campaigns · lead quality</span></div>
-        ${g.error ? `<div class="msg err">Leads sheet unavailable: ${esc(g.error)}</div>` : ''}
+        ${g.error ? `<div class="msg err">Leads partly unavailable: ${esc(g.error)}</div>` : ''}
         <div class="tscroll">
           <table class="ctable">
             <thead><tr>

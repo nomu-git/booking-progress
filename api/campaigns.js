@@ -7,6 +7,7 @@ const { build: buildMediaPlan } = require('./media-plan');
 const { classify } = require('../lib/trip-code');
 const { fetchWorkbook } = require('../lib/sheet');
 const leadsTab = require('../lib/tabs/leads');
+const manychat = require('../lib/manychat');
 const { leadProject } = require('./booking-report');
 
 const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
@@ -158,21 +159,39 @@ function leadCodeParts(code) {
 
 async function addLeadQuality(campaigns) {
   const running = campaigns.filter((c) => c.status === 'Active');
+  // Leads per day and project: ManyChat's automatic count from the day it
+  // started (21 Oct 2026), Marina's sheet for every day before (Anton, 25 Oct
+  // 2026). ManyChat ties a lead to a project through its Trip tag, so an
+  // untagged lead (NA) can't be credited to any campaign. Either source can
+  // fail on its own; the other still counts.
   let days = null;
   let error = null;
-  try {
-    const payload = leadsTab.build(await fetchWorkbook(leadsTab.envVar));
+  const [sheetRes, mcRes] = await Promise.all([
+    fetchWorkbook(leadsTab.envVar).then((wb) => ({ v: leadsTab.build(wb) }), (e) => ({ e: e.message })),
+    manychat.load().then((v) => ({ v }), (e) => ({ e: e.message })),
+  ]);
+  const mc = mcRes.v && mcRes.v.first && Array.isArray(mcRes.v.days) ? mcRes.v : null;
+  const mcFirst = mc ? mc.first : null;
+  if (sheetRes.v || mc) {
     days = [];
-    for (const w of payload.weeks || []) for (const d of w.days || []) if (d.recorded && !d.future) days.push(d);
-  } catch (err) {
-    error = err.message;
+    if (sheetRes.v) {
+      for (const w of sheetRes.v.weeks || []) for (const d of w.days || []) {
+        if (d.recorded && !d.future && (!mcFirst || d.date < mcFirst)) days.push(d);
+      }
+    }
+    if (mc) {
+      for (const d of mc.days) {
+        days.push({ date: d.date, projects: Object.entries(d.projects || {}).map(([code, x]) => ({ code, total: x.leads || 0, hp: x.hp || 0 })) });
+      }
+    }
   }
+  error = [sheetRes.e && `Leads sheet: ${sheetRes.e}`, mcRes.e && `ManyChat: ${mcRes.e}`].filter(Boolean).join(' · ') || null;
   const today = new Date(Date.now() + 4 * 3600 * 1000).toISOString().slice(0, 10);
 
   for (const c of running) {
     const { pd, pg } = leadProject({ title: c.name });
     if (!pd || !days) {
-      c.leadQuality = { linked: false, reason: !days ? 'Leads sheet unavailable' : 'No project in the campaign name' };
+      c.leadQuality = { linked: false, reason: !days ? 'Leads unavailable' : 'No project in the campaign name' };
       continue;
     }
     const since = c.startDate ? new Date(Date.parse(c.startDate) + 4 * 3600 * 1000).toISOString().slice(0, 10) : today;
@@ -221,7 +240,7 @@ async function addLeadQuality(campaigns) {
     else if (q.costPerHp <= avgCostPerHp) { q.status = 'Good'; q.why = 'Cost per high potential lead at or below the running average'; }
     else { q.status = 'Watch'; q.why = 'Cost per high potential lead above the running average'; }
   }
-  return { avgCostPerHp, minLeads: LQ_MIN_LEADS, minHpRate: LQ_MIN_HP_RATE, error };
+  return { avgCostPerHp, minLeads: LQ_MIN_LEADS, minHpRate: LQ_MIN_HP_RATE, error, manychatFrom: mcFirst };
 }
 
 async function build() {

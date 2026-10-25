@@ -16,11 +16,15 @@
 // Only days from LEAD_ALERTS_FROM on are judged, so switching it on doesn't
 // replay past days into the channel.
 //
-// The numbers are the Leads tab's own (lib/tabs/leads.js), so the alert and
-// the tab always agree.
+// Since 25 Oct 2026 (Anton: "refer to the manychats auto moving forward
+// since it only shows up to date leads status") the numbers are ManyChat's
+// automatic count (lib/manychat.js), the same the Leads tab shows from 21 Oct:
+// new contacts, and contacts tagged HP that day. Nothing waits for Marina's
+// sheet any more; the 11:30 PM run judges the day with what ManyChat has
+// counted by then (a lead after 11:30 PM still shows on the tab, not in that
+// night's alert). Days before ManyChat started aren't judged.
 
-const { fetchWorkbook } = require('../lib/sheet');
-const leadsTab = require('../lib/tabs/leads');
+const manychat = require('../lib/manychat');
 const kv = require('../lib/kv');
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
@@ -63,7 +67,7 @@ function message(day, j) {
     : !j.leadsMet ? 'Overall leads did not meet the target.'
       : 'High potential leads did not meet the target.';
   const hpLine = day.hp == null
-    ? `High potential: not recorded in the sheet (target ${HP_TARGET})`
+    ? `High potential: not recorded (target ${HP_TARGET})`
     : `High potential: *${day.hp}* (target ${HP_TARGET}) ${tick(j.hpMet)}`;
   const text = [
     `🚨 *Leads alert · ${dayLabel(day.date)}*`,
@@ -75,9 +79,9 @@ function message(day, j) {
 }
 
 async function loadDays() {
-  const payload = leadsTab.build(await fetchWorkbook(leadsTab.envVar));
+  const mc = await manychat.load();
   const byDate = new Map();
-  for (const w of payload.weeks) for (const d of w.days || []) byDate.set(d.date, d);
+  for (const d of (mc && mc.days) || []) byDate.set(d.date, { date: d.date, recorded: true, total: d.leads || 0, hp: d.hp || 0 });
   return byDate;
 }
 
@@ -110,7 +114,7 @@ module.exports = async (req, res) => {
     const errors = [];
     for (const date of candidateDays()) {
       const d = byDate.get(date);
-      // Not in the sheet yet: left for the next run.
+      // Before ManyChat started counting: nothing to judge.
       if (!d || !d.recorded || d.total == null) { waiting.push(date); continue; }
       const key = `lead-alerts:${date}`;
       if ((await kv.command('SET', key, '1', 'NX', 'EX', CLAIM_TTL_S)) !== 'OK') continue; // already judged
