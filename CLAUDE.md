@@ -227,6 +227,38 @@ first, then every way it might be written (both the long form and the short
 code itself, since a campaign already renamed to the scheme has to resolve
 back to the same pair — see the vocabulary-sharing regression noted below).
 
+## New vs repeat customers (WeTravel), 25 Oct 2026
+
+Anton: "see the new people booking with us and the repeated customer we
+have". ManyChat can't fire on every incoming message (Cowork checked: its
+"User sends a message" triggers are keyword-only, the system-field trigger
+only offers Email / Phone), so returning **leads** can't be counted cleanly;
+the `message` event in `lib/manychat.js` exists but no ManyChat rule sends it.
+Instead, repeat **bookings** come from WeTravel's own buyer history:
+
+- **`lib/repeat.js` `repeatOrders()`**: every WeTravel order has `buyer_id`
+  (0 of ~2,700 missing, 1,979 buyers); an order with active travellers is a
+  **repeat** when that buyer's first real booking (any trip since 2019,
+  charter orders count as history) is at least **30 days** earlier
+  (`REPEAT_GAP_DAYS`), so a second order for the same journey within the
+  month isn't "a returning customer". Checked on live data with gaps 0 / 1 /
+  7 / 30 / 90 / 180 (390 / 381 / 377 / 364 / 329 / 300 repeat orders)
+  before choosing 30.
+- **`api/previous-trips.js` `salesByMonth()`** sends `rep`, `repByDay`,
+  `repCats` beside `n`, `byDay`, `cats` (new = n − rep), plus
+  `sales.repeatGapDays` and `sales.buyers`. Only counts leave the API.
+- **Live, 25 Oct 2026**: repeat share 2019 3%, 2021 14%, 2022 13%, 2023 15%,
+  2024 19%, 2025 19%, 2026 26% (30 of 117); all years 15%. Not "most"
+  customers, but rising.
+- **Dashboard**: the bookings chart stacks **new** (`--fill`) and **repeat**
+  (`--lead-all`) per bar (tooltip with both, `ovRepeat` help on the legend),
+  headline "· N% repeat" (monthly and yearly); the scorecard's bookings
+  cells end "· N new, N repeat" (`ovRepeat()` sums `repByDay` over any
+  dates). Also in the AI Adviser snapshot (per year and last 12 months) and
+  the connector's `get_sales_history`.
+- Limit: a returning customer who books under a different WeTravel account
+  or email reads as new.
+
 ## Previous Sales charts
 
 Above the previous-projects list (`psHtml()` in `index.html`, Report chart
