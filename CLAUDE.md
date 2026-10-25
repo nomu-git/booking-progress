@@ -708,7 +708,10 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   per-project WA / IG / HP), so `renderLeads()` draws it with the same
   tiles, daily chart and targets, project table, conversion and weekly
   charts. `lib/manychat.js` `load()` now returns per-project wa / ig / hpWa /
-  hpIg for that. **The KPIs (tab, 8 AM Slack message, Dashboard's "All KPI
+  hpIg for that. **Now everything reads ManyChat from 21 Oct** (25 Oct 2026):
+  the Leads tab, the Dashboard scorecard, the KPIs, Campaign Ads' lead
+  quality and the 11:30 PM alert; the sheet only supplies days before 21 Oct.
+  **The KPIs (tab, 8 AM Slack message, Dashboard's "All KPI
   checks" card) read ManyChat since 25 Oct 2026.** **The Dashboard
   scorecard's Leads / High potential / Conversion rows are a hybrid since 25
   Oct 2026** (Anton: ManyChat "from the beginning where manychats has been
@@ -1170,6 +1173,13 @@ budget table: Campaign (project under it) | Status | Leads | High potential
 best first (Good, Watch, Bad, then by cost per HP lead). No footer line under the table (Anton asked for it
 removed, 8 Oct 2026); the average cost per HP lead is in the title's tooltip.
 
+- **Leads since 25 Oct 2026**: `addLeadQuality()` joins ManyChat (from its
+  first day, 21 Oct 2026) and Marina's sheet (every day before); each source
+  can fail alone (`error` names which; the panel says "Leads partly
+  unavailable"), and the payload carries `manychatFrom`. **A ManyChat lead
+  only reaches a campaign through its Trip tag** (`Trip: ZNZ|BL`); untagged
+  leads are NA and credit no campaign. First read 25 Oct: ZNZ|BL campaign
+  2 leads (from the sheet, 19–20 Oct), TH|EX 0: no Trip tags in ManyChat yet.
 - **Built in `api/campaigns.js` (`addLeadQuality`)**, sent as each running
   campaign's `leadQuality` plus a payload-level `leadQuality` (`avgCostPerHp`,
   thresholds, `error`). It reads the leads workbook itself
@@ -1209,6 +1219,13 @@ both are met. Wording: "🚨 Leads alert · Sun 4 Oct / Overall leads: 21
 meet the target (or "Both targets were missed."). Please review the Leads
 tab: https://crm.nomuhub.com/#leads".
 
+- **Reads ManyChat since 25 Oct 2026** (Anton: "refer to the manychats auto
+  moving forward since it only shows up to date leads status"): `loadDays()`
+  takes `lib/manychat.js` `load()` (new contacts, HP tags per day); no
+  waiting for Marina's sheet. The 11:30 PM run judges the day with what
+  ManyChat has counted by then (a later lead shows on the tab, not in that
+  night's alert); days before ManyChat started (21 Oct) aren't judged. The
+  rest below describes the sheet-era behaviour it replaced.
 - **Runs from cron-job.org once a day at 11:30 PM Muscat**, GET with
   `Authorization: Bearer $CAMPAIGN_ALERT_SECRET`. Marina fills the day in
   around **6 PM Oman time**, once a day (she confirmed to Anton, 6 Oct 2026),
