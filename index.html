@@ -3933,6 +3933,7 @@
       mcData = { error: e.message };
     }
     if (leads) renderLeads();
+    ovSoon();
   }
 
   async function loadLeads(force) {
@@ -5832,25 +5833,42 @@
   // Leads and high potential leads Marina logged between two days. Days come
   // from the daily sheet; weeks only her weekly report covers (late July to
   // mid September) count whole, by their first day.
-  function ovLeads(start, end) {
+  // Since 25 Oct 2026 (Anton): ManyChat's automatic count from the day it
+  // started counting (mcData.first, 21 Oct 2026), Marina's sheet for every day
+  // before that, so past periods keep their history. ManyChat days are only
+  // finished days; today counts only for the daily column's "Today so far"
+  // (`withToday`). If ManyChat can't be read, the sheet covers everything.
+  function ovLeads(start, end, withToday) {
     if (!leads || !leads.weeks) return null;
+    if (mcData === null) return null; // still loading
+    const mcFirst = mcData && mcData.first && Array.isArray(mcData.days) ? mcData.first : null;
     let n = 0, hp = 0, days = 0, hpDays = 0;
     const dates = new Set(); // the days these leads cover, for conversion
+    const sheetEnd = mcFirst && mcFirst <= end ? ovAdd(mcFirst, -1) : end;
     for (const w of leads.weeks) {
       if (w.days && w.days.length) {
         for (const d of w.days) {
-          if (!d.recorded || d.future || d.date < start || d.date > end) continue;
+          if (!d.recorded || d.future || d.date < start || d.date > sheetEnd) continue;
           n += d.total || 0; days += 1; dates.add(d.date);
           if (d.hp != null) { hp += d.hp; hpDays += 1; }
         }
-      } else if (w.start >= start && w.start <= end) {
+      } else if (w.start >= start && w.start <= sheetEnd) {
         const len = ovDiff(w.start, w.end) + 1;
         n += w.total || 0; days += len;
         for (let i = 0; i < len; i += 1) dates.add(ovAdd(w.start, i));
         if (w.hp != null) { hp += w.hp; hpDays += len; }
       }
     }
-    return { n, hp, days, hpDays, dates };
+    if (mcFirst && mcFirst <= end) {
+      const today = ovToday();
+      const last = withToday ? today : ovAdd(today, -1);
+      const by = new Map(mcData.days.map((d) => [d.date, d]));
+      for (let d = start > mcFirst ? start : mcFirst; d <= end && d <= last; d = ovAdd(d, 1)) {
+        const x = by.get(d) || {};
+        n += x.leads || 0; hp += x.hp || 0; days += 1; hpDays += 1; dates.add(d);
+      }
+    }
+    return { n, hp, days, hpDays, dates, mcFirst };
   }
 
   /* ---- KPI scorecard: daily, weekly, monthly ---- */
@@ -5956,8 +5974,9 @@
     }) });
 
     // Leads and high potential: the daily target times the days logged.
-    const L = P.map((p) => ovLeads(p.start, p.end));
-    rows.push({ go: 'leads', name: 'Leads', target: `${LT} a day`, cells: P.map((p, i) => {
+    const L = P.map((p) => ovLeads(p.start, p.end, p.key === 'd' && p.value === ovToday()));
+    const mcFrom = mcData && mcData.first ? ovDate(mcData.first) : null;
+    rows.push({ go: 'leads', name: 'Leads', target: `${LT} a day`, extra: mcFrom ? `ManyChat from ${mcFrom}, Marina's sheet before` : '', cells: P.map((p, i) => {
       const l = L[i];
       if (!l) return null;
       if (!l.days) return { na: p.key === 'd' ? 'Not logged yet' : 'Nothing logged yet' };
@@ -6482,6 +6501,7 @@
     // hasn't been loaded yet; each card fills in as its source arrives.
     if (view === 'overview') {
       if (!leads) loadLeads(false);
+      if (!mcData) loadMc(false);
       if (!campaigns) loadCampaigns(false);
       if (!feedback) loadFeedback(false);
       if (!revData) loadRevenue(false);
@@ -6667,6 +6687,7 @@
   setInterval(() => { if (feedback) loadFeedback(false); }, 300000);
   setInterval(() => { if (revData) loadRevenue(false); }, 300000);
   setInterval(() => { if (impData) loadImpact(false); }, 300000);
+  setInterval(() => { if (mcData) loadMc(false); }, 300000);
   setInterval(() => { if (monData) loadPending(false); }, 300000);
   setInterval(() => { if (kpiData) loadKpis(false); }, 300000);
   // Re-render between fetches so a highlight lapses at its own 24h mark and the

@@ -694,9 +694,19 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   tiles, daily chart and targets, project table, conversion and weekly
   charts. `lib/manychat.js` `load()` now returns per-project wa / ig / hpWa /
   hpIg for that. **The KPIs (tab, 8 AM Slack message, Dashboard's "All KPI
-  checks" card) read ManyChat since 25 Oct 2026**; the Dashboard scorecard,
-  the Leads tab's default view, Campaign Ads' lead quality panel and the
-  11:30 PM lead alert still read the sheet.
+  checks" card) read ManyChat since 25 Oct 2026.** **The Dashboard
+  scorecard's Leads / High potential / Conversion rows are a hybrid since 25
+  Oct 2026** (Anton: ManyChat "from the beginning where manychats has been
+  built ... the previous you can refer to Marina's sheet"): `ovLeads(start,
+  end, withToday)` takes ManyChat days from `mcData.first` (21 Oct 2026) on,
+  finished days only (today only for the daily column's "Today so far"), and
+  Marina's sheet for every earlier day; no ManyChat data = sheet only. The
+  Leads row says "ManyChat from 21 Oct, Marina's sheet before". The overview
+  now loads `mcData` (`loadMc`, refreshed every 5 minutes, calls `ovSoon`).
+  Checked 25 Oct against an independent sum: last week 18–24 Oct = 19 leads
+  (sheet 18–20 + ManyChat 21–24), 3 HP, 1 booking (5.3%); October = 190
+  leads, 20 HP, 12 bookings (6.3%). The Leads tab's default view, Campaign
+  Ads' lead quality panel and the 11:30 PM lead alert still read the sheet.
 - **Conversion uses the same days for bookings as for leads (22 Oct 2026**,
   Anton: "make sure that the Conversion % is accurate"): bookings are only
   counted on the days whose leads are counted (`leadBookings(start, end,
