@@ -5,6 +5,7 @@
 const { apiGet, mapWithConcurrency } = require('../lib/wetravel');
 const { buildCode } = require('../lib/trip-code');
 const { leadProject } = require('./booking-report');
+const { repeatOrders } = require('../lib/repeat');
 
 const CACHE_TTL_MS = Number(process.env.PREVIOUS_TRIPS_CACHE_TTL_MS || 300000);
 
@@ -228,6 +229,23 @@ async function build() {
       return [];
     })),
   ]);
+  // TEMPORARY (25 Oct 2026): how many bookings would read as repeat under
+  // different "earlier booking at least N days before" rules, counts only.
+  const allTripOrders = [
+    ...candidates.map((trip, i) => ({ trip, orders: loaded[i] ? loaded[i].orders : [] })),
+    ...upcoming.map((trip, i) => ({ trip, orders: upcomingOrders[i] })),
+  ];
+  const buyerDebug = {};
+  for (const g of [0, 1, 7, 30, 90, 180]) {
+    const r = repeatOrders(allTripOrders, Date.now(), g);
+    const perYear = {};
+    for (const { trip, orders } of allTripOrders) for (const o of orders || []) {
+      if (!(o.active_count > 0) || !r.repeat.has(`${trip.uuid}:${o.id}`)) continue;
+      const y = String(o.created_at).slice(0, 4);
+      perYear[y] = (perYear[y] || 0) + o.active_count;
+    }
+    buyerDebug[`gap${g}`] = { repeatOrders: r.repeat.size, unknownBuyer: r.unknown, buyers: r.buyers, repeatTravellersByYear: perYear };
+  }
   const sales = salesByMonth([
     ...candidates.map((trip, i) => ({ trip, orders: loaded[i] ? loaded[i].orders : [] })),
     ...upcoming.map((trip, i) => ({ trip, orders: upcomingOrders[i] })),
@@ -314,6 +332,7 @@ async function build() {
     today: todayKey,
     years,
     sales,
+    buyerDebug,
     totals: {
       trips: trips.length,
       coded: trips.filter((t) => t.code).length,
