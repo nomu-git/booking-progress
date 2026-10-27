@@ -1765,7 +1765,6 @@
       <div class="sb-group">
         <div class="sb-cat">Settings</div>
         <button class="sb-item" id="installApp" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="sb-label">Install app</span></button>
-        <a class="sb-item" href="/logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg><span class="sb-label">Log out</span></a>
       </div>
     </nav>
   </aside>
@@ -5664,22 +5663,6 @@
       sync();
     });
     sync();
-  })();
-
-  // Signed out on the server (30 days unused, or the password changed): the
-  // data calls start answering 401, so reload to land on the login page.
-  (() => {
-    const realFetch = window.fetch.bind(window);
-    let reloading = false;
-    window.fetch = async (...args) => {
-      const res = await realFetch(...args);
-      const url = String(args[0] && args[0].url ? args[0].url : args[0] || '');
-      if (res.status === 401 && url.startsWith('/api/') && !url.startsWith('/api/advisor') && !reloading) {
-        reloading = true;
-        location.reload();
-      }
-      return res;
-    };
   })();
 
   /* ================= install as an app ================= */

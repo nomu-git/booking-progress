@@ -1662,6 +1662,18 @@ What it found and what changed:
 
 ## Login gate, light / dark mode (18 Oct 2026)
 
+**The login gate was removed on 27 Oct 2026** (Anton: "Remove the login
+password Gate and remove the login 30days function as well"): `middleware.js`
+deleted, `@vercel/functions` dropped from `package.json`, Settings › Log out
+and the page's 401 → reload wrapper removed. **Every page and `/api/*`
+endpoint is open to anyone with the link again** (flagged to Anton: leads
+counts, verbatim feedback including the escalated complaint, staff and
+officer names, trip margins). Endpoints that check their own secret (alerts,
+slack-notify, ManyChat hook, `?audit=1`) still do. **`DASHBOARD_PASSWORD`
+stays set in Vercel**: the Claude connector's OAuth sign-in (`lib/mcp.js`)
+still asks for it, and answers 503 without it. The bullets below describe
+the gate as it was.
+
 Anton: password-only login (no username), stay signed in for a month while
 the device keeps being used, a login page in the logo's teal; a light / dark
 switch (light = NomuHub brand teal, dark = the original navy); and a New chat
