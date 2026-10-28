@@ -1229,7 +1229,7 @@ Marketing › Campaigns › This year (`auditPanel()`, classes `au-`; phone chip
   quality.
 - **Refresh**: stored in Upstash `campaign-audit:latest` (lock
   `campaign-audit:lock`). A Vercel cron (`vercel.json`, `0 3 * * *` = 7 AM
-  Muscat) regenerates it when older than 20 h; a page visit regenerates it
+  Muscat) regenerates it unless it was already made today (Muscat); a page visit regenerates it
   only when older than 24 h (backup if the cron misses), otherwise just
   reads the store, so opening the tab costs nothing. `?force=1` with
   `Authorization: Bearer $CAMPAIGN_ALERT_SECRET` (or `CRON_SECRET`) forces a
