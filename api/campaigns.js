@@ -510,3 +510,14 @@ module.exports = async (req, res) => {
 };
 
 module.exports.build = build;
+
+// The same "Results" reading for any insights row, so the daily campaign
+// audit (lib/campaign-audit.js) counts a week's results exactly as the board
+// counts the year's.
+module.exports.resultsOf = (row, label) => {
+  if (label === 'Reach') return num(row.reach);
+  const types = RESULT_ACTIONS[label];
+  return types ? actionValue(row.actions, types) : customConversionValue(row.actions);
+};
+module.exports.CPR_LIMIT = CPR_LIMIT;
+module.exports.CPR_MIN_RESULTS = CPR_MIN_RESULTS;

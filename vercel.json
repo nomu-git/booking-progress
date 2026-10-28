@@ -3,6 +3,10 @@
     {
       "path": "/api/slack-notify",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/advisor?route=campaign-audit",
+      "schedule": "0 3 * * *"
     }
   ],
   "rewrites": [
@@ -61,6 +65,10 @@
     {
       "source": "/hooks/manychat",
       "destination": "/api/advisor?route=manychat"
+    },
+    {
+      "source": "/api/campaign-audit",
+      "destination": "/api/advisor?route=campaign-audit"
     }
   ],
   "functions": {

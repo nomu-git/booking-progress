@@ -90,6 +90,8 @@ module.exports = async (req, res) => {
   // 12 Vercel function slots are used; vercel.json routes /mcp, /oauth/* and
   // the /.well-known OAuth documents here with ?route=.
   if (req.query && req.query.route === 'manychat') return require('../lib/manychat').handleHook(req, res);
+  // The daily campaign audit (Marketing › Campaigns), from /api/campaign-audit.
+  if (req.query && req.query.route === 'campaign-audit') return require('../lib/campaign-audit').handle(req, res);
   if (req.query && req.query.route) return require('../lib/mcp')(req, res, String(req.query.route));
   const t0 = Date.now();
   const connected = !!(process.env.ANTHROPIC_API_KEY || '').trim();

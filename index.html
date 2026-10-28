@@ -857,6 +857,36 @@
   .lq-st.none { background: rgba(111,134,168,.16); color: var(--text-2); }
   .lq-sub { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
   .abar-fill.lq { background: var(--tgt-hp); }
+  /* Campaign health (daily audit): one card per running campaign, a status
+     edge in the fixed status steps, the status pill reuses .lq-st. */
+  .au-meta { font-size: 12px; color: var(--text-3); margin: -4px 0 10px; }
+  .au-meta.au-warn { color: var(--warn-ink); }
+  .au-sum { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .au-of { font-size: 12px; color: var(--text-3); }
+  .au-bar { display: flex; gap: 2px; height: 8px; border-radius: 4px; overflow: hidden; background: var(--track); margin: 10px 0 14px; }
+  .au-seg.good { background: var(--q-high); } .au-seg.watch { background: var(--q-med); } .au-seg.bad { background: var(--q-low); }
+  .au-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .au-card { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--q-none); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+  .au-card.good { border-left-color: var(--q-high); } .au-card.watch { border-left-color: var(--q-med); } .au-card.bad { border-left-color: var(--q-low); }
+  .au-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .au-name { font-weight: 700; color: var(--strong); font-size: 13.5px; overflow-wrap: anywhere; }
+  .au-figs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 10px 0 4px; }
+  .au-figs > div { display: flex; flex-direction: column; min-width: 0; }
+  .au-figs .au-bud { grid-column: 1 / -1; }
+  .au-k { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .au-v { font-size: 15px; font-weight: 700; color: var(--strong); font-variant-numeric: tabular-nums; }
+  .au-v.au-badv { color: var(--bad-ink); }
+  .au-s { font-size: 11px; color: var(--text-3); }
+  .au-barrow { display: flex; align-items: center; margin-top: 4px; }
+  .au-bud .abar { width: 160px; }
+  .au-lab { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-top: 10px; }
+  .au-txt { font-size: 13px; color: var(--text); line-height: 1.45; margin-top: 2px; }
+  .au-act { display: inline-block; padding: 1px 8px; border-radius: 6px; background: rgba(var(--acc-rgb), .14); color: var(--yellow); font-weight: 700; font-size: 12px; margin-right: 4px; }
+  /* Lighter tints in light mode so the ink keeps 4.5:1 (contrast audit). */
+  html[data-theme="light"] .au .lq-st.good { background: rgba(12,163,12,.09); }
+  html[data-theme="light"] .au .lq-st.bad { background: rgba(208,59,59,.09); }
+  html[data-theme="light"] .au-act { background: rgba(var(--acc-rgb), .08); }
+  @media (max-width: 700px) { .au-grid { grid-template-columns: 1fr; } }
   /* ---- budget vs actual ----
      The one comparison this tab exists to make: two figures side by side and
      a single track underneath, rather than numbers the reader has to divide
@@ -2654,6 +2684,10 @@
 
   let campaigns = null;
   let campShow = 'active'; // Campaign Ads table: 'active' (running, default) or 'all'
+  // The daily campaign audit (lib/campaign-audit.js): status, what's
+  // happening and the next step per running campaign, refreshed every 24 h.
+  let audit = null;
+  let auditErr = null;
   let adHistory = null;
   // Which year the History tab is showing. Null until the API answers, so the
   // first load takes whatever it considers current rather than guessing here.
@@ -2878,6 +2912,78 @@
       </div>`;
   }
 
+  // Campaign health (Anton, 28 Oct 2026): one card per running campaign with
+  // a status (rules over Meta's numbers), what's happening and the next step
+  // (written by Claude once a day). Dashboard only, nothing goes to Slack.
+  const AU_CLS = { Healthy: 'good', Medium: 'watch', Unhealthy: 'bad' };
+  const AU_GLYPH = { Healthy: '▲', Medium: '■', Unhealthy: '▼' };
+  function auditPanel() {
+    const tip = (title, text) => `data-tip="${attr(`<div class="tt">${esc(title)}</div><div class="more">${esc(text)}</div>`)}"`;
+    const a = audit;
+    const head = (meta) => `<div class="ptitle"><span ${tip('Campaign health', 'Checked once a day for every running campaign. The status comes from fixed rules: Unhealthy when cost per result is over the limit (after 5 results), it is over its media-plan budget, it spent in the last 7 days with no results, or its lead quality is Bad. Medium when it is too early to judge (under 5 days or 5 results), still learning, close to the cost limit, near its budget, shown too often to the same people, or its results fell week on week. Healthy otherwise. What is happening and the next step are written by Claude from the same figures, read-only.')}>Campaign health · daily audit</span></div>${meta || ''}`;
+    if (!a) {
+      return `<div class="panel au">${head()}<div class="au-meta">${auditErr ? esc(auditErr) : 'Loading today\'s audit…'}</div></div>`;
+    }
+    const cur = esc(a.currency || 'SAR');
+    const when = new Date(a.generatedAt).toLocaleString('en-GB', { timeZone: 'Asia/Muscat', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
+    const meta = `<div class="au-meta">Updated ${esc(when)} (Muscat) · refreshes every 24 hours · ${a.source === 'claude' ? 'notes by Claude' : 'notes by rules'}</div>
+      ${a.error ? `<div class="au-meta au-warn">${esc(a.error)}</div>` : ''}`;
+    const list = a.campaigns || [];
+    if (!list.length) return `<div class="panel au">${head(meta)}<div class="au-meta">No campaign is running right now.</div></div>`;
+    const sm = a.summary || {};
+    const seg = (n, k) => (n ? `<div class="au-seg ${AU_CLS[k]}" style="flex:${n}" title="${n} ${k}"></div>` : '');
+    const sum = `<div class="au-sum">
+        ${['Healthy', 'Medium', 'Unhealthy'].map((k) => `<span class="lq-st ${AU_CLS[k]}">${AU_GLYPH[k]} ${int(sm[k.toLowerCase()] || 0)} ${k}</span>`).join('')}
+        <span class="au-of">of ${int(sm.running || list.length)} running</span>
+      </div>
+      <div class="au-bar">${seg(sm.healthy, 'Healthy')}${seg(sm.medium, 'Medium')}${seg(sm.unhealthy, 'Unhealthy')}</div>`;
+    const lim = (a.rules && a.rules.cprLimit) || 25;
+    const cards = list.map((c) => {
+      const w = c.last7 || {};
+      const p = c.prev7 || {};
+      const cprCls = c.costPerResult != null && c.results >= ((a.rules && a.rules.minResults) || 5) && c.costPerResult > lim ? ' au-badv' : '';
+      const trend = p.results ? (w.results > p.results ? '▲' : w.results < p.results ? '▼' : '=') : '';
+      const why = (c.reasons || []).join('. ') + '.';
+      return `<div class="au-card ${AU_CLS[c.status]}">
+        <div class="au-top">
+          <div class="au-name">${esc(c.name)}</div>
+          <span class="lq-st ${AU_CLS[c.status]}" ${tip(c.status, why)}>${AU_GLYPH[c.status]} ${esc(c.status)}</span>
+        </div>
+        <div class="au-figs">
+          <div><span class="au-k">Cost / result</span><span class="au-v${cprCls}">${c.costPerResult == null ? '—' : `${cur} ${money(c.costPerResult)}`}</span><span class="au-s">limit ${int(lim)}</span></div>
+          <div><span class="au-k">Last 7 days</span><span class="au-v">${int(w.results)} results</span><span class="au-s">${p.results != null ? `${trend} ${int(p.results)} the week before` : ''}</span></div>
+          <div class="au-bud"><span class="au-k">Budget used${c.budgetAssumed ? ' (assumed)' : ''}</span><div class="au-barrow">${barFor(c.spend, c.budget)}</div></div>
+        </div>
+        <div class="au-lab">What's happening</div>
+        <div class="au-txt">${esc(c.happening)}</div>
+        <div class="au-lab">Next step</div>
+        <div class="au-txt"><span class="au-act">${esc(c.action)}</span> ${esc(c.step)}</div>
+      </div>`;
+    }).join('');
+    return `<div class="panel au">${head(meta)}${sum}<div class="au-grid">${cards}</div></div>`;
+  }
+
+  let auditRetry = null;
+  async function loadAudit() {
+    try {
+      const res = await fetch('/api/campaign-audit');
+      const p = await res.json().catch(() => ({}));
+      if (res.status === 202 || p.pending) {
+        auditErr = 'Preparing today\'s audit, this takes about a minute…';
+        clearTimeout(auditRetry);
+        auditRetry = setTimeout(loadAudit, 30000);
+      } else if (!res.ok || !p.generatedAt) {
+        throw new Error(p.error || `HTTP ${res.status}`);
+      } else {
+        audit = p;
+        auditErr = null;
+      }
+    } catch (err) {
+      if (!audit) auditErr = `Could not load the audit: ${err.message}`;
+    }
+    if (campaigns) renderCampaigns();
+  }
+
   // Every 2026 campaign, each with its own budget to measure against. Budget
   // comes from Updated Budget.xlsx where the campaign ties to a plan line and
   // from a flat default where it doesn't; spend, names and status come live
@@ -2929,6 +3035,8 @@
 
     $('campaignsWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
+
+      ${auditPanel()}
 
       <div class="panel">
         <div class="ptitle">Budget vs actual · ${p.year}</div>
@@ -3004,6 +3112,7 @@
 
   async function loadCampaigns(force) {
     try {
+      loadAudit();
       const res = await fetch('/api/campaigns' + (force ? '?refresh=1' : ''));
       const p = await res.json();
       if (!res.ok && !p.campaigns) throw new Error(p.error || `HTTP ${res.status}`);
@@ -6393,7 +6502,7 @@
   const PV = {
     leadsWrap: { always: true, groups: [['This week', [0, 1]], ['Trends', [2, 3]], ['New vs repeat', [4]]] },
     previousWrap: { always: true, groups: [['Charts', [0, 1]], ['Projects', [2, 3]]] },
-    campaignsWrap: { groups: [['Budget', [0]], ['Lead quality', [1]], ['Campaigns', [2]]] },
+    campaignsWrap: { groups: [['Health', [0]], ['Budget', [1]], ['Lead quality', [2]], ['Campaigns', [3]]] },
     overviewWrap: { sel: [['KPIs', '.ovk'], ['At a glance', '.ov-sec, .ov-grid'], ['Bookings', '.ov-low']] },
     reportWrap: { auto: true }, historyWrap: { auto: true }, engagementsWrap: { auto: true },
     tripsWrap: { auto: true }, feedbackWrap: { auto: true }, revenueWrap: { auto: true }, impactWrap: { auto: true }, kpisWrap: { auto: true },

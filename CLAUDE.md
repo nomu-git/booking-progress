@@ -1193,6 +1193,52 @@ the report currency, no USD conversion.
   moves slowly. When the limit went to SAR 25, all 5 running campaigns were
   over (25.88 to 74.05), so the first check posted them as one list.
 
+## Campaign health · daily audit (Campaigns), 28 Oct 2026
+
+Anton: an automatic audit of the running Meta campaigns, refreshed every 24
+hours, with just two things per campaign, **what is happening** and **the
+next step** (wait, add funds, fix ...), plus a status **Healthy / Medium /
+Unhealthy**. **Dashboard only, never Slack** (his call). First panel on
+Marketing › Campaigns › This year (`auditPanel()`, classes `au-`; phone chip
+"Health").
+
+- **`lib/campaign-audit.js`**, served at `/api/campaign-audit` (rewrite to
+  `api/advisor.js?route=campaign-audit`; 12 of 12 functions used).
+- **Status = rules** (`judge()`), so the same figures always give the same
+  status. Unhealthy: cost per result over SAR 25 after 5 results; over a
+  **media-plan** budget; SAR 50+ spent in the last 7 days with no results;
+  lead quality Bad. Medium: too early (under 5 days or 5 results, `AUDIT_MIN_DAYS`);
+  Meta learning / learning limited (ad sets' `learning_stage_info`); last 7
+  days' cost over the limit; cost per result 80-100% of the limit; 90-100%
+  of budget used; **over the assumed $500 budget** (no plan line, so only
+  Medium); frequency over 3 in 7 days (`AUDIT_FREQ_HIGH`); results halved
+  week on week; lead quality Watch. Healthy otherwise. The reasons are in
+  the status pill's tooltip.
+- **Texts = Claude Sonnet** (`AUDIT_MODEL`, default `claude-sonnet-5-5`), one
+  call a day for all running campaigns, numbers only, no tools (read-only).
+  It may not change the status, must pick its action from a fixed list
+  (Keep running, Wait, Add funds, Reduce budget, Fix creative, Fix
+  targeting, Pause), and "Add funds" is only kept when `canAddFunds`
+  (Healthy, past the early stage, 5+ results in the last 7 days); otherwise
+  the rule text is used. No key / no credit / Claude down: `ruleText()`
+  writes both texts and the panel says "notes by rules".
+- Figures per campaign: year-to-date spend / results / cost per result from
+  `api/campaigns.js` `build()` (now also exports `resultsOf`, `CPR_LIMIT`,
+  `CPR_MIN_RESULTS`), plus the last 7 finished Muscat days and the 7 before
+  (two extra insights calls per account), budget used, daily budget, lead
+  quality.
+- **Refresh**: stored in Upstash `campaign-audit:latest` (lock
+  `campaign-audit:lock`). A Vercel cron (`vercel.json`, `0 3 * * *` = 7 AM
+  Muscat) regenerates it when older than 20 h; a page visit regenerates it
+  only when older than 24 h (backup if the cron misses), otherwise just
+  reads the store, so opening the tab costs nothing. `?force=1` with
+  `Authorization: Bearer $CAMPAIGN_ALERT_SECRET` (or `CRON_SECRET`) forces a
+  new one. Cost about 3-10 cents a day on the $25 Anthropic credit.
+- Built on 28 Oct 2026 when **no campaign was running** in Meta, so the
+  first live audit reads "No campaign is running right now"; the cards were
+  tested with sample campaigns through the real rules (both themes, phone,
+  contrast audit clean).
+
 ## Running campaigns · lead quality (Campaign Ads)
 
 Muatasam, 8 Oct 2026 (via Anton, with a spec drafted in Claude chat): link
