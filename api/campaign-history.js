@@ -42,7 +42,8 @@ const OBJECTIVE_LABEL = {
 const RESULT_ACTIONS = {
   Messages: ['onsite_conversion.messaging_conversation_started_7d', 'onsite_conversion.messaging_first_reply'],
   Purchases: ['purchase', 'offsite_conversion.fb_pixel_purchase', 'omni_purchase'],
-  Leads: ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead'],
+  // Leads campaigns set to message conversations report those as results.
+  Leads: ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead', 'onsite_conversion.messaging_conversation_started_7d'],
   'Link Clicks': ['link_click'],
 };
 

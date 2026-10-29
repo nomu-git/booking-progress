@@ -69,6 +69,10 @@
     {
       "source": "/api/campaign-audit",
       "destination": "/api/advisor?route=campaign-audit"
+    },
+    {
+      "source": "/api/budget-plan",
+      "destination": "/api/advisor?route=budget-plan"
     }
   ],
   "functions": {

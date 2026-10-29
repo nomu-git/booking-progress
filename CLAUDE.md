@@ -178,10 +178,10 @@ since they're easy to forget mid-session:
 | `lib/meta-ads.js` | Shared Meta Graph API client. `graphGet`/`graphGetAll` (follows Meta's cursor pagination), `getAccountMeta`, `toReportCurrency`/`budgetToReportCurrency` (USD→SAR conversion), `AD_ACCOUNTS` (env `META_AD_ACCOUNT_IDS`, default two accounts), `REPORT_CURRENCY` (env `META_CURRENCY`, default `SAR`), `USD_SAR` (env `META_USD_SAR`, default `3.75`). Token comes from whichever of `META_ACCESS_TOKEN` / `META_ACCESS_KEY` / `META_API_KEY` is set. |
 | `api/campaigns.js` | **Campaign Ads tab** (sidebar label; was "Campaigns", then "Ads"). Current year only (env `META_YEAR`, defaults to current calendar year — so this auto-rolls into 2027 with no code change). Every campaign gets its own budget (see "Budget matching" below), live spend/results/purchases from Meta. **Table (Anton, 15 Oct 2026):** a **Show: Running · N / All · N** filter, Running by default (`campShow`), with the TOTAL row summing the rows shown (the year hero keeps every campaign); and a **Daily Spend** column after Status = the campaign's daily budget in Meta (`dailyBudget`, summed over its active ad sets since CBO is off), running campaigns only, dash otherwise. It's what's set per day, not what was actually spent today (flagged to Anton). |
 | `api/campaign-history.js` | **History Campaign tab** (sidebar label; was "History"). One full calendar year at a time, picked via `?year=`. **Deliberately excludes the current year** — that's what Ads is for. Offers years back to Meta's retention floor (~37 months, env `META_RETENTION_MONTHS`). Every campaign uses a flat assumed budget (env `META_DEFAULT_BUDGET_USD`, default `$500`) since there's no budget sheet for past years. |
-| `api/media-plan.js` | Reads `Updated Budget.xlsx` — hardcoded `ROWS` array transcribed **verbatim** from the spreadsheet's "Media Plan" sheet. This is the *plan*, not measured data. If the spreadsheet changes, this array has to be hand-updated to match — there's no live file parsing. |
+| ~~`api/media-plan.js`~~ | **Deleted 29 Oct 2026**, replaced by the Budget Plan (`lib/budget-plan.js`, see below). It held `Updated Budget.xlsx`'s Media Plan sheet transcribed by hand. |
 | `lib/trip-code.js` | The project-code generator — see below. |
 
-**Budget matching (important, was broken once already):** Meta campaign
+**Budget matching (historical: replaced by the Budget Plan on 29 Oct 2026, kept for History's context):** Meta campaign
 names come in two eras — old descriptive names ("ZNZ Build MSG - 2026") and
 the newer code form ("ZNZ-BL-202609-02C", after Muatasam renamed them in Ads
 Manager). Both `campaigns.js` and `campaign-history.js` resolve a campaign to
@@ -1193,6 +1193,76 @@ the report currency, no USD conversion.
   moves slowly. When the limit went to SAR 25, all 5 running campaigns were
   over (25.88 to 74.05), so the first check posted them as one list.
 
+## Budget Plan (Campaigns › This year), 29 Oct 2026
+
+Anton: the new ad budget (USD 2,000 from 28 Oct to 30 Nov, USD 1,000 for
+December; five campaigns plus one always-on engagement campaign), shown as a
+tab inside This year named **Budget Plan**, with a form to change it, and
+**the old budget plan removed** so it can't confuse the budget KPI or the
+audit. Everything budget-related now reads this plan.
+
+- **`lib/budget-plan.js`**, stored in Upstash `budget-plan`; `/api/budget-plan`
+  (rewrite to `api/advisor.js?route=budget-plan`): GET = the plan, POST =
+  save the whole plan. **Saving needs the dashboard password**
+  (`DASHBOARD_PASSWORD`, 10 wrong tries per IP per 15 min, `plan-fail:<ip>`;
+  the page keeps it in `localStorage` `nomuPlanKey`), because the site has
+  no login; and `baseUpdatedAt` must match (409 if someone saved in between).
+  Flagged to Anton.
+- **Periods** = the money (`{ name, start, end, amount, currency USD|SAR }`,
+  USD at `META_USD_SAR` 3.75). Spend against a period = **all** Meta spend on
+  those days (campaigns not in the plan too, listed as "not in the plan").
+  **Lines** = one campaign's budget: `mode: 'daily'` (SAR a day, start to end)
+  or `'weekly'` (SAR a week over whole Sunday-Saturday weeks, picked From
+  week / To week in the form). A line ties to Meta by `campaignId` (picked
+  from the running campaigns, `liveCampaigns` in the campaigns payload) or by
+  its exact name when typed (so it can be planned before the campaign
+  exists; "Not in Meta" until then). Two lines for one campaign may not
+  overlap in dates (spend would count twice).
+- **`evaluate()`** pulls Meta daily spend per campaign (`time_increment=1`)
+  from the plan's first date to today. Per line: planned total, planned and
+  spent up to yesterday, spent incl. today, status **On track** (70-115% of
+  plan to date) / **Slow** / **Fast** / **Over** (past its whole budget) /
+  **Not in Meta** / **Planned** (not started) / **Ended**. Per period:
+  planned (sum of lines; over the money = shown red), spent, SAR a day so far
+  (finished days), the pace projection and the day it runs out at that pace.
+- **Seed** (until the first save): the five Meta campaigns live since 28 Oct
+  at SAR 200 a day each to their review dates (4 Nov; Sri Lanka 10 Nov), from
+  Anton's Slack table; engagement post SAR 30/day to 30 Nov and SAR 20/day in
+  December and January trips SAR 100/day in December, from the "What we
+  run" doc. **The two sources conflict**: at 5 x SAR 200 the 28 Oct-30 Nov
+  plan is SAR 10,220 against SAR 7,500 (USD 2,000) and at that pace it runs
+  out about 6-7 Nov; the doc's own figures (SAR 120 + 50 + 30 a day) fit the
+  money. Flagged to Anton; the form is how they settle it.
+- **What reads it**: `api/campaigns.js` (per campaign `inPlan`, `budgetSar`
+  = planned total, `planSpend` = spend inside its planned dates,
+  `remaining`, `usedPct`, `planPace`; `totals.budget` = the periods' money,
+  `totals.planSpend`, `planTimeGone`; whole evaluation as `budgetPlan`); the
+  Overview hero "Budget vs actual · Budget Plan" and the table's Budget /
+  Remaining / Spend vs Budget (dash = not in the plan); the KPI "Campaign
+  spend within budget" (fails if a running campaign is over its planned
+  budget, a running campaign isn't in the plan, or the current period is on
+  course to overspend); the Dashboard's "Ad budget used" card (pill "Plan",
+  mark = time gone, "runs out" warning); the daily audit (Unhealthy = over
+  its planned budget; Medium = not in the plan, spending 15%+ faster than
+  plan, 90%+ used; "Add funds" only with headroom in the current period; a
+  saved plan change rebuilds the audit on the next visit via
+  `planUpdatedAt`; the period running out shows once above the cards); the
+  AI Adviser snapshot and the connector's `get_ad_campaigns`.
+- **Removed**: `api/media-plan.js` (Updated Budget.xlsx, transcribed) and the
+  assumed $500 for the current year. **The functions count is 11 of 12
+  now.** `Updated Budget.xlsx` itself is still in the repo, unused. History
+  (past years) still uses its flat $500, unrelated to the plan.
+- UI: `campSub` (Overview | Budget Plan pills inside This year), `bpHtml()`,
+  `bpBind()`, `bpSave()`, forms `bpForm` / `bpPer` (values survive
+  re-renders), classes `bp-`; on a phone each plan line stacks as a block.
+  Checked in both themes (contrast audit clean) and at 390px.
+- **Results fix found the same day**: the five new campaigns use the
+  **Leads objective set to message conversations**, so Meta reports their
+  results as `onsite_conversion.messaging_conversation_started_7d`; the
+  board looked only for form leads and showed 0 results for all five (Meta:
+  3 to 21 each). `RESULT_ACTIONS.Leads` now falls back to conversations
+  started (campaigns.js and campaign-history.js).
+
 ## Campaign health · daily audit (Campaigns), 28 Oct 2026
 
 Anton: an automatic audit of the running Meta campaigns, refreshed every 24
@@ -1849,10 +1919,10 @@ name, who it's assigned to and its status exactly as monday shows it.
 - Due dates are sparse on these boards (Cowork: 1 of 17 on Operations
   General), so Overdue will usually read low; that's the data, not a bug.
 
-**Function budget: 12 of Vercel Hobby's 12 (FULL)** (sheets merged into one;
-`campaign-alerts`, `lead-alerts` and `advisor` added; the Claude connector
-shares `advisor`). New sheet tabs don't add
-to it; a new endpoint needs two existing ones merged first.
+**Function budget: 11 of Vercel Hobby's 12** (sheets merged into one;
+`campaign-alerts`, `lead-alerts` and `advisor` added; the Claude connector,
+the ManyChat hook, the campaign audit and the Budget Plan share `advisor`;
+`media-plan` deleted 29 Oct 2026). New sheet tabs don't add to it.
 
 ## Open items waiting on Muatasam
 

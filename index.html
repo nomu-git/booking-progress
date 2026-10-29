@@ -886,6 +886,79 @@
   html[data-theme="light"] .au .lq-st.good { background: rgba(12,163,12,.09); }
   html[data-theme="light"] .au .lq-st.bad { background: rgba(208,59,59,.09); }
   html[data-theme="light"] .au-act { background: rgba(var(--acc-rgb), .08); }
+  html[data-theme="light"] .bp .lq-st.good { background: rgba(12,163,12,.09); }
+  html[data-theme="light"] .bp .lq-st.bad { background: rgba(208,59,59,.09); }
+  html[data-theme="light"] .bp-now { background: rgba(var(--acc-rgb), .08); }
+  /* Budget Plan (Campaigns › This year › Budget Plan). */
+  .bp-meta { font-size: 12px; color: var(--text-3); margin: -4px 0 12px; }
+  .bp-msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 12px; border: 1px solid var(--line); }
+  .bp-msg.ok { color: var(--good-ink); background: rgba(12,163,12,.08); }
+  .bp-msg.err { color: var(--bad-ink); background: rgba(208,59,59,.08); }
+  .bp-pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .bp-pcard { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+  .bp-pcard.now { border-color: rgba(var(--acc-rgb), .55); box-shadow: inset 0 0 0 1px rgba(var(--acc-rgb), .25); }
+  .bp-ph { display: flex; align-items: center; gap: 8px; }
+  .bp-pname { font-weight: 700; color: var(--strong); font-size: 14px; }
+  .bp-now, .bp-done { font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; }
+  .bp-now { background: rgba(var(--acc-rgb), .14); color: var(--yellow); }
+  .bp-done { background: var(--track); color: var(--text-3); }
+  .bp-dates { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .bp-amt { font-size: 22px; font-weight: 700; color: var(--strong); margin: 6px 0 8px; font-variant-numeric: tabular-nums; }
+  .bp-amt span { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+  .bp-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; }
+  .bp-k { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .bp-v { font-weight: 700; color: var(--strong); font-variant-numeric: tabular-nums; }
+  .bp-v.bad { color: var(--bad-ink); }
+  .bp-track { position: relative; height: 8px; border-radius: 4px; background: var(--track); margin-top: 4px; }
+  .bp-fill { height: 100%; border-radius: 4px; background: var(--fill); min-width: 2px; }
+  .bp-fill.over { background: var(--danger); }
+  .bp-fill.spent { background: var(--fresh); }
+  .bp-fill.warn { background: var(--target); }
+  .bp-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--strong); border-radius: 1px; }
+  .bp-note { font-size: 11.5px; color: var(--text-2); margin-top: 4px; line-height: 1.45; }
+  .bp-note.bad { color: var(--bad-ink); }
+  .bp-cardact, .bp-rowact { display: flex; gap: 12px; }
+  .bp-cardact { margin-top: 10px; }
+  .bp-rowact { justify-content: flex-end; white-space: nowrap; }
+  .bp-link { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--yellow); cursor: pointer; }
+  .bp-link:hover { text-decoration: underline; }
+  .bp-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; }
+  .bp-btn:hover { border-color: rgba(var(--acc-rgb), .6); }
+  .bp-btn.primary { background: var(--yellow); border-color: var(--yellow); color: var(--navy); }
+  .bp-btn[disabled] { opacity: .6; cursor: wait; }
+  .bp-table + .bp-btn, .tscroll + .bp-btn { margin-top: 12px; }
+  .bp-miss { font-size: 12.5px; color: var(--warn-ink); margin: -4px 0 12px; line-height: 1.8; }
+  .bp-mi { display: inline-flex; gap: 6px; align-items: baseline; margin-right: 14px; color: var(--text); }
+  .bp-nop { color: var(--text-3); cursor: help; }
+  .bp-form { margin-top: 14px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(var(--acc-rgb), .5); background: rgba(var(--acc-rgb), .04); }
+  .bp-ftitle { font-weight: 700; color: var(--strong); margin-bottom: 10px; }
+  .bp-fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; align-items: end; }
+  .bp-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .bp-f > span { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .bp-f.bp-wide { grid-column: 1 / -1; }
+  .bp-f input, .bp-f select { font: inherit; font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); min-width: 0; width: 100%; box-sizing: border-box; }
+  .bp-f.bp-wide select, .bp-f.bp-wide input { max-width: 520px; }
+  .bp-f .seg { align-self: flex-start; }
+  .bp-sum { font-size: 13px; color: var(--text-2); margin: 12px 0 4px; }
+  .bp-sum b { color: var(--strong); }
+  .bp-pw { font-size: 12px; color: var(--text-3); margin-top: 8px; }
+  .bp-pwf { margin-top: 10px; max-width: 320px; }
+  .bp-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .bp-ph-only { display: none; }
+  @media (max-width: 700px) {
+    .bp-fgrid { grid-template-columns: 1fr 1fr; }
+    /* Each plan line stacks as a small block, so nothing scrolls out of sight. */
+    .bp-table thead { display: none; }
+    .bp-table, .bp-table tbody { display: block; width: 100%; }
+    .bp-table tr { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name st" "bud plan" "dates dates" "spent spent" "act act"; gap: 6px 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .bp-table td { display: block; padding: 0 !important; border: 0 !important; text-align: left !important; white-space: normal; }
+    .bp-c-name { grid-area: name; } .bp-c-st { grid-area: st; } .bp-c-bud { grid-area: bud; }
+    .bp-c-plan { grid-area: plan; text-align: right !important; } .bp-c-dates { grid-area: dates; }
+    .bp-c-spent { grid-area: spent; } .bp-table td.bp-c-act { grid-area: act; display: flex; gap: 18px; justify-content: flex-start; }
+    .bp-c-bud .lq-sub, .bp-c-dates .lq-sub { display: inline; margin-left: 4px; }
+    .bp-c-spent .bp-dash { display: none; }
+    .bp-ph-only { display: inline; color: var(--text-3); font-size: 12px; }
+  }
   @media (max-width: 700px) { .au-grid { grid-template-columns: 1fr; } }
   /* ---- budget vs actual ----
      The one comparison this tab exists to make: two figures side by side and
@@ -2723,16 +2796,16 @@
     status: ['Status', 'Active means Meta is running this campaign right now. Inactive means it is paused, finished, or switched off.'],
     months: ['Months', 'The months this campaign actually delivered in. A campaign that ran in January and again in August shows both, not the gap between them.'],
     dailySpend: ['Daily Spend', 'How much the campaign is set to spend per day in Meta: the daily budgets of its active ad sets added up. Running campaigns only; a dash means it isn\'t running.'],
-    budget: ['Budget', 'What this campaign is allowed to spend. Taken from Updated Budget.xlsx where the campaign matches a plan line, otherwise $500 is assumed.'],
+    budget: ['Budget', 'What this campaign is planned to spend, from the Budget Plan (the Budget Plan tab beside Overview). A dash means the campaign is not in the plan. On the total above: the money in the plan\'s budget periods.'],
     budgetAssumed: ['Budget', 'There is no budget sheet for past years, so every campaign in History is measured against the same assumed $500.'],
     spend: ['Spend', 'Money actually spent, live from Meta. Accounts billed in USD are converted to SAR so every figure on the board reads in one currency.'],
-    remaining: ['Remaining', 'Budget minus spend. A negative number means the campaign spent past its budget.'],
+    remaining: ['Remaining', 'Planned budget minus what the campaign spent inside its planned dates. A negative number means it spent past its budget.'],
     results: ['Results', 'The main action the campaign was set up to get, so it means different things on different campaigns: conversations started on a Messages campaign, leads on a Leads campaign, purchases on a Sales campaign.'],
     costPerResult: ['Cost / Result', 'Spend divided by results — what one result cost on average. Blank when a campaign has no results yet, rather than showing a misleading zero.'],
     purchases: ['Purchases', 'Purchases Meta actually tracked, counted on every campaign whatever its objective. A Messages campaign can still drive sales, and Results would only show its message count, so those sales appear here instead.'],
     impressions: ['Impressions', 'How many times the ads were shown. The same person seeing an ad twice counts twice, so this runs higher than the number of people reached.'],
-    spendVsBudget: ['Spend vs Budget', 'Spend as a percentage of budget. The bar fills as it gets closer, turns amber from 85%, and red once it is past 100%.'],
-    actualSpend: ['Actual spend', 'Total spent across every campaign below, live from Meta, against the total budget beside it.'],
+    spendVsBudget: ['Spend vs Budget', 'Spend inside its planned dates as a percentage of its planned budget. The bar fills as it gets closer, turns amber from 85%, and red once it is past 100%.'],
+    actualSpend: ['Actual spend', 'Everything spent on Meta during the Budget Plan\'s periods, live, against the budget beside it. Campaigns not in the plan count too: it is one ad budget.'],
     leadsWeek: ['Leads', "Everyone who messaged us this week on WhatsApp or Instagram. Counted automatically by ManyChat from 21 Oct 2026 (each new contact, once per 30 days); before that, from Marina's Leads Feedback & Report sheet. The weekly report's number where Marina has filled it in; otherwise the sum of the days logged so far."],
     leadsToday: ['Today', "Today's leads so far, counted live by ManyChat."],
     leadsBest: ['Busiest day', 'The day with the most leads in this week.'],
@@ -2897,7 +2970,7 @@
       </tr>`;
     }).join('');
     const rule = `Good: at least 1 high potential lead and cost per high potential lead at or below the running average (${g.avgCostPerHp == null ? 'none yet' : `${p.currency || 'SAR'} ${money(g.avgCostPerHp)}`}). Watch: under ${g.minLeads || 5} leads so far, or above that average. Bad: ${g.minLeads || 5}+ leads and no high potential, or a high potential rate under ${Math.round((g.minHpRate || 0.1) * 100)}%. Leads are matched to a campaign by the project in its name (EB-ZNZ-EX -> ZNZ|EX), counted from its start, so they include the project's leads from any source. From 21 Oct 2026 they come from ManyChat and only count when the lead has a Trip tag (e.g. Trip: ZNZ|EX); before that, from Marina's sheet.`;
-    return `<div class="panel">
+    return `<div class="panel lqp">
         <div class="ptitle"><span ${tip('Lead quality', rule)}>Running campaigns · lead quality</span></div>
         ${g.error ? `<div class="msg err">Leads partly unavailable: ${esc(g.error)}</div>` : ''}
         <div class="tscroll">
@@ -2912,6 +2985,331 @@
       </div>`;
   }
 
+  /* ---------------- Budget Plan (Campaigns › This year) ----------------
+     Anton, 29 Oct 2026: the ad budget is set here, on the dashboard, and
+     everything budget-related reads it (lib/budget-plan.js): budget periods
+     (the money: "28 Oct to 30 Nov: USD 2,000") and one line per campaign
+     (SAR a day between two dates, or SAR a week over chosen weeks). The page
+     sends the whole plan back on save; the server checks the dashboard
+     password (the site has no login) and that nobody saved in between. */
+  let campSub = 'overview'; // This year: 'overview' | 'plan'
+  let bpForm = null; // campaign form values while it's open
+  let bpPer = null; // period form values while it's open
+  let bpMsg = null; // { ok, text } after a save
+  let bpBusy = false;
+  let bpPwDraft = '';
+  const BP_KEY = 'nomuPlanKey';
+  const bpPass = {
+    get() { try { return localStorage.getItem(BP_KEY) || ''; } catch (e) { return ''; } },
+    set(v) { try { if (v) localStorage.setItem(BP_KEY, v); else localStorage.removeItem(BP_KEY); } catch (e) { /* private mode */ } },
+  };
+  const BP_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const BP_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const bpD = (iso) => { const d = new Date(`${iso}T00:00:00Z`); return `${BP_DOW[d.getUTCDay()]} ${d.getUTCDate()} ${BP_MON[d.getUTCMonth()]}`; };
+  const bpAdd = (iso, n) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+  const bpLen = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5) + 1;
+  const bpToday = () => new Date(Date.now() + 4 * 36e5).toISOString().slice(0, 10);
+  const bpSun = (iso) => bpAdd(iso, -new Date(`${iso}T00:00:00Z`).getUTCDay());
+  // Sunday-Saturday weeks, this week and the 25 after (plus any week a line
+  // being edited already uses, so editing doesn't drop it).
+  function bpWeeks(extra) {
+    const sun = bpSun(bpToday());
+    const starts = new Set([...Array(26)].map((_, i) => bpAdd(sun, 7 * i)));
+    (extra || []).filter(Boolean).forEach((d) => starts.add(bpSun(d)));
+    return [...starts].sort().map((st) => ({ start: st, end: bpAdd(st, 6), label: `${bpD(st)} – ${bpD(bpAdd(st, 6))}${st === sun ? ' · this week' : ''}` }));
+  }
+  const BP_ST = { 'On track': 'good', Slow: 'watch', Fast: 'bad', Over: 'bad', 'Not in Meta': 'watch', Planned: 'none', Ended: 'none' };
+  const BP_GL = { 'On track': '▲', Slow: '■', Fast: '▼', Over: '▼', 'Not in Meta': '■', Planned: '○', Ended: '○' };
+
+  // What a form would plan, for the line under it.
+  function bpFormTotal(f) {
+    const amt = Number(f.amount);
+    if (!(amt > 0)) return null;
+    if (f.mode === 'weekly') {
+      if (!f.wFrom || !f.wTo || f.wTo < f.wFrom) return null;
+      const weeks = Math.round(bpLen(f.wFrom, f.wTo) / 7);
+      return { total: amt * weeks, text: `${weeks} week${weeks === 1 ? '' : 's'}` };
+    }
+    if (!f.start || !f.end || f.end < f.start) return null;
+    const days = bpLen(f.start, f.end);
+    return { total: amt * days, text: `${days} day${days === 1 ? '' : 's'}` };
+  }
+
+  function bpPwHtml() {
+    if (bpPass.get()) return `<div class="bp-pw">Password saved on this device · <button type="button" class="bp-link" data-bp="forget">Forget it</button></div>`;
+    return `<label class="bp-f bp-pwf"><span>Dashboard password (needed to save)</span><input type="password" id="bpPw" autocomplete="current-password" value="${attr(bpPwDraft)}"></label>`;
+  }
+
+  function bpLineForm(p) {
+    const f = bpForm;
+    const live = p.liveCampaigns || [];
+    const opts = live.map((c) => `<option value="${attr(c.id)}"${f.pick === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+    // Editing a line tied to a campaign that isn't running any more: keep it pickable.
+    const kept = f.pick && f.pick !== '__typed' && !live.some((c) => c.id === f.pick)
+      ? `<option value="${attr(f.pick)}" selected>${esc(f.keptName || f.pick)} (not running now)</option>` : '';
+    const weeks = bpWeeks([f.wFrom, f.wTo]);
+    const wsel = (key, val, useEnd) => `<select class="fselect" data-bpf="${key}">${weeks.map((w) => {
+      const v = useEnd ? w.end : w.start;
+      return `<option value="${v}"${v === val ? ' selected' : ''}>${esc(w.label)}</option>`;
+    }).join('')}</select>`;
+    const tot = bpFormTotal(f);
+    const rate = (p.budgetPlan && p.budgetPlan.usdSar) || 3.75;
+    return `<div class="bp-form" id="bpLineForm">
+      <div class="bp-ftitle">${f.id ? 'Change this campaign budget' : 'Add a campaign budget'}</div>
+      <div class="bp-fgrid">
+        <label class="bp-f bp-wide"><span>Campaign</span><select class="fselect" data-bpf="pick">
+          ${live.length ? `<optgroup label="Running in Meta now (auto-detected)">${opts}</optgroup>` : ''}${kept}
+          <option value="__typed"${f.pick === '__typed' ? ' selected' : ''}>Type a name (not in Meta yet)…</option>
+        </select></label>
+        ${f.pick === '__typed' ? `<label class="bp-f bp-wide"><span>Campaign name, exactly as it is (or will be) named in Meta</span><input type="text" data-bpf="typed" value="${attr(f.typed || '')}" maxlength="120" placeholder="e.g. Engagement post (always on)"></label>` : ''}
+        <div class="bp-f"><span>Budget</span><div class="seg" role="group" aria-label="Budget type">
+          <button type="button" data-bp="mode" data-mode="daily" aria-pressed="${f.mode !== 'weekly'}">Daily</button>
+          <button type="button" data-bp="mode" data-mode="weekly" aria-pressed="${f.mode === 'weekly'}">Weekly</button>
+        </div></div>
+        <label class="bp-f"><span>SAR per ${f.mode === 'weekly' ? 'week' : 'day'}</span><input type="number" inputmode="decimal" min="1" step="1" data-bpf="amount" value="${attr(f.amount ?? '')}"></label>
+        ${f.mode === 'weekly'
+          ? `<label class="bp-f"><span>From week</span>${wsel('wFrom', f.wFrom)}</label><label class="bp-f"><span>To week</span>${wsel('wTo', f.wTo, true)}</label>`
+          : `<label class="bp-f"><span>Start date</span><input type="date" data-bpf="start" value="${attr(f.start || '')}"></label><label class="bp-f"><span>End date</span><input type="date" data-bpf="end" value="${attr(f.end || '')}"></label>`}
+      </div>
+      <div class="bp-sum" id="bpLineSum">${tot ? `= <b>SAR ${int(tot.total)}</b> over ${tot.text} (about USD ${int(tot.total / rate)})` : 'Fill in the amount and the dates.'}</div>
+      ${bpPwHtml()}
+      ${bpMsg && !bpMsg.ok ? `<div class="bp-msg err">▲ ${esc(bpMsg.text)}</div>` : ''}
+      <div class="bp-actions">
+        <button type="button" class="bp-btn primary" data-bp="saveLine"${bpBusy ? ' disabled' : ''}>${bpBusy ? 'Saving…' : 'Set budget'}</button>
+        <button type="button" class="bp-btn" data-bp="cancel">Cancel</button>
+      </div>
+    </div>`;
+  }
+
+  function bpPeriodForm() {
+    const f = bpPer;
+    return `<div class="bp-form" id="bpPerForm">
+      <div class="bp-ftitle">${f.id ? 'Change this budget period' : 'Add a budget period'}</div>
+      <div class="bp-fgrid">
+        <label class="bp-f bp-wide"><span>Name</span><input type="text" data-bpp="name" value="${attr(f.name || '')}" maxlength="60" placeholder="e.g. January"></label>
+        <label class="bp-f"><span>From</span><input type="date" data-bpp="start" value="${attr(f.start || '')}"></label>
+        <label class="bp-f"><span>To</span><input type="date" data-bpp="end" value="${attr(f.end || '')}"></label>
+        <label class="bp-f"><span>Budget</span><input type="number" inputmode="decimal" min="1" step="1" data-bpp="amount" value="${attr(f.amount ?? '')}"></label>
+        <label class="bp-f"><span>Currency</span><select class="fselect" data-bpp="currency">
+          <option value="USD"${f.currency !== 'SAR' ? ' selected' : ''}>USD</option><option value="SAR"${f.currency === 'SAR' ? ' selected' : ''}>SAR</option>
+        </select></label>
+      </div>
+      ${bpPwHtml()}
+      ${bpMsg && !bpMsg.ok ? `<div class="bp-msg err">▲ ${esc(bpMsg.text)}</div>` : ''}
+      <div class="bp-actions">
+        <button type="button" class="bp-btn primary" data-bp="savePer"${bpBusy ? ' disabled' : ''}>${bpBusy ? 'Saving…' : 'Set period'}</button>
+        <button type="button" class="bp-btn" data-bp="cancelPer">Cancel</button>
+      </div>
+    </div>`;
+  }
+
+  function bpHtml(p) {
+    const bp = p.budgetPlan;
+    if (!bp || !bp.plan) return '<div class="panel bp"><div class="msg">The Budget Plan could not be loaded.</div></div>';
+    const tip = (title, text) => `data-tip="${attr(`<div class="tt">${esc(title)}</div><div class="more">${esc(text)}</div>`)}"`;
+    const today = bp.today || bpToday();
+    const saved = bp.plan.updatedAt
+      ? `Last saved ${esc(new Date(bp.plan.updatedAt).toLocaleString('en-GB', { timeZone: 'Asia/Muscat', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }))} (Muscat)`
+      : 'Starting plan from the 28 Oct messages, not saved yet. Any change you set is saved for everyone.';
+    // A save error shows next to the open form's button; anything else up top.
+    const msg = bpMsg && (bpMsg.ok || !(bpForm || bpPer)) ? `<div class="bp-msg ${bpMsg.ok ? 'ok' : 'err'}">${bpMsg.ok ? '✓' : '▲'} ${esc(bpMsg.text)}</div>` : '';
+
+    const pcards = bp.periods.map((x) => {
+      const amt = x.amountSar;
+      const over = x.planned > amt;
+      const gone = x.days ? x.daysGone / x.days : 0;
+      const projOver = x.projected != null && x.projected > amt;
+      const bar = (v, cls, mark) => `<div class="bp-track"><div class="bp-fill${cls}" style="width:${Math.min(100, amt ? v / amt * 100 : 0).toFixed(1)}%"></div>${mark != null ? `<div class="bp-mark" style="left:${(Math.min(1, mark) * 100).toFixed(1)}%"></div>` : ''}</div>`;
+      return `<div class="bp-pcard${x.current ? ' now' : ''}">
+        <div class="bp-ph"><span class="bp-pname">${esc(x.name)}</span>${x.current ? '<span class="bp-now">Now</span>' : x.done ? '<span class="bp-done">Finished</span>' : ''}</div>
+        <div class="bp-dates">${esc(bpD(x.start))} – ${esc(bpD(x.end))} · ${int(x.days)} days</div>
+        <div class="bp-amt">${esc(x.currency)} ${int(x.amount)}${x.currency === 'USD' ? ` <span>= SAR ${int(amt)}</span>` : ''}</div>
+        <div class="bp-row"><span class="bp-k"><span ${tip('Planned', 'Every campaign budget in the plan on these days, added up. Over the period\'s money means the plan itself spends more than the budget.')}>Planned</span></span><span class="bp-v${over ? ' bad' : ''}">SAR ${int(x.planned)}</span></div>
+        ${bar(x.planned, over ? ' over' : '')}
+        <div class="bp-note${over ? ' bad' : ''}">${over ? `▲ SAR ${int(x.planned - amt)} more than this budget` : `SAR ${int(amt - x.planned)} not planned yet`}</div>
+        <div class="bp-row"><span class="bp-k"><span ${tip('Spent so far', 'All Meta spend on these days, live, including campaigns that are not in the plan. The mark shows how much of the period has gone.')}>Spent so far</span></span><span class="bp-v">SAR ${int(x.spent)}</span></div>
+        ${bar(x.spent, projOver ? ' warn' : ' spent', x.daysGone || x.current ? gone : null)}
+        <div class="bp-note${projOver ? ' bad' : ''}">${x.perDayActual != null
+          ? `SAR ${int(x.perDayActual)} a day so far${x.done ? '' : projOver ? ` · ▲ at that pace it runs out on <b>${esc(bpD(x.runsOut))}</b>` : ` · at that pace SAR ${int(x.projected)} by ${esc(bpD(x.end))}`}`
+          : today < x.start ? `Starts ${esc(bpD(x.start))}` : 'First day: no full day of spend yet'}</div>
+        ${x.unplanned ? `<div class="bp-note">Includes SAR ${int(x.unplanned)} by campaigns not in the plan: ${x.unplannedCampaigns.slice(0, 3).map((c) => esc(c.name)).join(', ')}${x.unplannedCampaigns.length > 3 ? '…' : ''}</div>` : ''}
+        <div class="bp-cardact"><button type="button" class="bp-link" data-bp="editPer" data-id="${attr(x.id)}">Edit</button><button type="button" class="bp-link" data-bp="delPer" data-id="${attr(x.id)}">Remove</button></div>
+      </div>`;
+    }).join('');
+
+    const lines = [...bp.lines].sort((a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name));
+    const rows = lines.map((l) => {
+      const st = BP_ST[l.status] || 'none';
+      const sub = l.linked
+        ? (l.metaName && l.metaName !== l.name ? `Meta: ${esc(l.metaName)} · ` : '') + (l.metaStatus === 'Active' ? 'running in Meta' : 'in Meta, not running')
+        : 'not in Meta yet';
+      const pctUsed = l.plannedTotal ? l.spent / l.plannedTotal : null;
+      return `<tr>
+        <td class="cname bp-c-name">${esc(l.name)}<div class="lq-sub">${sub}</div></td>
+        <td class="num bp-c-bud">SAR ${int(l.amount)}<div class="lq-sub">a ${l.mode === 'weekly' ? 'week' : 'day'}</div></td>
+        <td class="bp-c-dates">${esc(bpD(l.start))} – ${esc(bpD(l.end))}<div class="lq-sub">${int(l.days)} days</div></td>
+        <td class="num bp-c-plan"><span class="bp-ph-only">Planned SAR </span>${int(l.plannedTotal)}</td>
+        <td class="abar-cell bp-c-spent">${l.linked && today >= l.start ? barFor(l.spent, l.plannedTotal) + `<div class="lq-sub">SAR ${int(l.spent)} spent</div>` : '<span class="bp-dash">—</span>'}</td>
+        <td class="bp-c-st"><span class="lq-st ${st}" ${tip(l.status, l.why || '')}>${BP_GL[l.status] || '○'} ${esc(l.status)}</span></td>
+        <td class="bp-rowact bp-c-act"><button type="button" class="bp-link" data-bp="editLine" data-id="${attr(l.id)}">Edit</button><button type="button" class="bp-link" data-bp="delLine" data-id="${attr(l.id)}">Remove</button></td>
+      </tr>`;
+    }).join('');
+    const inPlan = new Set(bp.lines.filter((l) => l.metaId).map((l) => l.metaId));
+    const missing = (p.liveCampaigns || []).filter((c) => !inPlan.has(c.id));
+
+    return `${msg}
+      <div class="panel bp">
+        <div class="ptitle"><span ${tip('Budget periods', 'The money for ads over a stretch of dates. Spend against a period is all Meta spend on those days. Campaign budgets below are planned against these periods. The KPIs, the Overview figures and the daily audit all read this plan.')}>Budget Plan · periods</span></div>
+        <div class="bp-meta">${saved}</div>
+        <div class="bp-pgrid">${pcards || '<div class="msg">No budget period yet.</div>'}</div>
+        ${bpPer ? bpPeriodForm() : `<button type="button" class="bp-btn" data-bp="addPer">+ Add a budget period</button>`}
+      </div>
+
+      <div class="panel bp">
+        <div class="ptitle"><span ${tip('Campaign budgets', 'What each campaign is set to spend: SAR a day between two dates, or SAR a week over whole Sunday to Saturday weeks. A line is tied to its Meta campaign, so spend is counted only inside its dates. Status compares spend up to yesterday with the plan up to yesterday: On track 70 to 115%, Slow under, Fast over, Over past its whole budget.')}>Campaign budgets</span></div>
+        ${missing.length ? `<div class="bp-miss">▲ Running in Meta but not in the plan: ${missing.map((c) => `<span class="bp-mi">${esc(c.name)} <button type="button" class="bp-link" data-bp="addLive" data-id="${attr(c.id)}">Add to plan</button></span>`).join('')}</div>` : ''}
+        <div class="tscroll">
+          <table class="ctable bp-table">
+            <thead><tr><th>Campaign</th><th class="num">Budget</th><th>Dates</th><th class="num">Planned</th><th>Spent</th><th>Status</th><th></th></tr></thead>
+            <tbody>${rows || '<tr><td class="cname" colspan="7">No campaign budget yet.</td></tr>'}</tbody>
+          </table>
+        </div>
+        ${bpForm ? bpLineForm(p) : `<button type="button" class="bp-btn" data-bp="addLine">+ Add a campaign budget</button>`}
+      </div>`;
+  }
+
+  // Send the whole plan; the server checks the password and that nobody else saved since.
+  async function bpSave(next, done) {
+    const pw = bpPass.get() || bpPwDraft.trim();
+    if (!pw) { bpMsg = { ok: false, text: 'Enter the dashboard password to save.' }; renderCampaigns(); return; }
+    bpBusy = true;
+    renderCampaigns();
+    try {
+      const base = campaigns.budgetPlan.plan;
+      const res = await fetch('/api/budget-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw, baseUpdatedAt: base.updatedAt || null, plan: { periods: next.periods, lines: next.lines } }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 401) bpPass.set('');
+        if (res.status === 409) loadCampaigns(true);
+        throw new Error(j.error || `Could not save (HTTP ${res.status})`);
+      }
+      bpPass.set(pw);
+      bpPwDraft = '';
+      if (done) done();
+      bpMsg = { ok: true, text: 'Saved. Campaigns, the KPIs and the daily audit now use this plan.' };
+      bpBusy = false;
+      await loadCampaigns(true);
+      if (kpiData) loadKpis(true);
+      return;
+    } catch (err) {
+      bpMsg = { ok: false, text: err.message };
+    }
+    bpBusy = false;
+    renderCampaigns();
+  }
+  const bpClone = () => JSON.parse(JSON.stringify(campaigns.budgetPlan.plan));
+
+  function bpBind(wrap) {
+    const p = campaigns;
+    const plan = p.budgetPlan && p.budgetPlan.plan;
+    if (!plan) return;
+    const live = p.liveCampaigns || [];
+    const sumEl = () => wrap.querySelector('#bpLineSum');
+    const rate = p.budgetPlan.usdSar || 3.75;
+    wrap.querySelectorAll('[data-bpf]').forEach((el) => {
+      const k = el.dataset.bpf;
+      el.addEventListener('input', () => {
+        bpForm[k] = el.value;
+        const t = bpFormTotal(bpForm);
+        if (sumEl()) sumEl().innerHTML = t ? `= <b>SAR ${int(t.total)}</b> over ${t.text} (about USD ${int(t.total / rate)})` : 'Fill in the amount and the dates.';
+      });
+      if (k === 'pick') el.addEventListener('change', () => { bpForm.pick = el.value; renderCampaigns(); });
+    });
+    wrap.querySelectorAll('[data-bpp]').forEach((el) => el.addEventListener('input', () => { bpPer[el.dataset.bpp] = el.value; }));
+    const pwEl = wrap.querySelector('#bpPw');
+    if (pwEl) pwEl.addEventListener('input', () => { bpPwDraft = pwEl.value; });
+
+    wrap.querySelectorAll('[data-bp]').forEach((b) => b.addEventListener('click', () => {
+      const act = b.dataset.bp;
+      const id = b.dataset.id;
+      bpMsg = null;
+      const firstFree = () => { const used = new Set(plan.lines.map((l) => l.campaignId)); const c = live.find((x) => !used.has(x.id)); return c ? c.id : (live[0] ? live[0].id : '__typed'); };
+      const t = bpToday();
+      if (act === 'addLine' || act === 'addLive') {
+        const sun = bpSun(t);
+        bpForm = { id: null, pick: act === 'addLive' ? id : firstFree(), typed: '', mode: 'daily', amount: '', start: t, end: '', wFrom: sun, wTo: bpAdd(sun, 6) };
+      } else if (act === 'editLine') {
+        const l = plan.lines.find((x) => x.id === id);
+        if (!l) return;
+        const ln = (p.budgetPlan.lines || []).find((x) => x.id === id) || {};
+        const pick = l.campaignId || (ln.metaId && live.some((c) => c.id === ln.metaId) ? ln.metaId : '__typed');
+        bpForm = { id: l.id, pick, keptName: l.name, typed: l.campaignId ? '' : l.name, mode: l.mode, amount: l.amount, start: l.start, end: l.end, wFrom: bpSun(l.start), wTo: l.end };
+      } else if (act === 'cancel') bpForm = null;
+      else if (act === 'mode') {
+        bpForm.mode = b.dataset.mode;
+        if (bpForm.mode === 'weekly') {
+          bpForm.wFrom = bpSun(bpForm.start || t);
+          const e = bpForm.end || bpAdd(bpForm.wFrom, 6);
+          bpForm.wTo = bpAdd(bpSun(e), 6);
+        } else {
+          bpForm.start = bpForm.wFrom; bpForm.end = bpForm.wTo;
+        }
+      } else if (act === 'saveLine') {
+        const f = bpForm;
+        const camp = f.pick !== '__typed' ? (live.find((c) => c.id === f.pick) || { id: f.pick, name: f.keptName }) : null;
+        const name = camp ? camp.name : String(f.typed || '').trim();
+        if (!name) { bpMsg = { ok: false, text: 'Pick a campaign or type its name.' }; renderCampaigns(); return; }
+        const line = {
+          id: f.id || undefined, campaignId: camp ? camp.id : null, name, mode: f.mode === 'weekly' ? 'weekly' : 'daily',
+          amount: Number(f.amount),
+          start: f.mode === 'weekly' ? f.wFrom : f.start,
+          end: f.mode === 'weekly' ? f.wTo : f.end,
+        };
+        const next = bpClone();
+        next.lines = f.id ? next.lines.map((x) => (x.id === f.id ? { ...line, id: f.id } : x)) : [...next.lines, line];
+        bpSave(next, () => { bpForm = null; });
+        return;
+      } else if (act === 'delLine') {
+        const l = plan.lines.find((x) => x.id === id);
+        if (!l || !confirm(`Remove the budget for ${l.name} (${bpD(l.start)} to ${bpD(l.end)})?`)) return;
+        const next = bpClone();
+        next.lines = next.lines.filter((x) => x.id !== id);
+        bpSave(next);
+        return;
+      } else if (act === 'addPer') {
+        const last = plan.periods.map((x) => x.end).sort().slice(-1)[0];
+        const st = last ? bpAdd(last, 1) : t;
+        bpPer = { id: null, name: '', start: st, end: '', amount: '', currency: 'USD' };
+      } else if (act === 'editPer') {
+        const x = plan.periods.find((y) => y.id === id);
+        if (!x) return;
+        bpPer = { ...x };
+      } else if (act === 'cancelPer') bpPer = null;
+      else if (act === 'savePer') {
+        const f = bpPer;
+        const per = { id: f.id || undefined, name: String(f.name || '').trim(), start: f.start, end: f.end, amount: Number(f.amount), currency: f.currency === 'SAR' ? 'SAR' : 'USD' };
+        const next = bpClone();
+        next.periods = f.id ? next.periods.map((x) => (x.id === f.id ? { ...per, id: f.id } : x)) : [...next.periods, per];
+        bpSave(next, () => { bpPer = null; });
+        return;
+      } else if (act === 'delPer') {
+        const x = plan.periods.find((y) => y.id === id);
+        if (!x || !confirm(`Remove the budget period ${x.name}?`)) return;
+        const next = bpClone();
+        next.periods = next.periods.filter((y) => y.id !== id);
+        bpSave(next);
+        return;
+      } else if (act === 'forget') { bpPass.set(''); }
+      renderCampaigns();
+      const form = wrap.querySelector('#bpLineForm, #bpPerForm');
+      if (form && (act === 'addLine' || act === 'addLive' || act === 'editLine' || act === 'addPer' || act === 'editPer')) form.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }));
+  }
+
   // Campaign health (Anton, 28 Oct 2026): one card per running campaign with
   // a status (rules over Meta's numbers), what's happening and the next step
   // (written by Claude once a day). Dashboard only, nothing goes to Slack.
@@ -2920,14 +3318,15 @@
   function auditPanel() {
     const tip = (title, text) => `data-tip="${attr(`<div class="tt">${esc(title)}</div><div class="more">${esc(text)}</div>`)}"`;
     const a = audit;
-    const head = (meta) => `<div class="ptitle"><span ${tip('Campaign health', 'Checked once a day for every running campaign. The status comes from fixed rules: Unhealthy when cost per result is over the limit (after 5 results), it is over its media-plan budget, it spent in the last 7 days with no results, or its lead quality is Bad. Medium when it is too early to judge (under 5 days or 5 results), still learning, close to the cost limit, near its budget, shown too often to the same people, or its results fell week on week. Healthy otherwise. What is happening and the next step are written by Claude from the same figures, read-only.')}>Campaign health · daily audit</span></div>${meta || ''}`;
+    const head = (meta) => `<div class="ptitle"><span ${tip('Campaign health', 'Checked once a day for every running campaign. The status comes from fixed rules: Unhealthy when cost per result is over the limit (after 5 results), it has spent more than its Budget Plan budget, it spent in the last 7 days with no results, or its lead quality is Bad. Medium when it is too early to judge (under 5 days or 5 results), still learning, close to the cost limit, near its planned budget, spending faster than its plan, not in the Budget Plan, shown too often to the same people, or its results fell week on week. Healthy otherwise. What is happening and the next step are written by Claude from the same figures, read-only.')}>Campaign health · daily audit</span></div>${meta || ''}`;
     if (!a) {
       return `<div class="panel au">${head()}<div class="au-meta">${auditErr ? esc(auditErr) : 'Loading today\'s audit…'}</div></div>`;
     }
     const cur = esc(a.currency || 'SAR');
     const when = new Date(a.generatedAt).toLocaleString('en-GB', { timeZone: 'Asia/Muscat', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
     const meta = `<div class="au-meta">Updated ${esc(when)} (Muscat) · refreshes every 24 hours · ${a.source === 'claude' ? 'notes by Claude' : 'notes by rules'}</div>
-      ${a.error ? `<div class="au-meta au-warn">${esc(a.error)}</div>` : ''}`;
+      ${a.error ? `<div class="au-meta au-warn">${esc(a.error)}</div>` : ''}
+      ${a.period && (a.period.projected > a.period.amount || a.period.planned > a.period.amount) ? `<div class="au-meta au-warn">▲ Budget ${esc(a.period.name)}: ${cur} ${int(a.period.spent)} of ${cur} ${int(a.period.amount)} spent${a.period.runsOut ? `; at the pace so far it runs out on ${esc(bpD(a.period.runsOut))}` : ''}${a.period.planned > a.period.amount ? `. The plan is ${cur} ${int(a.period.planned - a.period.amount)} over this budget` : ''}.</div>` : ''}`;
     const list = a.campaigns || [];
     if (!list.length) return `<div class="panel au">${head(meta)}<div class="au-meta">No campaign is running right now.</div></div>`;
     const sm = a.summary || {};
@@ -2952,7 +3351,7 @@
         <div class="au-figs">
           <div><span class="au-k">Cost / result</span><span class="au-v${cprCls}">${c.costPerResult == null ? '—' : `${cur} ${money(c.costPerResult)}`}</span><span class="au-s">limit ${int(lim)}</span></div>
           <div><span class="au-k">Last 7 days</span><span class="au-v">${int(w.results)} results</span><span class="au-s">${p.results != null ? `${trend} ${int(p.results)} the week before` : ''}</span></div>
-          <div class="au-bud"><span class="au-k">Budget used${c.budgetAssumed ? ' (assumed)' : ''}</span><div class="au-barrow">${barFor(c.spend, c.budget)}</div></div>
+          <div class="au-bud"><span class="au-k">Budget used (plan)</span><div class="au-barrow">${c.inPlan && c.budget ? barFor(c.budget - (c.budgetRemaining ?? c.budget), c.budget) : '<span class="au-s">Not in the Budget Plan</span>'}</div></div>
         </div>
         <div class="au-lab">What's happening</div>
         <div class="au-txt">${esc(c.happening)}</div>
@@ -2984,10 +3383,8 @@
     if (campaigns) renderCampaigns();
   }
 
-  // Every 2026 campaign, each with its own budget to measure against. Budget
-  // comes from Updated Budget.xlsx where the campaign ties to a plan line and
-  // from a flat default where it doesn't; spend, names and status come live
-  // from Meta.
+  // Every 2026 campaign. Budgets come from the Budget Plan (a campaign not in
+  // the plan has none); spend, names and status come live from Meta.
   function renderCampaigns() {
     const p = campaigns;
     if (!p) return;
@@ -2998,6 +3395,24 @@
 
     const cur = esc(p.currency || 'SAR');
     const t = p.totals || {};
+    // Overview | Budget Plan inside This year (Anton, 29 Oct 2026).
+    const subBar = `<div class="seg subtabs" role="tablist" aria-label="This year">
+        <button role="tab" data-camp-sub="overview" aria-pressed="${campSub !== 'plan'}" aria-selected="${campSub !== 'plan'}">Overview</button>
+        <button role="tab" data-camp-sub="plan" aria-pressed="${campSub === 'plan'}" aria-selected="${campSub === 'plan'}">Budget Plan</button>
+      </div>`;
+    const bindSub = () => $('campaignsWrap').querySelectorAll('[data-camp-sub]').forEach((b) => b.addEventListener('click', () => {
+      if (campSub === b.dataset.campSub) return;
+      campSub = b.dataset.campSub;
+      bpMsg = null;
+      renderCampaigns();
+    }));
+    if (campSub === 'plan') {
+      $('campaignsWrap').innerHTML = subBar + bpHtml(p);
+      bindHelp($('campaignsWrap'));
+      bindSub();
+      bpBind($('campaignsWrap'));
+      return;
+    }
     const allRows = [...(p.campaigns || [])].sort((a, b) => b.spend - a.spend || a.name.localeCompare(b.name));
     // Running / All filter for the table (Anton, 15 Oct 2026), running by
     // default. The year hero above keeps every campaign; the table's TOTAL
@@ -3005,8 +3420,8 @@
     const running = allRows.filter((c) => c.status === 'Active');
     const rows = campShow === 'all' ? allRows : running;
     const sum = (k) => rows.reduce((n, c) => n + (Number(c[k]) || 0), 0);
-    const ft = { budget: sum('budgetSar'), spend: sum('spend'), results: sum('results'), purchases: sum('purchases'), impressions: sum('impressions') };
-    ft.remaining = ft.budget - ft.spend;
+    const ft = { budget: sum('budgetSar'), planSpend: sum('planSpend'), spend: sum('spend'), results: sum('results'), purchases: sum('purchases'), impressions: sum('impressions') };
+    ft.remaining = ft.budget - ft.planSpend;
     ft.costPerResult = ft.results ? ft.spend / ft.results : null;
     // Daily spend = the daily budget set in Meta on the campaign's active ad
     // sets (CBO is off, so it lives there), only for campaigns running now.
@@ -3021,25 +3436,25 @@
         <td class="cname">${esc(c.name)}</td>
         <td><span class="cpill ${c.status === 'Active' ? 'on' : 'off'}">${esc(c.status || 'Inactive')}</span></td>
         <td class="num">${show(daily(c), money)}</td>
-        <td class="num">${money(c.budgetSar)}</td>
+        <td class="num">${c.inPlan ? money(c.budgetSar) : '<span class="bp-nop" title="Not in the Budget Plan">—</span>'}</td>
         <td class="num">${money(c.spend)}</td>
-        <td class="num">${money(c.remaining)}</td>
+        <td class="num">${c.inPlan ? money(c.remaining) : '—'}</td>
         <td class="num">${int(c.results)}</td>
         <td class="num">${c.cprOver
           ? `<span class="cpr-over" data-tip="${attr(`<div class="tt">Over the cost limit</div><div class="more">${esc(cur)} ${esc(money(c.costPerResult))} per result, limit ${esc(cur)} ${esc(int(lim.report))}. Slack was alerted when it went over.</div>`)}">▲ ${money(c.costPerResult)}</span>`
           : show(c.costPerResult, money)}</td>
         <td class="num">${int(c.purchases)}</td>
         <td class="num">${int(c.impressions)}</td>
-        <td class="abar-cell">${barFor(c.spend, c.budgetSar)}</td>
+        <td class="abar-cell">${c.inPlan ? barFor(c.planSpend, c.budgetSar) : '<span class="lq-sub">Not in the Budget Plan</span>'}</td>
       </tr>`).join('');
 
-    $('campaignsWrap').innerHTML = `
+    $('campaignsWrap').innerHTML = `${subBar}
       ${p.stale ? `<div class="msg err">Showing last known figures — ${esc(p.error || 'Meta unreachable')}</div>` : ''}
 
       ${auditPanel()}
 
-      <div class="panel">
-        <div class="ptitle">Budget vs actual · ${p.year}</div>
+      <div class="panel bvp">
+        <div class="ptitle">Budget vs actual · Budget Plan${t.planFrom ? ` · ${esc(bpD(t.planFrom))} – ${esc(bpD(t.planTo))}` : ''}</div>
         <div class="bvhero">
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('budget')}>Budget</span></div>
@@ -3049,8 +3464,8 @@
           <div class="bv-vs">vs</div>
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('actualSpend')}>Actual spend</span></div>
-            <div class="bv-n bv-act">${money(t.spend)}</div>
-            <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
+            <div class="bv-n bv-act">${money(t.planSpend)}</div>
+            <div class="bv-s">${show(t.usedPct, pct)} of budget used${t.planTimeGone != null ? ` · ${pct(t.planTimeGone)} of the time gone` : ''}</div>
           </div>
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('remaining')}>Remaining</span></div>
@@ -3063,11 +3478,12 @@
             <div class="bvbar-fill" style="width:${Math.min(100, (t.usedPct || 0) * 100).toFixed(1)}%"></div>
           </div>
         </div>
+        <div class="pnote">From the Budget Plan (the tab beside Overview). Spend is everything on Meta in the plan's periods; the year's own spend is in the table below.</div>
       </div>
 
       ${lqPanel(p, rows)}
 
-      <div class="panel">
+      <div class="panel cbp">
         <div class="ptitle">Budget vs actual by campaign · ${p.year}</div>
         <div class="cpr-note${overCpr.length ? ' bad' : ''}">${overCpr.length ? '▲' : '✓'}
           Cost per result limit: <b>${cur} ${int(lim.report)}</b> for running campaigns ·
@@ -3097,13 +3513,14 @@
               <td class="num">${show(ft.costPerResult, money)}</td>
               <td class="num">${int(ft.purchases)}</td>
               <td class="num">${int(ft.impressions)}</td>
-              <td class="abar-cell">${barFor(ft.spend, ft.budget)}</td>
+              <td class="abar-cell">${ft.budget ? barFor(ft.planSpend, ft.budget) : '—'}</td>
             </tr></tfoot>
           </table>
         </div>
       </div>`;
 
     bindHelp($('campaignsWrap'));
+    bindSub();
     $('campaignsWrap').querySelectorAll('#campShowSeg [data-show]').forEach((b) => b.addEventListener('click', () => {
       campShow = b.dataset.show;
       renderCampaigns();
@@ -6215,7 +6632,7 @@
   function ovGlance(today) {
     const cards = [];
     const cp = { go: 'campaigns', tab: 'Campaigns', icon: 'target', title: 'Cost per result', pill: 'Running', tone: 'mkt' };
-    const bu = { go: 'campaigns', tab: 'Campaigns', icon: 'wallet', title: 'Ad budget used', pill: 'Year', tone: 'mkt' };
+    const bu = { go: 'campaigns', tab: 'Campaigns', icon: 'wallet', title: 'Ad budget used', pill: 'Plan', tone: 'mkt' };
     if (!campaigns || !campaigns.campaigns) cards.push(ovWait(cp, 'Meta'), ovWait(bu, 'Meta'));
     else {
       const cur = campaigns.currency || 'SAR';
@@ -6234,13 +6651,16 @@
             + (early ? ` · ${early} with under ${minR} results yet` : '')
           : 'No campaign is running right now'),
       })));
+      // Against the Budget Plan (Campaigns › This year › Budget Plan).
       const t = campaigns.totals || {};
-      const used = t.budget ? t.spend / t.budget : null;
-      const y0 = today.slice(0, 4) + '-01-01';
-      const yearGone = (ovDiff(y0, today) + 1) / (ovDiff(y0, today.slice(0, 4) + '-12-31') + 1);
+      const used = t.budget ? t.planSpend / t.budget : null;
+      const gone = t.planTimeGone != null ? t.planTimeGone : null;
+      const per = ((campaigns.budgetPlan || {}).periods || []).find((x) => x.current);
+      const runOut = per && per.projected != null && per.projected > per.amountSar && per.runsOut;
       cards.push(ovCard(Object.assign(bu, {
-        value: ovPct(used), of: `${esc(cur)} ${int(t.budget)}`, state: used != null && used > 1 ? 'bad' : '', bar: used, mark: yearGone,
-        note: `<b>${esc(cur)} ${int(t.spend)}</b> spent · ${ovPct(yearGone)} of the year gone (the mark) · ${int(t.active)} running`,
+        value: ovPct(used), of: `${esc(cur)} ${int(t.budget)}`, state: (used != null && used > 1) || runOut ? 'bad' : '', bar: used, mark: gone,
+        note: `<b>${esc(cur)} ${int(t.planSpend)}</b> spent of the Budget Plan${gone != null ? ` · ${ovPct(gone)} of its time gone (the mark)` : ''}`
+          + (runOut ? ` · <span class="bad">▼ ${esc(per.name)} runs out ${esc(bpD(per.runsOut))} at this pace</span>` : ` · ${int(t.active)} running`),
       })));
     }
 
@@ -6502,7 +6922,7 @@
   const PV = {
     leadsWrap: { always: true, groups: [['This week', [0, 1]], ['Trends', [2, 3]], ['New vs repeat', [4]]] },
     previousWrap: { always: true, groups: [['Charts', [0, 1]], ['Projects', [2, 3]]] },
-    campaignsWrap: { groups: [['Health', [0]], ['Budget', [1]], ['Lead quality', [2]], ['Campaigns', [3]]] },
+    campaignsWrap: { sel: [['Health', '.au'], ['Budget', '.bvp'], ['Lead quality', '.lqp'], ['Campaigns', '.cbp']] },
     overviewWrap: { sel: [['KPIs', '.ovk'], ['At a glance', '.ov-sec, .ov-grid'], ['Bookings', '.ov-low']] },
     reportWrap: { auto: true }, historyWrap: { auto: true }, engagementsWrap: { auto: true },
     tripsWrap: { auto: true }, feedbackWrap: { auto: true }, revenueWrap: { auto: true }, impactWrap: { auto: true }, kpisWrap: { auto: true },

@@ -3,8 +3,7 @@ const {
   AD_ACCOUNTS, REPORT_CURRENCY, USD_SAR,
 } = require('../lib/meta-ads');
 const { mapWithConcurrency } = require('../lib/wetravel');
-const { build: buildMediaPlan } = require('./media-plan');
-const { classify } = require('../lib/trip-code');
+const budgetPlan = require('../lib/budget-plan');
 const { fetchWorkbook } = require('../lib/sheet');
 const leadsTab = require('../lib/tabs/leads');
 const manychat = require('../lib/manychat');
@@ -15,10 +14,6 @@ const CACHE_TTL_MS = Number(process.env.META_CACHE_TTL_MS || 300000);
 // The sheet this replaces is "2026 figures only". Year is overridable so the
 // board rolls into 2027 without a code change.
 const YEAR = Number(process.env.META_YEAR || new Date().getUTCFullYear());
-
-// What a campaign is measured against when it can't be tied to a line in
-// Updated Budget.xlsx. Muatasam's rule: assume $500 rather than show a dash.
-const DEFAULT_BUDGET_USD = Number(process.env.META_DEFAULT_BUDGET_USD || 500);
 
 // Cost-per-result limit, in the report currency (SAR). Muatasam first said
 // "not more than 20 per result" (taken as USD), then on 8 Oct 2026: "Alarm
@@ -53,7 +48,10 @@ const OBJECTIVE_LABEL = {
 const RESULT_ACTIONS = {
   Messages: ['onsite_conversion.messaging_conversation_started_7d', 'onsite_conversion.messaging_first_reply'],
   Purchases: ['purchase', 'offsite_conversion.fb_pixel_purchase', 'omni_purchase'],
-  Leads: ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead'],
+  // A Leads campaign can be set to get its leads as WhatsApp / Messenger
+  // conversations; Meta then reports its results as conversations started
+  // (the five campaigns launched 28 Oct 2026 do). Form leads first, then that.
+  Leads: ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead', 'onsite_conversion.messaging_conversation_started_7d'],
   'Link Clicks': ['link_click'],
 };
 
@@ -386,84 +384,52 @@ async function build() {
   const noResultCampaigns = campaigns.filter((c) => c.noResults).map((c) => c.name);
 
   /* ---------------- budget per campaign ----------------
-     Every campaign carries its own budget, so the board can show spend
-     against budget on each line rather than a share of the total. Budgets
-     come from Updated Budget.xlsx where the campaign can be tied to a plan
-     line, and from a flat default where it can't — no row is ever left
-     without something to measure against.
-
-     Campaigns are named two different ways: the current code form
-     ("ZNZ-BL-202609-02C") and the older long form ("ZNZ Build MSG - 2026",
-     "Thailan Wellness MSG - 2026", typo included). Both resolve to the same
-     destination + programme pair, which is the level the plan budgets at.
-     Deliberately NOT matched on month: the plan's dates are the trip's own
-     window while a campaign's are the ad flight's, and a December trip is
-     advertised months earlier — matching those two was what put the wrong
-     budget on the wrong campaign before. Every programme that runs twice
-     carries the same budget in the sheet, so the pair alone is enough. */
-  const words = (s) => String(s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .split(' ')
-    .filter(Boolean);
-
-  // Both naming eras resolve through the same vocabulary the booking side
-  // uses, so "ZNZ-BL-202609-02C" and "ZNZ Build MSG - 2026" are both ZNZ-BL
-  // and a code can never mean one thing here and another there.
-  const projectKey = (name) => {
-    const { destination, programme } = classify({ name });
-    return destination && programme ? `${destination}-${programme}` : null;
-  };
-
-  let plan = null;
-  try {
-    plan = buildMediaPlan();
-  } catch (err) {
-    console.error(`media plan unavailable, every budget falls back to the default: ${err.message}`);
-  }
-
-  // project key -> planned USD, and the always-on website lines which have no
-  // destination at all and so are matched on their words instead.
-  const planByProject = new Map();
-  const planByWords = [];
-  for (const line of (plan && plan.lines) || []) {
-    if (line.cancelled) continue;
-    const key = projectKey(line.program);
-    if (key) {
-      if (!planByProject.has(key)) planByProject.set(key, { usd: line.budgetUsd, program: line.program });
-    } else {
-      planByWords.push({ need: words(line.program), usd: line.budgetUsd, program: line.program });
+     Budgets come from the Budget Plan set on the dashboard (lib/budget-plan.js,
+     Anton, 29 Oct 2026), which replaced the media plan (Updated Budget.xlsx)
+     and its assumed $500 default. A campaign in the plan is measured on its
+     spend inside its planned dates against the planned amount; a campaign not
+     in the plan has no budget (shown as a dash), and its spend still counts
+     against the plan period it falls in. */
+  // Every campaign Meta has switched on, delivered or not, for the plan's
+  // "running in Meta" picker and to tie typed names to campaigns.
+  const liveCampaigns = [];
+  for (const { accountId, campaigns: meta } of loaded) {
+    for (const c of meta || []) {
+      if ((c.effective_status || c.status) === 'ACTIVE') liveCampaigns.push({ id: c.id, name: c.name, account: accountId, status: 'Active' });
     }
   }
-
-  const planFor = (name) => {
-    const key = projectKey(name);
-    if (key && planByProject.has(key)) return planByProject.get(key);
-    const tokens = new Set(words(name));
-    const hit = planByWords.find((l) => l.need.every((w) => tokens.has(w)));
-    return hit || null;
-  };
+  const known = [...campaigns.map((c) => ({ id: c.id, name: c.name, status: c.status })), ...liveCampaigns.filter((l) => !campaigns.some((c) => c.id === l.id))];
+  const plan = await budgetPlan.load();
+  const planEval = await budgetPlan.evaluate(plan, known);
 
   for (const c of campaigns) {
-    const hit = planFor(c.name);
-    c.budgetUsd = hit ? hit.usd : DEFAULT_BUDGET_USD;
-    c.budgetSar = c.budgetUsd * USD_SAR;
-    c.budgetSource = hit ? 'plan' : 'default';
-    c.planProgram = hit ? hit.program : null;
-    c.remaining = c.budgetSar - c.spend;
-    c.usedPct = c.budgetSar ? c.spend / c.budgetSar : null;
+    const b = planEval.byCampaign[c.id];
+    c.inPlan = !!b;
+    c.budgetSar = b ? b.budget : null;
+    c.budgetSource = b ? 'plan' : null;
+    c.planSpend = b ? b.spent : null;
+    c.remaining = b ? b.remaining : null;
+    c.usedPct = b ? b.usedPct : null;
+    c.planPace = b ? b.pace : null;
+    c.planFrom = b ? b.start : null;
+    c.planTo = b ? b.end : null;
+    c.planToday = b ? b.todayBudget : null;
     c.costPerResult = c.results ? c.spend / c.results : null;
     c.cprOver = c.status === 'Active' && c.results >= CPR_MIN_RESULTS && c.costPerResult > CPR_LIMIT;
   }
 
-  // The table foots to these, so they're summed from the same rows rather
-  // than taken from the plan's own total — the two can't drift apart.
-  totals.budget = campaigns.reduce((total, c) => total + c.budgetSar, 0);
-  totals.remaining = totals.budget - totals.spend;
-  totals.usedPct = totals.budget ? totals.spend / totals.budget : null;
+  // The year's own spend stays in totals.spend; the budget figures are the
+  // plan's: its periods' money against all Meta spend on those days.
+  const pt = planEval.totals;
+  totals.budget = pt.budget;
+  totals.planSpend = pt.spent;
+  totals.remaining = pt.remaining;
+  totals.usedPct = pt.usedPct;
+  totals.planFrom = pt.from;
+  totals.planTo = pt.to;
+  totals.planTimeGone = pt.timeGone;
   totals.costPerResult = totals.results ? totals.spend / totals.results : null;
-  totals.onPlan = campaigns.filter((c) => c.budgetSource === 'plan').length;
+  totals.inPlan = campaigns.filter((c) => c.inPlan).length;
 
   const leadQuality = await addLeadQuality(campaigns);
 
@@ -478,9 +444,10 @@ async function build() {
     // converted, so the whole payload reads in one comparable unit.
     currency: REPORT_CURRENCY,
     totals,
-    budgetSource: 'Updated Budget.xlsx',
-    defaultBudgetUsd: DEFAULT_BUDGET_USD,
+    budgetSource: 'Budget Plan',
     usdSar: USD_SAR,
+    budgetPlan: { plan, ...planEval },
+    liveCampaigns,
     cprLimit: { report: CPR_LIMIT, minResults: CPR_MIN_RESULTS },
     leadQuality,
     campaigns,
