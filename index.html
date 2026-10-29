@@ -941,8 +941,10 @@
   .bp-f .seg { align-self: flex-start; }
   .bp-sum { font-size: 13px; color: var(--text-2); margin: 12px 0 4px; }
   .bp-sum b { color: var(--strong); }
-  .bp-pw { font-size: 12px; color: var(--text-3); margin-top: 8px; }
-  .bp-pwf { margin-top: 10px; max-width: 320px; }
+  .bp-ask { z-index: 60; }
+  .bp-askp { font-size: 13.5px; color: var(--text-2); line-height: 1.5; margin: 10px 0 0; }
+  .bp-askp b { color: var(--strong); }
+  .bp-ask .bp-actions { margin-top: 18px; }
   .bp-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .bp-ph-only { display: none; }
   @media (max-width: 700px) {
@@ -2990,19 +2992,34 @@
      everything budget-related reads it (lib/budget-plan.js): budget periods
      (the money: "28 Oct to 30 Nov: USD 2,000") and one line per campaign
      (SAR a day between two dates, or SAR a week over chosen weeks). The page
-     sends the whole plan back on save; the server checks the dashboard
-     password (the site has no login) and that nobody saved in between. */
+     sends the whole plan back on save, after an "Are you sure?" popup (no
+     password, Anton 29 Oct 2026); the server checks nobody saved in between. */
   let campSub = 'overview'; // This year: 'overview' | 'plan'
   let bpForm = null; // campaign form values while it's open
   let bpPer = null; // period form values while it's open
   let bpMsg = null; // { ok, text } after a save
   let bpBusy = false;
-  let bpPwDraft = '';
-  const BP_KEY = 'nomuPlanKey';
-  const bpPass = {
-    get() { try { return localStorage.getItem(BP_KEY) || ''; } catch (e) { return ''; } },
-    set(v) { try { if (v) localStorage.setItem(BP_KEY, v); else localStorage.removeItem(BP_KEY); } catch (e) { /* private mode */ } },
-  };
+  // "Are you sure?" before any change is saved: resolves true on Yes.
+  function bpAsk(title, lines, okLabel) {
+    return new Promise((resolve) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'modal-backdrop bp-ask';
+      wrap.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="bpAskT">
+        <div class="mtitle" id="bpAskT">${esc(title)}</div>
+        ${lines.map((l) => `<p class="bp-askp">${l}</p>`).join('')}
+        <div class="bp-actions"><button type="button" class="bp-btn primary" data-ok>${esc(okLabel || 'Yes, save it')}</button><button type="button" class="bp-btn" data-no>Cancel</button></div>
+      </div>`;
+      const done = (v) => { document.removeEventListener('keydown', key); wrap.remove(); resolve(v); };
+      const key = (e) => { if (e.key === 'Escape') done(false); };
+      wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
+      wrap.querySelector('[data-ok]').addEventListener('click', () => done(true));
+      wrap.querySelector('[data-no]').addEventListener('click', () => done(false));
+      document.addEventListener('keydown', key);
+      document.body.appendChild(wrap);
+      wrap.querySelector('[data-ok]').focus();
+    });
+  }
+  const BP_EVERYONE = 'This changes the Budget Plan for everyone, and the campaign budgets, the budget KPI and the daily audit will use it.';
   const BP_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const BP_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const bpD = (iso) => { const d = new Date(`${iso}T00:00:00Z`); return `${BP_DOW[d.getUTCDay()]} ${d.getUTCDate()} ${BP_MON[d.getUTCMonth()]}`; };
@@ -3033,11 +3050,6 @@
     if (!f.start || !f.end || f.end < f.start) return null;
     const days = bpLen(f.start, f.end);
     return { total: amt * days, text: `${days} day${days === 1 ? '' : 's'}` };
-  }
-
-  function bpPwHtml() {
-    if (bpPass.get()) return `<div class="bp-pw">Password saved on this device · <button type="button" class="bp-link" data-bp="forget">Forget it</button></div>`;
-    return `<label class="bp-f bp-pwf"><span>Dashboard password (needed to save)</span><input type="password" id="bpPw" autocomplete="current-password" value="${attr(bpPwDraft)}"></label>`;
   }
 
   function bpLineForm(p) {
@@ -3072,7 +3084,6 @@
           : `<label class="bp-f"><span>Start date</span><input type="date" data-bpf="start" value="${attr(f.start || '')}"></label><label class="bp-f"><span>End date</span><input type="date" data-bpf="end" value="${attr(f.end || '')}"></label>`}
       </div>
       <div class="bp-sum" id="bpLineSum">${tot ? `= <b>SAR ${int(tot.total)}</b> over ${tot.text} (about USD ${int(tot.total / rate)})` : 'Fill in the amount and the dates.'}</div>
-      ${bpPwHtml()}
       ${bpMsg && !bpMsg.ok ? `<div class="bp-msg err">▲ ${esc(bpMsg.text)}</div>` : ''}
       <div class="bp-actions">
         <button type="button" class="bp-btn primary" data-bp="saveLine"${bpBusy ? ' disabled' : ''}>${bpBusy ? 'Saving…' : 'Set budget'}</button>
@@ -3094,7 +3105,6 @@
           <option value="USD"${f.currency !== 'SAR' ? ' selected' : ''}>USD</option><option value="SAR"${f.currency === 'SAR' ? ' selected' : ''}>SAR</option>
         </select></label>
       </div>
-      ${bpPwHtml()}
       ${bpMsg && !bpMsg.ok ? `<div class="bp-msg err">▲ ${esc(bpMsg.text)}</div>` : ''}
       <div class="bp-actions">
         <button type="button" class="bp-btn primary" data-bp="savePer"${bpBusy ? ' disabled' : ''}>${bpBusy ? 'Saving…' : 'Set period'}</button>
@@ -3178,10 +3188,8 @@
       </div>`;
   }
 
-  // Send the whole plan; the server checks the password and that nobody else saved since.
+  // Send the whole plan; the server checks that nobody else saved since.
   async function bpSave(next, done) {
-    const pw = bpPass.get() || bpPwDraft.trim();
-    if (!pw) { bpMsg = { ok: false, text: 'Enter the dashboard password to save.' }; renderCampaigns(); return; }
     bpBusy = true;
     renderCampaigns();
     try {
@@ -3189,16 +3197,13 @@
       const res = await fetch('/api/budget-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw, baseUpdatedAt: base.updatedAt || null, plan: { periods: next.periods, lines: next.lines } }),
+        body: JSON.stringify({ baseUpdatedAt: base.updatedAt || null, plan: { periods: next.periods, lines: next.lines } }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        if (res.status === 401) bpPass.set('');
         if (res.status === 409) loadCampaigns(true);
         throw new Error(j.error || `Could not save (HTTP ${res.status})`);
       }
-      bpPass.set(pw);
-      bpPwDraft = '';
       if (done) done();
       bpMsg = { ok: true, text: 'Saved. Campaigns, the KPIs and the daily audit now use this plan.' };
       bpBusy = false;
@@ -3230,8 +3235,6 @@
       if (k === 'pick') el.addEventListener('change', () => { bpForm.pick = el.value; renderCampaigns(); });
     });
     wrap.querySelectorAll('[data-bpp]').forEach((el) => el.addEventListener('input', () => { bpPer[el.dataset.bpp] = el.value; }));
-    const pwEl = wrap.querySelector('#bpPw');
-    if (pwEl) pwEl.addEventListener('input', () => { bpPwDraft = pwEl.value; });
 
     wrap.querySelectorAll('[data-bp]').forEach((b) => b.addEventListener('click', () => {
       const act = b.dataset.bp;
@@ -3271,14 +3274,21 @@
         };
         const next = bpClone();
         next.lines = f.id ? next.lines.map((x) => (x.id === f.id ? { ...line, id: f.id } : x)) : [...next.lines, line];
-        bpSave(next, () => { bpForm = null; });
+        const tot = bpFormTotal(f);
+        const okDates = line.start && line.end && line.end >= line.start && line.amount > 0;
+        const what = okDates
+          ? `<b>SAR ${esc(int(line.amount))} a ${line.mode === 'weekly' ? 'week' : 'day'}</b> for <b>${esc(name)}</b>, ${esc(bpD(line.start))} to ${esc(bpD(line.end))}${tot ? ` (SAR ${esc(int(tot.total))} in all)` : ''}.`
+          : `<b>${esc(name)}</b>.`;
+        bpAsk(f.id ? 'Are you sure you want to change this budget?' : 'Are you sure you want to set this budget?', [what, BP_EVERYONE], f.id ? 'Yes, change it' : 'Yes, set it')
+          .then((ok) => { if (ok) bpSave(next, () => { bpForm = null; }); });
         return;
       } else if (act === 'delLine') {
         const l = plan.lines.find((x) => x.id === id);
-        if (!l || !confirm(`Remove the budget for ${l.name} (${bpD(l.start)} to ${bpD(l.end)})?`)) return;
+        if (!l) return;
         const next = bpClone();
         next.lines = next.lines.filter((x) => x.id !== id);
-        bpSave(next);
+        bpAsk('Are you sure you want to remove this budget?', [`<b>${esc(l.name)}</b>: SAR ${esc(int(l.amount))} a ${l.mode === 'weekly' ? 'week' : 'day'}, ${esc(bpD(l.start))} to ${esc(bpD(l.end))}.`, BP_EVERYONE], 'Yes, remove it')
+          .then((ok) => { if (ok) bpSave(next); });
         return;
       } else if (act === 'addPer') {
         const last = plan.periods.map((x) => x.end).sort().slice(-1)[0];
@@ -3294,16 +3304,21 @@
         const per = { id: f.id || undefined, name: String(f.name || '').trim(), start: f.start, end: f.end, amount: Number(f.amount), currency: f.currency === 'SAR' ? 'SAR' : 'USD' };
         const next = bpClone();
         next.periods = f.id ? next.periods.map((x) => (x.id === f.id ? { ...per, id: f.id } : x)) : [...next.periods, per];
-        bpSave(next, () => { bpPer = null; });
+        const okP = per.start && per.end && per.end >= per.start && per.amount > 0;
+        bpAsk(f.id ? 'Are you sure you want to change this budget period?' : 'Are you sure you want to set this budget period?',
+          [okP ? `<b>${esc(per.name || 'Budget period')}</b>: ${esc(per.currency)} ${esc(int(per.amount))} from ${esc(bpD(per.start))} to ${esc(bpD(per.end))}.` : `<b>${esc(per.name || 'Budget period')}</b>.`, BP_EVERYONE],
+          f.id ? 'Yes, change it' : 'Yes, set it')
+          .then((ok) => { if (ok) bpSave(next, () => { bpPer = null; }); });
         return;
       } else if (act === 'delPer') {
         const x = plan.periods.find((y) => y.id === id);
-        if (!x || !confirm(`Remove the budget period ${x.name}?`)) return;
+        if (!x) return;
         const next = bpClone();
         next.periods = next.periods.filter((y) => y.id !== id);
-        bpSave(next);
+        bpAsk('Are you sure you want to remove this budget period?', [`<b>${esc(x.name)}</b>: ${esc(x.currency)} ${esc(int(x.amount))}, ${esc(bpD(x.start))} to ${esc(bpD(x.end))}.`, BP_EVERYONE], 'Yes, remove it')
+          .then((ok) => { if (ok) bpSave(next); });
         return;
-      } else if (act === 'forget') { bpPass.set(''); }
+      }
       renderCampaigns();
       const form = wrap.querySelector('#bpLineForm, #bpPerForm');
       if (form && (act === 'addLine' || act === 'addLive' || act === 'editLine' || act === 'addPer' || act === 'editPer')) form.scrollIntoView({ block: 'nearest', behavior: 'smooth' });

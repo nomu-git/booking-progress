@@ -1203,11 +1203,14 @@ audit. Everything budget-related now reads this plan.
 
 - **`lib/budget-plan.js`**, stored in Upstash `budget-plan`; `/api/budget-plan`
   (rewrite to `api/advisor.js?route=budget-plan`): GET = the plan, POST =
-  save the whole plan. **Saving needs the dashboard password**
-  (`DASHBOARD_PASSWORD`, 10 wrong tries per IP per 15 min, `plan-fail:<ip>`;
-  the page keeps it in `localStorage` `nomuPlanKey`), because the site has
-  no login; and `baseUpdatedAt` must match (409 if someone saved in between).
-  Flagged to Anton.
+  save the whole plan. **No password** (built with the dashboard password
+  first; Anton had it removed the same day): instead every save, change and
+  removal opens an **"Are you sure?" popup** (`bpAsk()`, summary of the
+  change, "Yes, set it" / Cancel; Escape or the backdrop cancels), and
+  nothing is sent until Yes. Server side: at most 60 saves an hour per IP
+  (`plan-saves:<ip>`), a plan with no budget period is refused (an empty
+  POST can't wipe it), and `baseUpdatedAt` must match (409 if someone saved
+  in between). Anyone with the link can change the plan.
 - **Periods** = the money (`{ name, start, end, amount, currency USD|SAR }`,
   USD at `META_USD_SAR` 3.75). Spend against a period = **all** Meta spend on
   those days (campaigns not in the plan too, listed as "not in the plan").
