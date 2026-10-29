@@ -1221,10 +1221,14 @@ audit. Everything budget-related now reads this plan.
 - **`evaluate()`** pulls Meta daily spend per campaign (`time_increment=1`)
   from the plan's first date to today. Per line: planned total, planned and
   spent up to yesterday, spent incl. today, status **On track** (70-115% of
-  plan to date) / **Slow** / **Fast** / **Over** (past its whole budget) /
+  plan, judged from the line's **second** day to yesterday, since the first
+  is often a part day: the 28 Oct campaigns started mid-afternoon) /
+  **Started** (no full day yet) / **Slow** / **Fast** / **Over** (past its
+  whole budget) /
   **Not in Meta** / **Planned** (not started) / **Ended**. Per period:
   planned (sum of lines; over the money = shown red), spent, SAR a day so far
-  (finished days), the pace projection and the day it runs out at that pace.
+  (finished days after its first), the pace projection and the day it runs
+  out at that pace.
 - **Seed** (until the first save): the five Meta campaigns live since 28 Oct
   at SAR 200 a day each to their review dates (4 Nov; Sri Lanka 10 Nov), from
   Anton's Slack table; engagement post SAR 30/day to 30 Nov and SAR 20/day in

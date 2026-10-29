@@ -3018,8 +3018,8 @@
     (extra || []).filter(Boolean).forEach((d) => starts.add(bpSun(d)));
     return [...starts].sort().map((st) => ({ start: st, end: bpAdd(st, 6), label: `${bpD(st)} – ${bpD(bpAdd(st, 6))}${st === sun ? ' · this week' : ''}` }));
   }
-  const BP_ST = { 'On track': 'good', Slow: 'watch', Fast: 'bad', Over: 'bad', 'Not in Meta': 'watch', Planned: 'none', Ended: 'none' };
-  const BP_GL = { 'On track': '▲', Slow: '■', Fast: '▼', Over: '▼', 'Not in Meta': '■', Planned: '○', Ended: '○' };
+  const BP_ST = { 'On track': 'good', Slow: 'watch', Fast: 'bad', Over: 'bad', 'Not in Meta': 'watch', Started: 'none', Planned: 'none', Ended: 'none' };
+  const BP_GL = { 'On track': '▲', Slow: '■', Fast: '▼', Over: '▼', 'Not in Meta': '■', Started: '○', Planned: '○', Ended: '○' };
 
   // What a form would plan, for the line under it.
   function bpFormTotal(f) {
@@ -3131,7 +3131,7 @@
         ${bar(x.spent, projOver ? ' warn' : ' spent', x.daysGone || x.current ? gone : null)}
         <div class="bp-note${projOver ? ' bad' : ''}">${x.perDayActual != null
           ? `SAR ${int(x.perDayActual)} a day so far${x.done ? '' : projOver ? ` · ▲ at that pace it runs out on <b>${esc(bpD(x.runsOut))}</b>` : ` · at that pace SAR ${int(x.projected)} by ${esc(bpD(x.end))}`}`
-          : today < x.start ? `Starts ${esc(bpD(x.start))}` : 'First day: no full day of spend yet'}</div>
+          : today < x.start ? `Starts ${esc(bpD(x.start))}` : 'The pace shows after its first full day'}</div>
         ${x.unplanned ? `<div class="bp-note">Includes SAR ${int(x.unplanned)} by campaigns not in the plan: ${x.unplannedCampaigns.slice(0, 3).map((c) => esc(c.name)).join(', ')}${x.unplannedCampaigns.length > 3 ? '…' : ''}</div>` : ''}
         <div class="bp-cardact"><button type="button" class="bp-link" data-bp="editPer" data-id="${attr(x.id)}">Edit</button><button type="button" class="bp-link" data-bp="delPer" data-id="${attr(x.id)}">Remove</button></div>
       </div>`;
@@ -3166,7 +3166,7 @@
       </div>
 
       <div class="panel bp">
-        <div class="ptitle"><span ${tip('Campaign budgets', 'What each campaign is set to spend: SAR a day between two dates, or SAR a week over whole Sunday to Saturday weeks. A line is tied to its Meta campaign, so spend is counted only inside its dates. Status compares spend up to yesterday with the plan up to yesterday: On track 70 to 115%, Slow under, Fast over, Over past its whole budget.')}>Campaign budgets</span></div>
+        <div class="ptitle"><span ${tip('Campaign budgets', 'What each campaign is set to spend: SAR a day between two dates, or SAR a week over whole Sunday to Saturday weeks. A line is tied to its Meta campaign, so spend is counted only inside its dates. Status compares spend with the plan from its second day to yesterday (the first day is often a part day): On track 70 to 115%, Slow under, Fast over, Over past its whole budget.')}>Campaign budgets</span></div>
         ${missing.length ? `<div class="bp-miss">▲ Running in Meta but not in the plan: ${missing.map((c) => `<span class="bp-mi">${esc(c.name)} <button type="button" class="bp-link" data-bp="addLive" data-id="${attr(c.id)}">Add to plan</button></span>`).join('')}</div>` : ''}
         <div class="tscroll">
           <table class="ctable bp-table">
