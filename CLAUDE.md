@@ -1263,6 +1263,14 @@ audit. Everything budget-related now reads this plan.
   `bpBind()`, `bpSave()`, forms `bpForm` / `bpPer` (values survive
   re-renders), classes `bp-`; on a phone each plan line stacks as a block.
   Checked in both themes (contrast audit clean) and at 390px.
+- **SAR shows USD on hover** (Anton, 29 Oct 2026): `sarHover(root)` runs
+  inside `bindHelp()` (so on every page that binds tooltips: Campaigns,
+  Budget Plan, health audit, Past years, Dashboard, KPIs): it wraps any
+  "SAR 1,234" in text, plus bare figures in SAR columns marked with
+  `sarN(n)` (`data-sar`), in a `.sar-usd` span (dotted underline) whose
+  tooltip reads "≈ USD 2,725 · SAR 10,220 at 3.75 riyals to the dollar"
+  (`campaigns.usdSar`, i.e. `META_USD_SAR`). Text already inside a
+  `data-tip` / `data-help` element, buttons or selects is left alone.
 - **Results fix found the same day**: the five new campaigns use the
   **Leads objective set to message conversations**, so Meta reports their
   results as `onsite_conversion.messaging_conversation_started_7d`; the

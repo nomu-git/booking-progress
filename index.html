@@ -947,6 +947,7 @@
   .bp-ask .bp-actions { margin-top: 18px; }
   .bp-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .bp-ph-only { display: none; }
+  .sar-usd { cursor: help; text-decoration: underline dotted rgba(var(--acc-rgb), .45); text-underline-offset: 3px; text-decoration-thickness: 1px; }
   @media (max-width: 700px) {
     .bp-fgrid { grid-template-columns: 1fr 1fr; }
     /* Each plan line stacks as a small block, so nothing scrolls out of sight. */
@@ -2894,7 +2895,48 @@
   addEventListener('scroll', hideTip, true);
 
   // One tooltip element for the page, same one the Report bars use.
+  // SAR amounts show their USD value on hover (Anton, 29 Oct 2026), at the
+  // dashboard's rate (META_USD_SAR, 3.75). Bare figures in SAR columns are
+  // wrapped with sarN(); any "SAR 1,234" in text is found when the page binds
+  // its tooltips, so new text gets it too.
+  const sarRate = () => (campaigns && campaigns.usdSar) || (adHistory && adHistory.usdSar) || 3.75;
+  const sarN = (n) => (n == null ? '—' : `<span data-sar="${Number(n)}">${money(n)}</span>`);
+  const SAR_RE = /SAR\s?(−?-?[\d,]+(?:\.\d+)?)/g;
+  function sarHover(root) {
+    const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (SAR_RE.test(n.nodeValue) && (SAR_RE.lastIndex = 0, true)
+        && !n.parentElement.closest('[data-sar], [data-tip], [data-help], script, style, select, option, textarea, button')
+        ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT),
+    });
+    const nodes = [];
+    while (walk.nextNode()) nodes.push(walk.currentNode);
+    for (const n of nodes) {
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      const text = n.nodeValue;
+      text.replace(SAR_RE, (m, num, i) => {
+        frag.append(text.slice(last, i));
+        const sp = document.createElement('span');
+        sp.dataset.sar = num.replace(/[,−]/g, (c) => (c === '−' ? '-' : ''));
+        sp.textContent = m;
+        frag.append(sp);
+        last = i + m.length;
+        return m;
+      });
+      frag.append(text.slice(last));
+      n.replaceWith(frag);
+    }
+    const rate = sarRate();
+    root.querySelectorAll('[data-sar]:not([data-tip])').forEach((el) => {
+      const v = Number(el.dataset.sar);
+      if (!Number.isFinite(v)) return;
+      el.classList.add('sar-usd');
+      el.dataset.tip = `<div class="tt">≈ USD ${esc(money(v / rate))}</div><div class="more">SAR ${esc(money(v))} at ${rate} riyals to the dollar</div>`;
+    });
+  }
+
   function bindHelp(root) {
+    sarHover(root);
     const tip = $('tip');
     // Re-rendering replaces the node the pointer is over, so its mouseleave
     // never arrives and the tooltip would stay up over a table it no longer
@@ -2956,7 +2998,7 @@
         return `<tr><td class="cname">${esc(c.name)}</td>
           <td><span class="lq-st none" ${tip('Not linked', `${q.reason}, so its leads can't be told apart in the leads sheet.`)}>○ Not linked</span></td>
           <td class="num">—</td><td class="num">—</td><td class="abar-cell">—</td>
-          <td class="num">${show(c.costPerResult, money)}</td><td class="num">—</td></tr>`;
+          <td class="num">${show(c.costPerResult, sarN)}</td><td class="num">—</td></tr>`;
       }
       const why = `${q.why || ''}. Leads for ${q.project} in the leads sheet since ${q.since}, from any source, not only this ad.`
         + (q.sharedWith && q.sharedWith.length ? ` Shared with ${q.sharedWith.join(', ')}, which runs on the same project.` : '');
@@ -2967,8 +3009,8 @@
         <td class="num">${int(q.leads)}</td>
         <td class="num">${q.hp == null ? '—' : int(q.hp)}</td>
         <td class="abar-cell">${rate == null ? '—' : `<div class="abar"><div class="abar-fill lq" style="width:${Math.min(100, rate * 100).toFixed(1)}%"></div></div><span class="abar-pct">${pct(rate)}</span>`}</td>
-        <td class="num">${show(c.costPerResult, money)}</td>
-        <td class="num">${show(q.costPerHp, money)}</td>
+        <td class="num">${show(c.costPerResult, sarN)}</td>
+        <td class="num">${show(q.costPerHp, sarN)}</td>
       </tr>`;
     }).join('');
     const rule = `Good: at least 1 high potential lead and cost per high potential lead at or below the running average (${g.avgCostPerHp == null ? 'none yet' : `${p.currency || 'SAR'} ${money(g.avgCostPerHp)}`}). Watch: under ${g.minLeads || 5} leads so far, or above that average. Bad: ${g.minLeads || 5}+ leads and no high potential, or a high potential rate under ${Math.round((g.minHpRate || 0.1) * 100)}%. Leads are matched to a campaign by the project in its name (EB-ZNZ-EX -> ZNZ|EX), counted from its start, so they include the project's leads from any source. From 21 Oct 2026 they come from ManyChat and only count when the lead has a Trip tag (e.g. Trip: ZNZ|EX); before that, from Marina's sheet.`;
@@ -3158,7 +3200,7 @@
         <td class="cname bp-c-name">${esc(l.name)}<div class="lq-sub">${sub}</div></td>
         <td class="num bp-c-bud">SAR ${int(l.amount)}<div class="lq-sub">a ${l.mode === 'weekly' ? 'week' : 'day'}</div></td>
         <td class="bp-c-dates">${esc(bpD(l.start))} – ${esc(bpD(l.end))}<div class="lq-sub">${int(l.days)} days</div></td>
-        <td class="num bp-c-plan"><span class="bp-ph-only">Planned SAR </span>${int(l.plannedTotal)}</td>
+        <td class="num bp-c-plan"><span class="bp-ph-only">Planned SAR </span><span data-sar="${l.plannedTotal}">${int(l.plannedTotal)}</span></td>
         <td class="abar-cell bp-c-spent">${l.linked && today >= l.start ? barFor(l.spent, l.plannedTotal) + `<div class="lq-sub">SAR ${int(l.spent)} spent</div>` : '<span class="bp-dash">—</span>'}</td>
         <td class="bp-c-st"><span class="lq-st ${st}" ${tip(l.status, l.why || '')}>${BP_GL[l.status] || '○'} ${esc(l.status)}</span></td>
         <td class="bp-rowact bp-c-act"><button type="button" class="bp-link" data-bp="editLine" data-id="${attr(l.id)}">Edit</button><button type="button" class="bp-link" data-bp="delLine" data-id="${attr(l.id)}">Remove</button></td>
@@ -3450,14 +3492,14 @@
       <tr>
         <td class="cname">${esc(c.name)}</td>
         <td><span class="cpill ${c.status === 'Active' ? 'on' : 'off'}">${esc(c.status || 'Inactive')}</span></td>
-        <td class="num">${show(daily(c), money)}</td>
-        <td class="num">${c.inPlan ? money(c.budgetSar) : '<span class="bp-nop" title="Not in the Budget Plan">—</span>'}</td>
-        <td class="num">${money(c.spend)}</td>
-        <td class="num">${c.inPlan ? money(c.remaining) : '—'}</td>
+        <td class="num">${show(daily(c), sarN)}</td>
+        <td class="num">${c.inPlan ? sarN(c.budgetSar) : '<span class="bp-nop" title="Not in the Budget Plan">—</span>'}</td>
+        <td class="num">${sarN(c.spend)}</td>
+        <td class="num">${c.inPlan ? sarN(c.remaining) : '—'}</td>
         <td class="num">${int(c.results)}</td>
         <td class="num">${c.cprOver
           ? `<span class="cpr-over" data-tip="${attr(`<div class="tt">Over the cost limit</div><div class="more">${esc(cur)} ${esc(money(c.costPerResult))} per result, limit ${esc(cur)} ${esc(int(lim.report))}. Slack was alerted when it went over.</div>`)}">▲ ${money(c.costPerResult)}</span>`
-          : show(c.costPerResult, money)}</td>
+          : show(c.costPerResult, sarN)}</td>
         <td class="num">${int(c.purchases)}</td>
         <td class="num">${int(c.impressions)}</td>
         <td class="abar-cell">${c.inPlan ? barFor(c.planSpend, c.budgetSar) : '<span class="lq-sub">Not in the Budget Plan</span>'}</td>
@@ -3473,18 +3515,18 @@
         <div class="bvhero">
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('budget')}>Budget</span></div>
-            <div class="bv-n">${money(t.budget)}</div>
+            <div class="bv-n">${sarN(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('actualSpend')}>Actual spend</span></div>
-            <div class="bv-n bv-act">${money(t.planSpend)}</div>
+            <div class="bv-n bv-act">${sarN(t.planSpend)}</div>
             <div class="bv-s">${show(t.usedPct, pct)} of budget used${t.planTimeGone != null ? ` · ${pct(t.planTimeGone)} of the time gone` : ''}</div>
           </div>
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('remaining')}>Remaining</span></div>
-            <div class="bv-n">${money(t.remaining)}</div>
+            <div class="bv-n">${sarN(t.remaining)}</div>
             <div class="bv-s">${cur}</div>
           </div>
         </div>
@@ -3520,12 +3562,12 @@
             <tfoot><tr>
               <td class="cname">TOTAL</td>
               <td></td>
-              <td class="num">${ft.daily ? money(ft.daily) : '—'}</td>
-              <td class="num">${money(ft.budget)}</td>
-              <td class="num">${money(ft.spend)}</td>
-              <td class="num">${money(ft.remaining)}</td>
+              <td class="num">${ft.daily ? sarN(ft.daily) : '—'}</td>
+              <td class="num">${sarN(ft.budget)}</td>
+              <td class="num">${sarN(ft.spend)}</td>
+              <td class="num">${sarN(ft.remaining)}</td>
               <td class="num">${int(ft.results)}</td>
-              <td class="num">${show(ft.costPerResult, money)}</td>
+              <td class="num">${show(ft.costPerResult, sarN)}</td>
               <td class="num">${int(ft.purchases)}</td>
               <td class="num">${int(ft.impressions)}</td>
               <td class="abar-cell">${ft.budget ? barFor(ft.planSpend, ft.budget) : '—'}</td>
@@ -3584,18 +3626,18 @@
       return `
         <div class="m-l${m.month === nowMonth ? ' now' : ''}">${esc(m.label)}</div>
         <div class="m-b"><div class="m-f" style="width:${w.toFixed(1)}%"></div></div>
-        <div class="m-v${m.spend > 0 ? '' : ' zero'}">${m.spend > 0 ? money(m.spend) : '—'}</div>`;
+        <div class="m-v${m.spend > 0 ? '' : ' zero'}">${m.spend > 0 ? sarN(m.spend) : '—'}</div>`;
     }).join('');
 
     const body = p.campaigns.map((c) => `
       <tr>
         <td class="cname">${esc(c.name)}</td>
         <td class="num">${esc(c.firstMonth || '—')}${c.lastMonth && c.lastMonth !== c.firstMonth ? ' – ' + esc(c.lastMonth) : ''}</td>
-        <td class="num">${money(c.budget)}</td>
-        <td class="num">${money(c.spend)}</td>
-        <td class="num">${money(c.remaining)}</td>
+        <td class="num">${sarN(c.budget)}</td>
+        <td class="num">${sarN(c.spend)}</td>
+        <td class="num">${sarN(c.remaining)}</td>
         <td class="num">${int(c.results)}</td>
-        <td class="num">${show(c.costPerResult, money)}</td>
+        <td class="num">${show(c.costPerResult, sarN)}</td>
         <td class="num">${int(c.purchases)}</td>
         <td class="num">${int(c.impressions)}</td>
         <td class="abar-cell">${barFor(c.spend, c.budget)}</td>
@@ -3610,18 +3652,18 @@
         <div class="bvhero">
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('budgetAssumed')}>Budget</span></div>
-            <div class="bv-n">${money(t.budget)}</div>
+            <div class="bv-n">${sarN(t.budget)}</div>
             <div class="bv-s">${cur}</div>
           </div>
           <div class="bv-vs">vs</div>
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('actualSpend')}>Actual spend</span></div>
-            <div class="bv-n bv-act">${money(t.spend)}</div>
+            <div class="bv-n bv-act">${sarN(t.spend)}</div>
             <div class="bv-s">${show(t.usedPct, pct)} of budget used</div>
           </div>
           <div class="bv-side">
             <div class="bv-lab"><span ${hlp('costPerResult')}>Cost per result</span></div>
-            <div class="bv-n">${show(t.costPerResult, money)}</div>
+            <div class="bv-n">${show(t.costPerResult, sarN)}</div>
             <div class="bv-s">${int(t.results)} results · ${int(t.campaigns)} campaign${t.campaigns === 1 ? '' : 's'}</div>
           </div>
         </div>
@@ -3644,11 +3686,11 @@
             <tfoot><tr>
               <td class="cname">TOTAL</td>
               <td></td>
-              <td class="num">${money(t.budget)}</td>
-              <td class="num">${money(t.spend)}</td>
-              <td class="num">${money(t.remaining)}</td>
+              <td class="num">${sarN(t.budget)}</td>
+              <td class="num">${sarN(t.spend)}</td>
+              <td class="num">${sarN(t.remaining)}</td>
               <td class="num">${int(t.results)}</td>
-              <td class="num">${show(t.costPerResult, money)}</td>
+              <td class="num">${show(t.costPerResult, sarN)}</td>
               <td class="num">${int(t.purchases)}</td>
               <td class="num">${int(t.impressions)}</td>
               <td class="abar-cell">${barFor(t.spend, t.budget)}</td>
