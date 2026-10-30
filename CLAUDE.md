@@ -802,6 +802,12 @@ Story Engagement Question).
   recorded", shown as a dash, not 0.
 - Story Responses can be text ("8 Link Clicks"): the number is kept and the
   unit shown under it. Response rate (responses / views) is computed here.
+- **Stories removed from the page (Muatasam, 31 Oct 2026: "Remove stories
+  from here")**: Engagement shows Posts only, with no sub-tab bar; the
+  stories view, its sort, its top-performing list and its glossary entries
+  are gone (`engSub` / `storySort` / `STORY_SORTS` deleted). The API still
+  reads the Story tab, so the AI Adviser and the connector still see it. The
+  bullets below describe the page before this.
 - **Posts | Stories tabs replaced the Type filter** (Anton, 5 Oct 2026:
   "I only want to show Posts and Stories", with a screenshot of the old
   Type pills): `engSub` switches between a Posts view and a Stories view,

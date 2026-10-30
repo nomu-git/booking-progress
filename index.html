@@ -1378,7 +1378,6 @@
   .et-val { color: var(--strong); text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
   .et-row .abar { width: 140px; }
   @media (max-width: 600px) { .et-row { grid-template-columns: 24px minmax(0, 1fr) 52px; } .et-row .abar { display: none; } }
-  .eres { white-space: normal; font-size: 11.5px; color: var(--text-2); min-width: 180px; text-align: left !important; }
   #engagementsWrap .ctable td.cname { min-width: 200px; max-width: 320px; }
   /* On a phone the post name, views and engagement have to fit on screen;
      the counts after them scroll. */
@@ -2852,9 +2851,6 @@
     trMix: ['Weeks by quality', "How the region's departure weeks split across the quality ratings."],
     engType: ['Content type', 'Reel, Carousel, Static or Photo dump, as Maryam recorded it.'],
     engCta: ['CTA', "The post's call to action, as Maryam tagged it: the specific word used (Trip, Grow...), or Open when there's no specific one."],
-    stViews: ['Views', 'How many people viewed the story.'],
-    stResponses: ['Responses', 'Poll votes, slider taps, replies or link clicks, depending on the story type.'],
-    stRate: ['Response rate', 'Responses divided by views: the share of viewers who answered or tapped.'],
     fbSat: ['Satisfaction', "Year-to-date satisfaction from the Feedback sheet: the overall 1 to 5 score across every survey response, as a percentage of 5."],
     fbTrips: ['Trips reported', 'Trips with a survey on file that have scores, out of every trip surveyed. A trip whose form got no answers counts in the second number only.'],
     fbResp: ['Responses', 'Survey responses counted in the scores, out of all responses received.'],
@@ -2873,7 +2869,6 @@
     rvProgramme: ['Programme', 'Building, Explore, Medical, Teaching or Wellness, as the sheet has it.'],
     rvTrip: ['Trip', 'The trip as the sheet names it, with destination, programme and dates underneath.'],
     fbLow: ['Lowest scores', 'Every question, hotel or activity that averaged under 4.0, lowest first.'],
-    stResult: ['Result', 'What the audience said, as Maryam recorded it (poll percentages, or the replies received).'],
   };
 
   // data-help carries HTML into an attribute, so it goes through attr() and
@@ -4629,16 +4624,8 @@
   // else "<field>-desc" / "<field>-asc". A post with no value for the field
   // always goes last, whichever way it's sorted.
   let engSort = 'newest';
-  // Posts | Stories (Anton, 5 Oct 2026: "I only want to show Posts and
-  // Stories", in place of the content-type filter) and the stories' own sort.
-  let engSub = 'posts';
-  let storySort = 'newest';
-  const STORY_SORTS = [
-    ['newest', 'Newest first'], ['oldest', 'Oldest first'],
-    ['rate-desc', 'Top performing (response rate)'], ['rate-asc', 'Lowest response rate'],
-    ['views-desc', 'Views: high to low'], ['views-asc', 'Views: low to high'],
-    ['responses-desc', 'Responses: high to low'], ['responses-asc', 'Responses: low to high'],
-  ];
+  // Posts only: the Stories view was removed (Muatasam, 31 Oct 2026:
+  // "Remove stories from here"). The sheet's stories are still read by the API.
   const ENG_SORTS = [
     ['newest', 'Newest first'], ['oldest', 'Oldest first'],
     ['views-desc', 'Views: high to low'], ['views-asc', 'Views: low to high'],
@@ -4695,7 +4682,6 @@
     if (engMonth !== 'all' && !p.months.includes(engMonth)) engMonth = 'all';
     const inMonth = (x) => engMonth === 'all' || (x.date || '').slice(0, 7) === engMonth;
     const posts = p.posts.filter(inMonth);
-    const stories = p.stories.filter(inMonth);
     const period = engMonth === 'all'
       ? (p.months.length ? `${PT_MONTHS_SHORT[Number(p.months[0].slice(5)) - 1]} – ${PT_MONTHS_SHORT[Number(p.months[p.months.length - 1].slice(5)) - 1]} ${p.year}` : String(p.year))
       : `${PT_MONTHS[Number(engMonth.slice(5)) - 1]} ${engMonth.slice(0, 4)}`;
@@ -4736,40 +4722,8 @@
         <td>${esc(x.ctaPresent === 'Open' || !x.ctaWord ? (x.ctaPresent || '—') : x.ctaWord)}</td>
       </tr>`).join('');
 
-    const maxResp = Math.max(0.0001, ...stories.map((x) => (x.views ? (x.responses || 0) / x.views : 0)));
-    const rateOf = (x) => (x.views ? (x.responses || 0) / x.views : null);
-    if (!STORY_SORTS.some(([k]) => k === storySort)) storySort = 'newest';
-    const sortedStories = [...stories]; // oldest first
-    if (storySort === 'newest') sortedStories.reverse();
-    else if (storySort !== 'oldest') {
-      const [field, dir] = storySort.split('-');
-      const sign = dir === 'asc' ? 1 : -1;
-      const val = (x) => (field === 'rate' ? rateOf(x) : x[field]);
-      sortedStories.sort((a, b) => {
-        const av = val(a);
-        const bv = val(b);
-        if (av == null && bv == null) return 0;
-        if (av == null) return 1;
-        if (bv == null) return -1;
-        return (av - bv) * sign || String(a.date || '').localeCompare(String(b.date || ''));
-      });
-    }
-    const storyRows = sortedStories.map((x) => {
-      const r = x.views ? (x.responses || 0) / x.views : null;
-      return `
-      <tr>
-        <td class="cname"><span dir="auto">${esc(x.name)}</span><span class="esub">${esc([x.kind, x.date ? shortDay(x.date) : x.dateText, x.language].filter(Boolean).join(' · '))}</span>${x.question ? `<span class="esub" dir="auto">“${esc(x.question)}”</span>` : ''}</td>
-        <td class="num"><b>${int(x.views)}</b></td>
-        <td class="num">${x.responses == null ? '—' : int(x.responses)}${x.responsesUnit ? `<span class="esub">${esc(x.responsesUnit)}</span>` : ''}</td>
-        <td class="abar-cell"><div class="abar"><div class="abar-fill eng" style="width:${(((r || 0) / maxResp) * 100).toFixed(1)}%"></div></div><span class="abar-pct">${r == null ? '—' : pct(r)}</span></td>
-        <td class="eres" dir="auto">${esc(x.result || '—')}</td>
-      </tr>`;
-    }).join('');
-    const sViews = sum(stories, 'views');
-    const sResp = sum(stories, 'responses');
-
-    // Top performing: the three best by engagement (posts) or response rate
-    // (stories), each with a bar scaled to the best of the three.
+    // Top performing: the three best posts by engagement, each with a bar
+    // scaled to the best of the three.
     const topList = (rows, label, valueOf, sub) => {
       const top = rows.filter((x) => valueOf(x) != null && valueOf(x) > 0).sort((a, b) => valueOf(b) - valueOf(a) || (b.views || 0) - (a.views || 0)).slice(0, 3);
       if (!top.length) return '';
@@ -4787,13 +4741,7 @@
       </div>`;
     };
     const postSub = (x) => [x.type, x.date ? shortDay(x.date) : x.dateText, `${int(x.views)} views`].filter(Boolean).join(' · ');
-    const storySub = (x) => [x.kind, x.date ? shortDay(x.date) : x.dateText, `${int(x.views)} views`].filter(Boolean).join(' · ');
 
-    const subtabs = `
-      <div class="seg subtabs" role="tablist" aria-label="Engagement sections">
-        <button role="tab" data-eng-sub="posts" aria-pressed="${engSub === 'posts'}" aria-selected="${engSub === 'posts'}">Posts <span class="ecount">${int(posts.length)}</span></button>
-        <button role="tab" data-eng-sub="stories" aria-pressed="${engSub === 'stories'}" aria-selected="${engSub === 'stories'}">Stories <span class="ecount">${int(stories.length)}</span></button>
-      </div>`;
     const sortSelect = (id, list, cur) => `<div class="efilter"><span class="efl">Sort by</span><select class="fselect" id="${id}" aria-label="Sort">${list.map(([k, l]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`;
 
     const postsHtml = `
@@ -4853,59 +4801,16 @@
         </div>
       </div>`;
 
-    const storiesHtml = `
-      <div class="panel">
-        <div class="ptitle">Instagram stories · ${esc(period)}</div>
-        <div class="efilters">
-          <div class="efilter"><span class="efl">Month</span><div class="seg">${pills}</div></div>
-        </div>
-        <div class="bvhero">
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('engPosts')}>Stories</span></div><div class="bv-n">${int(stories.length)}</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('stViews')}>Views</span></div><div class="bv-n bv-act">${int(sViews)}</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('stResponses')}>Responses</span></div><div class="bv-n">${int(sResp)}</div></div>
-          <div class="bv-side"><div class="bv-lab"><span ${hlp('stRate')}>Response rate</span></div><div class="bv-n">${sViews ? pct(sResp / sViews) : '—'}</div></div>
-        </div>
-      </div>
-
-      ${topList(stories, 'stories', rateOf, storySub)}
-
-      <div class="panel">
-        <div class="lhead"><div class="ptitle">Stories · ${esc(period)}</div>${sortSelect('storySortSel', STORY_SORTS, storySort)}</div>
-        ${stories.length ? `
-        <div class="tscroll">
-          <table class="ctable">
-            <thead><tr>
-              ${hcol('engPosts', 'Story')}${hcol('stViews', 'Views')}${hcol('stResponses', 'Responses')}
-              ${hcol('stRate', 'Response rate')}${hcol('stResult', 'Result')}
-            </tr></thead>
-            <tbody>${storyRows}</tbody>
-            <tfoot><tr>
-              <td class="cname">TOTAL</td>
-              <td class="num">${int(sViews)}</td>
-              <td class="num">${int(sResp)}</td>
-              <td class="abar-cell"><span class="abar-pct">${sViews ? pct(sResp / sViews) : '—'}</span></td>
-              <td></td>
-            </tr></tfoot>
-          </table>
-        </div>` : '<div class="pnote">No stories in the sheet for this month.</div>'}
-      </div>`;
-
     $('engagementsWrap').innerHTML = `
       ${p.stale ? `<div class="msg err">Showing the last copy of the sheet — ${esc(p.error || 'OneDrive unreachable')}</div>` : ''}
-      ${subtabs}
-      ${engSub === 'stories' ? storiesHtml : postsHtml}`;
+      ${postsHtml}`;
 
     bindHelp($('engagementsWrap'));
     $('engagementsWrap').querySelectorAll('[data-eng-month]').forEach((b) => {
       b.addEventListener('click', () => { engMonth = b.dataset.engMonth; renderEngagements(); });
     });
-    $('engagementsWrap').querySelectorAll('[data-eng-sub]').forEach((b) => {
-      b.addEventListener('click', () => { engSub = b.dataset.engSub; renderEngagements(); });
-    });
     const sortSel = $('engagementsWrap').querySelector('#engSortSel');
     if (sortSel) sortSel.addEventListener('change', () => { engSort = sortSel.value; renderEngagements(); });
-    const storySel = $('engagementsWrap').querySelector('#storySortSel');
-    if (storySel) storySel.addEventListener('change', () => { storySort = storySel.value; renderEngagements(); });
   }
 
   async function loadEngagements(force) {
