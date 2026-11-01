@@ -46,6 +46,10 @@ env-var changes on a new deployment.
 | `LEADS_DAILY_TARGET` / `HP_DAILY_TARGET` | Optional, default `20` / `5`. The daily leads alert (`api/lead-alerts.js`, cron-job.org daily at 11:30 PM Muscat, same Bearer secret) posts to Slack when a day misses either. |
 | `MONDAY_API_TOKEN` | monday.com → profile picture → **Developers** → **API token**. Read by the Pending Task tab. Without it the tab says `MONDAY_API_TOKEN is not set`. |
 | `MONDAY_BOARD_IDS` | Optional. Comma-separated board IDs for Pending Task. Defaults to Operations General, Asia, Africa, Marketing General and Sales General. |
+| `MS_TENANT_ID` / `MS_CLIENT_ID` / `MS_CLIENT_SECRET` | Required for the traveller sync (`lib/traveller-sync.js`, WeTravel bookings into each trip's Project Sheet). A Microsoft Entra app registration with Microsoft Graph **application** permission `Sites.Selected` (granted *write* on the SharePoint site holding `03. Operations/01 Trips`) or `Files.ReadWrite.All`, admin-consented. The secret expires (Entra shows the date); renew it before then. |
+| `WETRAVEL_WEBHOOK_SECRET` | Required for the traveller sync's webhook: the `whsec_…` signing secret of the `https://crm.nomuhub.com/hooks/wetravel` endpoint in WeTravel's Manage Webhooks (Svix) page. Events without a valid signature are refused. |
+| `TRAVELLER_SYNC_MODE` | `dry` (default: works out what it would add and returns it, writes nothing), `live` (writes) or `off`. |
+| `TRAVELLER_SYNC_TRIPS` | Optional. Comma-separated WeTravel trip ids; when set, the sync only touches those trips (for a first live test on one trip). `TRAVELLER_SYNC_SKIP` leaves trips out. `TRAVELLER_SYNC_ROOT` (default `03. Operations/01 Trips`), `TRAVELLER_SYNC_SHEET` (default `Travellers Data`), `TRAVELLER_SYNC_SITE` (default `root`) / `TRAVELLER_SYNC_DRIVE_ID` locate the workbooks. |
 | `DASHBOARD_URL` | The deployment URL used in the Slack message's "Open dashboard" link. Defaults to `https://bookingprogress.vercel.app`; change it if the project's domain changed. |
 
 ### Optional — all have working defaults baked into the code

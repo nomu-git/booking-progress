@@ -1960,8 +1960,76 @@ name, who it's assigned to and its status exactly as monday shows it.
 
 **Function budget: 11 of Vercel Hobby's 12** (sheets merged into one;
 `campaign-alerts`, `lead-alerts` and `advisor` added; the Claude connector,
-the ManyChat hook, the campaign audit and the Budget Plan share `advisor`;
+the ManyChat hook, the campaign audit, the Budget Plan and the traveller sync share `advisor`;
 `media-plan` deleted 29 Oct 2026). New sheet tabs don't add to it.
+
+## Traveller sync: WeTravel bookings into each trip's Project Sheet, 1 Nov 2026
+
+Anton: "whenever someone books in our WeTravel trip it will go straight ...
+in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
+**Travellers Data**), "make sure no duplicates". Built as
+**`lib/traveller-sync.js`**, routed through `api/advisor.js`
+(`?route=traveller-sync`, still 11 of 12 functions).
+
+- **Triggers**: WeTravel's webhook (Svix) `booking.created` / `booking.updated`
+  -> `POST /hooks/wetravel` (signature checked with `WETRAVEL_WEBHOOK_SECRET`;
+  answers 202 at once and finishes with `@vercel/functions` `waitUntil`, since
+  Svix waits ~15 s); a daily Vercel cron at 02:30 UTC (6:30 AM Muscat) over
+  every trip that hasn't ended (catches missed events and checkout answers
+  given after booking); manual `GET /api/traveller-sync?trip=<id>[&dry=1]`
+  and `?last=1` (last run's summary), Bearer `CRON_SECRET` or
+  `CAMPAIGN_ALERT_SECRET`. An event only says which trip changed: the whole
+  trip is reconciled from the API, so retries and duplicates are harmless.
+- **WeTravel key unchanged**: it uses `WETRAVEL_API_KEY`. WeTravel only shows
+  "Revoke API Key", no second key; a new key would break this dashboard.
+  The dashboard's old webhook endpoint (`bookingprogress.vercel.app/api/webhook`,
+  Disabled since 16 Aug 2026, no route in this repo) was left alone; the sync
+  gets its own endpoint beside it.
+- **Data**: `/bookings/trips/<id>/bookings` then `/bookings/trips/<id>/orders/<order>`
+  (participants per package option with their `survey` answers; add-on
+  options list the same people). Questions matched by wording (Birthdate,
+  Gender, Nationality, Country of Residence, WhatsApp, Medical, Dietary,
+  Emergency contact name / phone). Week = "Week N" in the package name.
+- **Which workbook**: project code from `trip-code.js` `buildCode()` (weeks =
+  the trip's package count), at `<TRAVELLER_SYNC_ROOT>/<YYYY>/<MM Month>/<code>/<code>.xlsx`
+  (e.g. `03. Operations/01 Trips/2026/11 November/ZNZ-BL-202611-03C`), else a
+  search that must find exactly one `<code>.xlsx`. No code / no file / two
+  files = reported, nothing written.
+- **Row = Operations' layout (Anton's choices, 22 Oct 2026)**: A/B names as
+  typed in WeTravel (Arabic kept), C birthdate YYYY-MM-DD, D gender, E
+  nationality as answered, F age on the trip's start day, G WhatsApp, H
+  email, I medical, J dietary, **K Accommodation = hotel / room / night
+  add-ons**, M notes "Booked Week 1 and Week 2. Residence: X. Emergency
+  contact: name phone", **T Activity = other add-ons**; L and the flight
+  columns N-S stay empty. Text cells get the text format first, so a phone
+  "+966…" or an answer starting "=" stays text, never a formula.
+- **No duplicates, never overwrites**: a traveller is "already there" if their
+  week block has their email (plus first name when an email is shared, e.g. a
+  parent and child) or, failing that, their full name. Found in another week
+  only = reported, not added. Each traveller placed or found is remembered
+  in Upstash (`tsync:p:<trip>:<participant>:<week>`), so a row Operations
+  later edits or deletes is reported, not re-added. New rows go in the first
+  row of the week block whose A-T are all empty; a full block gets a row
+  inserted above the next week's heading. Blanks are filled later only in
+  rows the sync added. Cancelled = that row's text red (Operations' rule),
+  unless the same person has an active booking in that week (rebooked).
+  Per-trip lock `tsync:lock:<trip>`; a second event waits for the first.
+- **Safety switches**: `TRAVELLER_SYNC_MODE` `dry` (default) / `live` / `off`;
+  `TRAVELLER_SYNC_TRIPS` limits it to listed trip ids. Reports carry
+  initials, week, row and the columns filled; never a name, email, phone or
+  answer (public site).
+- **Microsoft side**: Entra app, Graph application permission
+  (`Sites.Selected` with a write grant on the trips' site, or
+  `Files.ReadWrite.All`), env `MS_TENANT_ID` / `MS_CLIENT_ID` /
+  `MS_CLIENT_SECRET`. Edits go through a workbook session, so they land in
+  the open Excel Online file like a co-author's.
+- Tested locally with mocked WeTravel / Graph / Upstash on the real ZNZ
+  layout (dry run writes nothing; existing 5 found; new Week 2 pair added at
+  rows 20-21; Tala's cancellation red; second run writes nothing; hand-edited
+  row not duplicated; blank filled without overwriting; full Week 1 gets a
+  row inserted). **Still to verify against a live order**: the exact shape of
+  `survey.answers` and of add-on participants, and the webhook payload's trip
+  id field (if it has none, the event syncs every upcoming trip).
 
 ## Open items waiting on Muatasam
 

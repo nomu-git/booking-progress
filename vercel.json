@@ -7,6 +7,10 @@
     {
       "path": "/api/advisor?route=campaign-audit",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/advisor?route=traveller-sync",
+      "schedule": "30 2 * * *"
     }
   ],
   "rewrites": [
@@ -67,12 +71,20 @@
       "destination": "/api/advisor?route=manychat"
     },
     {
+      "source": "/hooks/wetravel",
+      "destination": "/api/advisor?route=traveller-sync&hook=1"
+    },
+    {
       "source": "/api/campaign-audit",
       "destination": "/api/advisor?route=campaign-audit"
     },
     {
       "source": "/api/budget-plan",
       "destination": "/api/advisor?route=budget-plan"
+    },
+    {
+      "source": "/api/traveller-sync",
+      "destination": "/api/advisor?route=traveller-sync"
     }
   ],
   "functions": {

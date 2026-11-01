@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Live booking-progress dashboard reading directly from the WeTravel Partner API",
   "dependencies": {
-    "@anthropic-ai/sdk": "latest"
+    "@anthropic-ai/sdk": "latest",
+    "@vercel/functions": "3.10.1"
   }
 }
