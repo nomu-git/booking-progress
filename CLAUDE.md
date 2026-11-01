@@ -1269,6 +1269,22 @@ audit. Everything budget-related now reads this plan.
   `bpBind()`, `bpSave()`, forms `bpForm` / `bpPer` (values survive
   re-renders), classes `bp-`; on a phone each plan line stacks as a block.
   Checked in both themes (contrast audit clean) and at 390px.
+- **Campaign budgets table grouped and filtered** (Anton, 1 Nov 2026: "put
+  the ended at below ... properly organize and have filters"): rows sit under
+  **Running now / Coming up / Ended** headings (`.bp-grp` rows), Ended last
+  (by date: today past the end, or status Ended); a **Show** filter (All /
+  Running now / Coming up / Ended, each with its count, `bpShow`) and a
+  **Campaign** dropdown (`bpCamp`, so a campaign's old and new lines sit
+  together), plus Clear. The table no longer folds after 10 rows (`.bp-table`
+  left out of `CLAMP`). Same day, the plan was split from Meta's activity log:
+  the five campaigns started at SAR 200/day on 28 Oct and were cut on 29 Oct
+  about 1:25 PM (ZNZ-BL 50, BA-TA 30, ZNZ-TA 30, SL-EX 20, BA-WL 20), so each
+  has a 28-29 Oct line at 200 and a line from 30 Oct at the new amount
+  (Thursday counted at the old budget, which ran most of the day). Nov period
+  now plans SAR 4,040 of 7,500. **Known gap**: the period's "runs out"
+  projection is the average daily spend since its first full day, so the
+  SAR 636 Thursday still drags it to ~SAR 298/day ("runs out 21 Nov"); a fix
+  (project the rest from the plan) was offered to Anton, not built.
 - **SAR shows USD on hover** (Anton, 29 Oct 2026): `sarHover(root)` runs
   inside `bindHelp()` (so on every page that binds tooltips: Campaigns,
   Budget Plan, health audit, Past years, Dashboard, KPIs): it wraps any

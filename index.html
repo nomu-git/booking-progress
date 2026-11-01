@@ -947,6 +947,12 @@
   .bp-ask .bp-actions { margin-top: 18px; }
   .bp-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .bp-ph-only { display: none; }
+  .bp-filters { display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap; margin: 0 0 10px; }
+  .bp-table tr.bp-grp td { background: transparent; border-bottom: 1px solid var(--line); text-align: left; padding: 16px 10px 6px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); }
+  .bp-table tbody tr.bp-grp:first-child td { padding-top: 6px; }
+  .bp-table tr.bp-grp.ended td { color: var(--text-3); }
+  .bp-table tr.bp-grp:hover td { background: transparent; }
   .sar-usd { cursor: help; text-decoration: underline dotted rgba(var(--acc-rgb), .45); text-underline-offset: 3px; text-decoration-thickness: 1px; }
   @media (max-width: 700px) {
     .bp-fgrid { grid-template-columns: 1fr 1fr; }
@@ -955,6 +961,8 @@
     .bp-table, .bp-table tbody { display: block; width: 100%; }
     .bp-table tr { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name st" "bud plan" "dates dates" "spent spent" "act act"; gap: 6px 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
     .bp-table td { display: block; padding: 0 !important; border: 0 !important; text-align: left !important; white-space: normal; }
+    .bp-table tr.bp-grp { display: block; padding: 16px 0 4px; }
+    .bp-table tr.bp-grp:first-child { padding-top: 4px; }
     .bp-c-name { grid-area: name; } .bp-c-st { grid-area: st; } .bp-c-bud { grid-area: bud; }
     .bp-c-plan { grid-area: plan; text-align: right !important; } .bp-c-dates { grid-area: dates; }
     .bp-c-spent { grid-area: spent; } .bp-table td.bp-c-act { grid-area: act; display: flex; gap: 18px; justify-content: flex-start; }
@@ -3036,6 +3044,8 @@
   let bpPer = null; // period form values while it's open
   let bpMsg = null; // { ok, text } after a save
   let bpBusy = false;
+  let bpShow = 'all'; // Campaign budgets: 'all' | 'running' | 'coming' | 'ended'
+  let bpCamp = ''; // Campaign budgets: one campaign's lines, '' = every campaign
   // "Are you sure?" before any change is saved: resolves true on Yes.
   function bpAsk(title, lines, okLabel) {
     return new Promise((resolve) => {
@@ -3184,8 +3194,18 @@
       </div>`;
     }).join('');
 
-    const lines = [...bp.lines].sort((a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name));
-    const rows = lines.map((l) => {
+    // Lines grouped by where they are in time: running now first, then coming
+    // up, and ended at the bottom (Anton, 1 Nov 2026), each filterable.
+    const phase = (l) => (l.status === 'Ended' || today > l.end ? 'ended' : today < l.start ? 'coming' : 'running');
+    const GROUPS = [['running', 'Running now'], ['coming', 'Coming up'], ['ended', 'Ended']];
+    const camps = [...new Set(bp.lines.map((l) => l.name))].sort((a, b) => a.localeCompare(b));
+    if (bpCamp && !camps.includes(bpCamp)) bpCamp = '';
+    const byCamp = bp.lines.filter((l) => !bpCamp || l.name === bpCamp);
+    const count = (ph) => byCamp.filter((l) => phase(l) === ph).length;
+    const order = { running: (a, b) => a.name.localeCompare(b.name) || a.start.localeCompare(b.start),
+      coming: (a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name),
+      ended: (a, b) => b.end.localeCompare(a.end) || a.name.localeCompare(b.name) };
+    const row = (l) => {
       const st = BP_ST[l.status] || 'none';
       const sub = l.linked
         ? (l.metaName && l.metaName !== l.name ? `Meta: ${esc(l.metaName)} · ` : '') + (l.metaStatus === 'Active' ? 'running in Meta' : 'in Meta, not running')
@@ -3200,7 +3220,22 @@
         <td class="bp-c-st"><span class="lq-st ${st}" ${tip(l.status, l.why || '')}>${BP_GL[l.status] || '○'} ${esc(l.status)}</span></td>
         <td class="bp-rowact bp-c-act"><button type="button" class="bp-link" data-bp="editLine" data-id="${attr(l.id)}">Edit</button><button type="button" class="bp-link" data-bp="delLine" data-id="${attr(l.id)}">Remove</button></td>
       </tr>`;
+    };
+    const rows = GROUPS.filter(([ph]) => bpShow === 'all' || bpShow === ph).map(([ph, label]) => {
+      const ls = byCamp.filter((l) => phase(l) === ph).sort(order[ph]);
+      if (!ls.length) return '';
+      return `<tr class="bp-grp${ph === 'ended' ? ' ended' : ''}"><td colspan="7">${label} · ${ls.length}</td></tr>${ls.map(row).join('')}`;
     }).join('');
+    const showBtn = (k, label, n) => `<button type="button" data-bpshow="${k}" aria-pressed="${bpShow === k}">${label} · ${n}</button>`;
+    const filters = bp.lines.length ? `<div class="bp-filters">
+        <div class="efilter"><span class="efl">Show</span><div class="seg" id="bpShowSeg">
+          ${showBtn('all', 'All', byCamp.length)}${showBtn('running', 'Running now', count('running'))}${showBtn('coming', 'Coming up', count('coming'))}${showBtn('ended', 'Ended', count('ended'))}
+        </div></div>
+        <div class="efilter"><span class="efl">Campaign</span><select class="fselect" id="bpCampSel" aria-label="Choose a campaign">
+          <option value="">All campaigns · ${bp.lines.length}</option>${camps.map((n) => `<option value="${attr(n)}"${n === bpCamp ? ' selected' : ''}>${esc(n)} · ${bp.lines.filter((l) => l.name === n).length}</option>`).join('')}
+        </select></div>
+        ${bpShow !== 'all' || bpCamp ? '<button type="button" class="bp-link" id="bpClear">Clear</button>' : ''}
+      </div>` : '';
     const inPlan = new Set(bp.lines.filter((l) => l.metaId).map((l) => l.metaId));
     const missing = (p.liveCampaigns || []).filter((c) => !inPlan.has(c.id));
 
@@ -3215,10 +3250,11 @@
       <div class="panel bp">
         <div class="ptitle"><span ${tip('Campaign budgets', 'What each campaign is set to spend: SAR a day between two dates, or SAR a week over whole Sunday to Saturday weeks. A line is tied to its Meta campaign, so spend is counted only inside its dates. Status compares spend with the plan from its second day to yesterday (the first day is often a part day): On track 70 to 115%, Slow under, Fast over, Over past its whole budget.')}>Campaign budgets</span></div>
         ${missing.length ? `<div class="bp-miss">▲ Running in Meta but not in the plan: ${missing.map((c) => `<span class="bp-mi">${esc(c.name)} <button type="button" class="bp-link" data-bp="addLive" data-id="${attr(c.id)}">Add to plan</button></span>`).join('')}</div>` : ''}
+        ${filters}
         <div class="tscroll">
           <table class="ctable bp-table">
             <thead><tr><th>Campaign</th><th class="num">Budget</th><th>Dates</th><th class="num">Planned</th><th>Spent</th><th>Status</th><th></th></tr></thead>
-            <tbody>${rows || '<tr><td class="cname" colspan="7">No campaign budget yet.</td></tr>'}</tbody>
+            <tbody>${rows || `<tr><td class="cname" colspan="7">${bp.lines.length ? 'No campaign budget matches these filters.' : 'No campaign budget yet.'}</td></tr>`}</tbody>
           </table>
         </div>
         ${bpForm ? bpLineForm(p) : `<button type="button" class="bp-btn" data-bp="addLine">+ Add a campaign budget</button>`}
@@ -3272,6 +3308,11 @@
       if (k === 'pick') el.addEventListener('change', () => { bpForm.pick = el.value; renderCampaigns(); });
     });
     wrap.querySelectorAll('[data-bpp]').forEach((el) => el.addEventListener('input', () => { bpPer[el.dataset.bpp] = el.value; }));
+    wrap.querySelectorAll('[data-bpshow]').forEach((b) => b.addEventListener('click', () => { bpShow = b.dataset.bpshow; renderCampaigns(); }));
+    const cs = wrap.querySelector('#bpCampSel');
+    if (cs) cs.addEventListener('change', () => { bpCamp = cs.value; renderCampaigns(); });
+    const cl = wrap.querySelector('#bpClear');
+    if (cl) cl.addEventListener('click', () => { bpShow = 'all'; bpCamp = ''; renderCampaigns(); });
 
     wrap.querySelectorAll('[data-bp]').forEach((b) => b.addEventListener('click', () => {
       const act = b.dataset.bp;
@@ -6891,7 +6932,7 @@
   };
   // [container selector, item selector, show, phone only]
   const CLAMP = [
-    ['table.ctable:not(.kp-table):not(.fb-matrix) > tbody', ':scope > tr:not(.trp-detail)', 10],
+    ['table.ctable:not(.kp-table):not(.fb-matrix):not(.bp-table) > tbody', ':scope > tr:not(.trp-detail)', 10],
     ['.mon-list', ':scope > .mon-row', 10],
     ['#previousWrap .panel', ':scope > .pt-month', 3],
     ['.fb-prog', ':scope > .fb-trip', 3],
