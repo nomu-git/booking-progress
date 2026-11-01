@@ -948,11 +948,6 @@
   .bp-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .bp-ph-only { display: none; }
   .bp-filters { display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap; margin: 0 0 10px; }
-  .bp-table tr.bp-grp td { background: transparent; border-bottom: 1px solid var(--line); text-align: left; padding: 16px 10px 6px;
-    font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); }
-  .bp-table tbody tr.bp-grp:first-child td { padding-top: 6px; }
-  .bp-table tr.bp-grp.ended td { color: var(--text-3); }
-  .bp-table tr.bp-grp:hover td { background: transparent; }
   .sar-usd { cursor: help; text-decoration: underline dotted rgba(var(--acc-rgb), .45); text-underline-offset: 3px; text-decoration-thickness: 1px; }
   @media (max-width: 700px) {
     .bp-fgrid { grid-template-columns: 1fr 1fr; }
@@ -961,8 +956,6 @@
     .bp-table, .bp-table tbody { display: block; width: 100%; }
     .bp-table tr { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name st" "bud plan" "dates dates" "spent spent" "act act"; gap: 6px 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
     .bp-table td { display: block; padding: 0 !important; border: 0 !important; text-align: left !important; white-space: normal; }
-    .bp-table tr.bp-grp { display: block; padding: 16px 0 4px; }
-    .bp-table tr.bp-grp:first-child { padding-top: 4px; }
     .bp-c-name { grid-area: name; } .bp-c-st { grid-area: st; } .bp-c-bud { grid-area: bud; }
     .bp-c-plan { grid-area: plan; text-align: right !important; } .bp-c-dates { grid-area: dates; }
     .bp-c-spent { grid-area: spent; } .bp-table td.bp-c-act { grid-area: act; display: flex; gap: 18px; justify-content: flex-start; }
@@ -3194,17 +3187,16 @@
       </div>`;
     }).join('');
 
-    // Lines grouped by where they are in time: running now first, then coming
-    // up, and ended at the bottom (Anton, 1 Nov 2026), each filterable.
+    // One list, no headings (Anton, 1 Nov 2026): running lines first, then
+    // coming up, then ended, and "Not in Meta" at the bottom; latest date
+    // first within each.
     const phase = (l) => (l.status === 'Ended' || today > l.end ? 'ended' : today < l.start ? 'coming' : 'running');
-    const GROUPS = [['running', 'Running now'], ['coming', 'Coming up'], ['ended', 'Ended']];
+    const RANK = { running: 0, coming: 1, ended: 2 };
+    const rank = (l) => (l.status === 'Not in Meta' ? 3 : RANK[phase(l)]);
     const camps = [...new Set(bp.lines.map((l) => l.name))].sort((a, b) => a.localeCompare(b));
     if (bpCamp && !camps.includes(bpCamp)) bpCamp = '';
     const byCamp = bp.lines.filter((l) => !bpCamp || l.name === bpCamp);
     const count = (ph) => byCamp.filter((l) => phase(l) === ph).length;
-    const order = { running: (a, b) => a.name.localeCompare(b.name) || a.start.localeCompare(b.start),
-      coming: (a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name),
-      ended: (a, b) => b.end.localeCompare(a.end) || a.name.localeCompare(b.name) };
     const row = (l) => {
       const st = BP_ST[l.status] || 'none';
       const sub = l.linked
@@ -3221,11 +3213,9 @@
         <td class="bp-rowact bp-c-act"><button type="button" class="bp-link" data-bp="editLine" data-id="${attr(l.id)}">Edit</button><button type="button" class="bp-link" data-bp="delLine" data-id="${attr(l.id)}">Remove</button></td>
       </tr>`;
     };
-    const rows = GROUPS.filter(([ph]) => bpShow === 'all' || bpShow === ph).map(([ph, label]) => {
-      const ls = byCamp.filter((l) => phase(l) === ph).sort(order[ph]);
-      if (!ls.length) return '';
-      return `<tr class="bp-grp${ph === 'ended' ? ' ended' : ''}"><td colspan="7">${label} · ${ls.length}</td></tr>${ls.map(row).join('')}`;
-    }).join('');
+    const rows = byCamp.filter((l) => bpShow === 'all' || phase(l) === bpShow)
+      .sort((a, b) => rank(a) - rank(b) || b.start.localeCompare(a.start) || b.end.localeCompare(a.end) || a.name.localeCompare(b.name))
+      .map(row).join('');
     const showBtn = (k, label, n) => `<button type="button" data-bpshow="${k}" aria-pressed="${bpShow === k}">${label} · ${n}</button>`;
     const filters = bp.lines.length ? `<div class="bp-filters">
         <div class="efilter"><span class="efl">Show</span><div class="seg" id="bpShowSeg">

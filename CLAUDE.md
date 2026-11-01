@@ -1270,9 +1270,11 @@ audit. Everything budget-related now reads this plan.
   re-renders), classes `bp-`; on a phone each plan line stacks as a block.
   Checked in both themes (contrast audit clean) and at 390px.
 - **Campaign budgets table grouped and filtered** (Anton, 1 Nov 2026: "put
-  the ended at below ... properly organize and have filters"): rows sit under
-  **Running now / Coming up / Ended** headings (`.bp-grp` rows), Ended last
-  (by date: today past the end, or status Ended); a **Show** filter (All /
+  the ended at below ... properly organize and have filters"): one list with
+  **no headings** (Anton's follow-up the same day: "no need for segregation
+  just the order"): running lines first, then coming up, then ended (today
+  past the end, or status Ended), then "Not in Meta" at the bottom; latest
+  start date first within each; a **Show** filter (All /
   Running now / Coming up / Ended, each with its count, `bpShow`) and a
   **Campaign** dropdown (`bpCamp`, so a campaign's old and new lines sit
   together), plus Clear. The table no longer folds after 10 rows (`.bp-table`
