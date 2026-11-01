@@ -2017,7 +2017,8 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
 - **Safety switches**: `TRAVELLER_SYNC_MODE` `dry` (default) / `live` / `off`;
   `TRAVELLER_SYNC_TRIPS` limits it to listed trip ids. Reports carry
   initials, week, row and the columns filled; never a name, email, phone or
-  answer (public site).
+  answer (public site). Each run's summary is also logged (Vercel > Logs, search
+  `traveller-sync`), so a dry run can be read without the secret.
 - **Microsoft side**: Entra app, Graph application permission
   (`Sites.Selected` with a write grant on the trips' site, or
   `Files.ReadWrite.All`), env `MS_TENANT_ID` / `MS_CLIENT_ID` /
