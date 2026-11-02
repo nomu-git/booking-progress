@@ -2026,7 +2026,10 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
   `TRAVELLER_SYNC_TRIPS` limits it to listed trip ids. Reports carry
   initials, week, row and the columns filled; never a name, email, phone or
   answer (public site). Each run's summary is also logged (Vercel > Logs, search
-  `traveller-sync`), so a dry run can be read without the secret.
+  `traveller-sync`), so a dry run can be read without the secret. The
+  summary's `checked` lists every trip looked at (code, alreadyThere, added,
+  problems as counts), since `results` keeps only trips with something to
+  report and a clean run printed `results: []` (2 Nov 2026).
 - **Microsoft side**: Entra app, Graph application permission
   (`Sites.Selected` with a write grant on the trips' site, or
   `Files.ReadWrite.All`), env `MS_TENANT_ID` / `MS_CLIENT_ID` /
