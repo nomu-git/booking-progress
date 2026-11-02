@@ -2018,6 +2018,11 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
   standard one both there = "2 workbooks match"). **A new trip code or folder
   name is one line in these tables** (each has a comment saying where), e.g.
   SA Explore later.
+- **Tab**: "Travellers Data" (`TRAVELLER_SYNC_SHEET`), else **"Volunteer
+  Data"**, the older Project Sheet template's name for the same tab and
+  columns (found in `BA-EX-2026-12-01C.xlsx`, 2 Nov 2026). The first read
+  picks the tab and every write goes to it; neither there = the trip's
+  problem `no "Travellers Data" or "Volunteer Data" tab`, nothing written.
 - **Columns are read from the header row, not fixed (2 Nov 2026)**.
   Operations' Project Sheets don't share one column order (ZNZ-BL-202611-03C:
   C..F Birthdate, gender, nationality, Age; ZNZ-TA-202612-02C and
