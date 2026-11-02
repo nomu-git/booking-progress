@@ -2003,14 +2003,37 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
   exactly one file named after one of the codes; a failing search is now a
   reported problem, not a crash (it threw a 500 and killed the trip's run).
   No code / no file / two files = reported, `code` null, nothing written.
-- **Row = Operations' layout (Anton's choices, 22 Oct 2026)**: A/B names as
-  typed in WeTravel (Arabic kept), C birthdate YYYY-MM-DD, D gender, E
-  nationality as answered, F age on the trip's start day, G WhatsApp, H
-  email, I medical, J dietary, **K Accommodation = hotel / room / night
-  add-ons**, M notes "Booked Week 1 and Week 2. Residence: X. Emergency
-  contact: name phone", **T Activity = other add-ons**; L and the flight
-  columns N-S stay empty. Text cells get the text format first, so a phone
-  "+966…" or an answer starting "=" stays text, never a formula.
+- **Columns are read from the header row, not fixed (2 Nov 2026)**.
+  Operations' Project Sheets don't share one column order (ZNZ-BL-202611-03C:
+  C..F Birthdate, gender, nationality, Age; ZNZ-TA-202612-02C and
+  BA-TA-202612-02C: Age, Birth Date, Gender, Nationality; SL-EX-202612-01C:
+  C..H Nationality, Phone No., Email, Date of Birth, Age, Medical History),
+  and the old fixed A..T layout made a live run write birth date, gender,
+  nationality and age into the wrong columns of ZNZ-TA-202612-02C
+  (`TRAVELLER_SYNC_MODE` went back to dry). Now `parseSheet()` takes the
+  first row with a First Name header (row 1 on these sheets) and
+  `headerMap()` maps each header, compared lower-case with punctuation and
+  extra spaces removed, to its column (`HEADERS`): first name, last name,
+  age, birth date / birthdate / date of birth, gender, nationality, phone /
+  phone no / whatsapp, email, medical history, dietary requirements,
+  accommodation, room type, notes, activity; flight no / arriving /
+  departing are recognised and never written, nor is room type. Columns
+  A..Z are read. `rowValues()` returns values by field, `cellsFor()` places
+  them under the mapped headers only, and a row is written cell by cell, so
+  **an unmapped column is never touched**. Duplicate checks, fill-the-blanks
+  and the "added" report (`columns` = the letters written) use the mapped
+  first name / last name / email columns. **No First Name, Last Name or
+  Email header = a problem for that trip, nothing written**; the run goes on
+  to the other trips. A cancelled row is red from A to the last titled
+  column; an inserted row is a whole sheet row. Values as Operations writes
+  them (Anton's choices, 22 Oct 2026): names as typed in WeTravel (Arabic
+  kept), birth date YYYY-MM-DD, gender and nationality as answered, age on
+  the trip's start day, WhatsApp, email, medical, dietary, **Accommodation =
+  hotel / room / night add-ons**, Notes "Booked Week 1 and Week 2.
+  Residence: X. Emergency contact: name phone", **Activity = other
+  add-ons**. Text cells get the text format first, so a phone "+966…" or an
+  answer starting "=" stays text, never a formula. Week blocks are still a
+  "Week N" cell in column A.
 - **No duplicates, never overwrites**: a traveller is "already there" if their
   week block has their email (plus first name when an email is shared, e.g. a
   parent and child) or, failing that, their full name. Found in another week
@@ -2035,8 +2058,11 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
   `Files.ReadWrite.All`), env `MS_TENANT_ID` / `MS_CLIENT_ID` /
   `MS_CLIENT_SECRET`. Edits go through a workbook session, so they land in
   the open Excel Online file like a co-author's.
-- Tested locally with mocked WeTravel / Graph / Upstash on the real ZNZ
-  layout (dry run writes nothing; existing 5 found; new Week 2 pair added at
+- Tested locally with mocked WeTravel / Graph / Upstash. On 2 Nov 2026, the
+  three header layouts above: each value checked under its own header,
+  unmapped columns untouched, blanks refilled under the right header only,
+  reruns add nothing, a sheet without the name / email headers writes
+  nothing. First, on the real ZNZ layout (dry run writes nothing; existing 5 found; new Week 2 pair added at
   rows 20-21; Tala's cancellation red; second run writes nothing; hand-edited
   row not duplicated; blank filled without overwriting; full Week 1 gets a
   row inserted). **Still to verify against a live order**: the exact shape of
