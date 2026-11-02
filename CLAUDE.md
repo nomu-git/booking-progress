@@ -1990,11 +1990,19 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
   options list the same people). Questions matched by wording (Birthdate,
   Gender, Nationality, Country of Residence, WhatsApp, Medical, Dietary,
   Emergency contact name / phone). Week = "Week N" in the package name.
-- **Which workbook**: project code from `trip-code.js` `buildCode()` (weeks =
-  the trip's package count), at `<TRAVELLER_SYNC_ROOT>/<YYYY>/<MM Month>/<code>/<code>.xlsx`
-  (e.g. `03. Operations/01 Trips/2026/11 November/ZNZ-BL-202611-03C`), else a
-  search that must find exactly one `<code>.xlsx`. No code / no file / two
-  files = reported, nothing written.
+- **Which workbook**: project code from `trip-code.js` `buildCode()`, at
+  `<TRAVELLER_SYNC_ROOT>/<YYYY>/<MM Month>/<code>/<code>.xlsx` (e.g.
+  `03. Operations/01 Trips/2026/11 November/ZNZ-BL-202611-03C`). **The week
+  count in the code is tried three ways** (2 Nov 2026): the trip's package
+  count, its date span in weeks (end - start + 1 days, / 7, rounded) and the
+  highest "Week N" anyone booked, one code each; **exactly one of those
+  workbooks must exist** at its usual place. Found because WeTravel listed 2
+  packages for "ZNZ | Building - /29 Nov - 19 Dec" (trip 3769899024) while
+  Operations filed it as `ZNZ-BL-202611-03C`; the sync looked for 02C. None
+  there: a Graph search (for the code without its week part) that must find
+  exactly one file named after one of the codes; a failing search is now a
+  reported problem, not a crash (it threw a 500 and killed the trip's run).
+  No code / no file / two files = reported, `code` null, nothing written.
 - **Row = Operations' layout (Anton's choices, 22 Oct 2026)**: A/B names as
   typed in WeTravel (Arabic kept), C birthdate YYYY-MM-DD, D gender, E
   nationality as answered, F age on the trip's start day, G WhatsApp, H
