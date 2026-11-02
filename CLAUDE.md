@@ -2002,7 +2002,22 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
   there: a Graph search (for the code without its week part) that must find
   exactly one file named after one of the codes; a failing search is now a
   reported problem, not a crash (it threw a 500 and killed the trip's run).
-  No code / no file / two files = reported, `code` null, nothing written.
+  No code / no file / two files = reported, nothing written (`code` kept
+  when only one code was tried, else null).
+- **Overrides, in `lib/traveller-sync.js` only** (2 Nov 2026; `trip-code.js`
+  is shared with the Meta campaigns, so it isn't touched). **`CODE_BY_TRIP`**
+  (WeTravel trip id -> project code) for a trip whose title gives no code:
+  `6048796957` -> `KE-EX-202701-01C` (Kenya Safari and Maasai Trip, 16-22
+  Jan 2027); a listed trip uses that code as is, no week-count lookup.
+  **`PATH_BY_CODE`** (code -> `{ folder, file }`) where Operations named the
+  folder or file differently: `ZNZ-BL-202611-01B` -> `CISCO-ZNZ-BL-202611-01B/
+  ZNZ-BL-202611-01B.xlsx`, `BA-EX-202612-01C` -> `BA-EX-2026-12-01C/
+  BA-EX-2026-12-01C.xlsx` (inside the usual `<YYYY>/<MM Month>`); tried
+  first, then the standard path, and the search also accepts the override
+  file name. Exactly one workbook must still exist (an override and a
+  standard one both there = "2 workbooks match"). **A new trip code or folder
+  name is one line in these tables** (each has a comment saying where), e.g.
+  SA Explore later.
 - **Columns are read from the header row, not fixed (2 Nov 2026)**.
   Operations' Project Sheets don't share one column order (ZNZ-BL-202611-03C:
   C..F Birthdate, gender, nationality, Age; ZNZ-TA-202612-02C and
