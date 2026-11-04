@@ -724,6 +724,19 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   "HP removed", or `{ event: "tag applied", tag: "HP" }`. HP tagged before a
   fixed rule is live isn't counted until the tag is removed and re-added
   (counted that day).
+- **Cause found by Cowork (4 Nov 2026)**: Marina marked HP with an **Inbox
+  conversation label**, and ManyChat rules can't trigger on Inbox labels. The
+  "HP added" / "HP removed" rules (live, right URL and key) watch the
+  **contact tag HP**, which had 0 contacts, so they never ran. Cowork added
+  `"channel": "whatsapp"` to both bodies (hard-coded: one rule serves both
+  channels). That's harmless: the hook counts an HP under the channel the
+  contact's **lead** was counted on (`rec.ch`) and only uses the body's
+  channel for a contact it has never seen. Tested: 2 `hp` + 1 `hp_removed`
+  arrived 4 Nov ~16:40-16:52 Muscat, all accepted, 4 Nov reads 2 HP.
+  **Workflow for Marina: add the HP tag from the contact's profile, one at a
+  time. Bulk tagging doesn't fire the rule, and the Inbox label alone sends
+  nothing.** The HP day is the Muscat day the tag is applied (the request
+  arrives within seconds), not the day the lead first wrote in.
 - **Read side**: `/api/sheets?name=manychat` (`lib/tabs/manychat.js`, 30 s
   cache) → per-day leads / HP / WA / IG / per project since the first event.
   The side-by-side "ManyChat check" panel was **removed** (Anton, 22 Oct
