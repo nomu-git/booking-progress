@@ -711,6 +711,19 @@ tab has a third chip, **ManyChat check**, comparing the two per day.
   30+ days starts a fresh cycle (trip back to NA until re-tagged). Tested 11
   cases locally. Leads tab, ManyChat mode: a **Returning** tile ("N new · N
   returning", `leadsRet` help). KPIs count all leads (new + returning).
+- **HP read 0 for every day (4 Nov 2026)**: Marina said she had tagged HP in
+  ManyChat days before, but `mc:d:*` held no `hp|…` counter at all from 21
+  Oct, while leads and Trip tags arrived. So no HP event ever reached the
+  hook (or each was rejected). The counting code was fine. Added: **a hook
+  log**, `mc:log:<Muscat date>` (30 days), counts per `event|outcome`
+  ("hp|HP counted", "rejected|bad key", "rejected|unknown event: X",
+  "rejected|hp: contact id missing"), sent as `log` (last 14 days) in
+  `/api/sheets?name=manychat`, no contact or name ever logged. **Read it
+  first** when a ManyChat count looks wrong. The hook also accepts
+  hand-typed spellings via `eventOf()`: "HP", "hp added", "High Potential",
+  "HP removed", or `{ event: "tag applied", tag: "HP" }`. HP tagged before a
+  fixed rule is live isn't counted until the tag is removed and re-added
+  (counted that day).
 - **Read side**: `/api/sheets?name=manychat` (`lib/tabs/manychat.js`, 30 s
   cache) → per-day leads / HP / WA / IG / per project since the first event.
   The side-by-side "ManyChat check" panel was **removed** (Anton, 22 Oct
