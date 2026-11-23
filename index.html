@@ -671,7 +671,7 @@
      and those tabs' panels have touched since; Previous Projects and Leads
      never had it. */
   #previousWrap > .panel, #campaignsWrap > .panel,
-  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel, #revenueWrap > .panel, #impactWrap > .panel, #pendingWrap > .panel, #kpisWrap > .panel { margin-bottom: 12px; }
+  #historyWrap > .panel, #leadsWrap > .panel, #engagementsWrap > .panel, #tripsWrap > .panel, #feedbackWrap > .panel, #revenueWrap > .panel, #impactWrap > .panel, #pendingWrap > .panel, #b2bWrap > .panel, #kpisWrap > .panel { margin-bottom: 12px; }
   .ptitle {
     font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-3); margin-bottom: 10px;
@@ -1816,6 +1816,49 @@
     .mon-show select { min-width: 160px; }
   }
 
+  /* ---------- B2B (monday B2B CRM board), classes b2- ---------- */
+  .b2-bar { display: flex; gap: 2px; height: 12px; border-radius: 999px; overflow: hidden; background: var(--track); margin: 4px 0 12px; }
+  .b2-bar > i { display: block; height: 100%; min-width: 4px; background: var(--st); }
+  .b2-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .b2-chips button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--text-2); }
+  .b2-chips button::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--st); }
+  .b2-chips button b { color: var(--strong); font-variant-numeric: tabular-nums; }
+  .b2-chips button:hover { border-color: var(--text-3); }
+  .b2-chips button[aria-pressed="true"] { border-color: var(--yellow); background: rgba(var(--acc-rgb),.1); color: var(--strong); }
+  .b2-sum { margin-top: 12px; font-size: 12.5px; color: var(--text-3); }
+  .b2-sum b { color: var(--strong); }
+  .b2-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin: 4px 0 14px; }
+  .b2-tools .im-search { flex: 1 1 260px; margin: 0; }
+  .b2-tools .fb-fl select { min-width: 130px; }
+  .b2-row, .b2-headrow { display: grid; align-items: center; gap: 14px; grid-template-columns: minmax(0, 2.2fr) 112px minmax(0, 1fr) minmax(0, 1fr) 140px 54px 96px 26px; }
+  .b2-headrow { padding: 0 18px 10px; font-size: 11.5px; font-weight: 600; color: var(--text-3); }
+  .b2-list { display: grid; gap: 8px; }
+  .b2-row { padding: 12px 18px; border-radius: 10px; background: var(--card); border: 1px solid transparent; font-size: 12.5px; color: var(--text-2); transition: border-color .15s; }
+  .b2-row:hover { border-color: var(--yellow); }
+  .b2-org { min-width: 0; }
+  .b2-org b { display: block; font-size: 13.5px; font-weight: 700; color: var(--strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .b2-org small, .b2-meta { display: block; margin-top: 2px; font-size: 11.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .b2-meta { display: none; }
+  .b2-c { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .b2-date.past { color: var(--text-3); }
+  .b2-pax { text-align: right; font-variant-numeric: tabular-nums; }
+  .b2-none { color: var(--text-3); }
+  .b2-note { margin-top: 12px; font-size: 11.5px; color: var(--text-3); }
+  @media (max-width: 760px) {
+    .b2-headrow { display: none; }
+    .b2-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'org av' 'st date' 'meta open'; gap: 6px 12px; }
+    .b2-row > .b2-org { grid-area: org; }
+    .b2-row > .b2-org b { white-space: normal; }
+    .b2-row > .b2-stc { grid-area: st; }
+    .b2-row > .b2-date { grid-area: date; justify-self: end; font-size: 11.5px; }
+    .b2-row > .b2-c, .b2-row > .b2-pax { display: none; }
+    .b2-row > .b2-meta { display: block; grid-area: meta; margin: 0; white-space: normal; }
+    .b2-row > .mon-av { grid-area: av; align-self: start; }
+    .b2-row > .mon-open { grid-area: open; justify-self: end; }
+    .b2-tools .fb-fl { flex: 1 1 140px; }
+    .b2-tools .fb-fl select { min-width: 0; width: 100%; max-width: none; }
+  }
+
   /* Ratings: a row per question, a column per trip. The question column
      stays put while the trips scroll sideways. */
   #feedbackWrap .fb-matrix th.fb-trip-h { white-space: normal; min-width: 118px; max-width: 150px; text-align: left; vertical-align: bottom; line-height: 1.3; }
@@ -1932,6 +1975,7 @@
   <div id="impactWrap" hidden></div>
   <div id="kpisWrap" hidden></div>
   <div id="pendingWrap" hidden></div>
+  <div id="b2bWrap" hidden></div>
   <div class="notes" id="notes"></div>
   <div class="msg" id="msg">Loading booking data…</div>
   </div>
@@ -2048,7 +2092,7 @@
       // A browser that saved state before the Table tab was removed could
       // still have "table" stored — fall back to the dashboard rather than
       // restoring a view that no longer exists.
-      if (['overview', 'board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'impact', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'].includes(s.view)) view = s.view;
+      if (['overview', 'board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'impact', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'b2b', 'kpis'].includes(s.view)) view = s.view;
       // Older saves stored 'all' or a numeric string; a plain finite number is
       // the only valid value now, anything else falls back to the latest year.
       if (s.ptYear != null && Number.isFinite(Number(s.ptYear)) && String(s.ptYear) !== 'all') {
@@ -6018,6 +6062,206 @@
     }
   }
 
+  /* ================= B2B tab (monday.com B2B CRM board) ================= */
+
+  // The Sales workspace's "B2B CRM" board, live (Anton, 23 Nov 2026). Columns
+  // are found by title, so the page follows the board; contact details
+  // (phone, email, contact name) never reach the page (lib/tabs/b2b.js).
+  let b2bData = null;
+  let b2Group = 'all';
+  let b2Q = '';
+  const b2F = { status: '', dest: '', client: '', who: '' };
+  const B2_NOBODY = '__none__';
+
+  function b2Cols(p) {
+    const cols = p.columns || [];
+    const byTitle = (re, type) => cols.find((c) => (!type || c.type === type) && re.test(c.title));
+    const dates = cols.filter((c) => c.type === 'timeline' || c.type === 'date');
+    const tripDates = dates.filter((c) => /trip/i.test(c.title));
+    return {
+      status: cols.find((c) => c.labels && /status|stage/i.test(c.title)) || cols.find((c) => c.labels),
+      people: cols.find((c) => c.type === 'people' || c.type === 'multiple-person'),
+      dest: byTitle(/destination/i), client: byTitle(/client/i), theme: byTitle(/theme/i), country: byTitle(/country/i),
+      dates: tripDates.length ? tripDates : dates,
+      pax: byTitle(/numbers|pax|size|travell/i, 'numbers') || cols.find((c) => c.type === 'numbers'),
+    };
+  }
+  const b2Text = (i, c) => (c && i.values[c.id] && i.values[c.id].text) || '';
+  const b2List = (i, c) => b2Text(i, c).split(',').map((x) => x.trim()).filter(Boolean);
+  const b2People = (i, c) => (c && i.values[c.id] && i.values[c.id].people) || [];
+  // "2026-10-25 - 2026-10-31" (or one date) -> { start, end }.
+  function b2Range(i, C) {
+    for (const c of C.dates) {
+      const m = /(\d{4}-\d{2}-\d{2})(?:\s*-\s*(\d{4}-\d{2}-\d{2}))?/.exec(b2Text(i, c));
+      if (m) return { start: m[1], end: m[2] || m[1] };
+    }
+    return null;
+  }
+  function b2Fmt(r) {
+    const d = (iso) => [Number(iso.slice(8, 10)), MON_MON[Number(iso.slice(5, 7)) - 1], iso.slice(0, 4)];
+    const [a, am, ay] = d(r.start);
+    const [b, bm, by] = d(r.end);
+    if (r.start === r.end) return `${a} ${am} ${ay}`;
+    if (ay !== by) return `${a} ${am} ${ay} – ${b} ${bm} ${by}`;
+    if (am !== bm) return `${a} ${am} – ${b} ${bm} ${by}`;
+    return `${a}–${b} ${am} ${ay}`;
+  }
+
+  function renderB2b() {
+    const p = b2bData;
+    if (!p) return;
+    if (p.error && !p.items) {
+      $('b2bWrap').innerHTML = `<div class="msg err">Could not load the B2B CRM from monday.com: ${esc(p.error)}</div>`;
+      return;
+    }
+    const C = b2Cols(p);
+    const today = p.today;
+    const groups = (p.groups || []).map((g) => ({ ...g, n: p.items.filter((i) => i.group === g.id).length })).filter((g) => g.n);
+    if (b2Group !== 'all' && !groups.some((g) => g.id === b2Group)) b2Group = 'all';
+    const groupName = new Map((p.groups || []).map((g) => [g.id, g.title]));
+    const everyone = [...new Set(p.items.flatMap((i) => b2People(i, C.people)))].sort((a, b) => a.localeCompare(b));
+    const colorOf = new Map(everyone.map((n, k) => [n, MON_PEOPLE[k % MON_PEOPLE.length]]));
+    const statusColor = new Map(((C.status && C.status.labels) || []).map((l) => [l.label, monColor(l.color)]));
+
+    const words = b2Q.toLowerCase().split(/\s+/).filter(Boolean);
+    const hay = (i) => [i.name, b2Text(i, C.country), b2Text(i, C.dest), b2Text(i, C.theme), b2Text(i, C.client)].join(' ').toLowerCase();
+    // Every filter but `skip`, so each menu counts what it would show.
+    const pass = (i, skip) => (b2Group === 'all' || i.group === b2Group)
+      && (skip === 'status' || !b2F.status || b2Text(i, C.status) === b2F.status)
+      && (skip === 'dest' || !b2F.dest || b2List(i, C.dest).includes(b2F.dest))
+      && (skip === 'client' || !b2F.client || b2List(i, C.client).includes(b2F.client))
+      && (skip === 'who' || !b2F.who || (b2F.who === B2_NOBODY ? !b2People(i, C.people).length : b2People(i, C.people).includes(b2F.who)))
+      && (!words.length || words.every((w) => hay(i).includes(w)));
+    const shown = p.items.filter((i) => pass(i));
+
+    // Status bar: the rows the other filters leave, split by status in
+    // monday's colours; a chip filters to that status (again to clear).
+    const forBar = p.items.filter((i) => pass(i, 'status'));
+    const stCount = new Map();
+    for (const i of forBar) { const k = b2Text(i, C.status) || 'No status'; stCount.set(k, (stCount.get(k) || 0) + 1); }
+    const stOrder = [...stCount.entries()].sort((a, b) => b[1] - a[1]);
+    const stCol = (k) => statusColor.get(k) || 'var(--q-none)';
+    const bar = forBar.length ? `
+      <div class="b2-bar" role="img" aria-label="${attr(stOrder.map(([k, n]) => `${k} ${n}`).join(', '))}">
+        ${stOrder.map(([k, n]) => `<i style="--st:${stCol(k)};flex:${n}" ${tipOf(k, [['Organisations', int(n)], ['Share', `${Math.round(n / forBar.length * 100)}%`]])}></i>`).join('')}
+      </div>
+      <div class="b2-chips">
+        ${stOrder.map(([k, n]) => `<button type="button" data-b2-st="${attr(k)}" aria-pressed="${b2F.status === k}" style="--st:${stCol(k)}">${esc(k)} <b>${int(n)}</b></button>`).join('')}
+      </div>` : '';
+    const upcoming = shown.filter((i) => { const r = b2Range(i, C); return r && r.end >= today; });
+    const pax = upcoming.reduce((t, i) => t + (Number(b2Text(i, C.pax)) || 0), 0);
+
+    const opts = (key, col, list) => {
+      const counts = new Map();
+      for (const i of p.items.filter((x) => pass(x, key))) for (const v of list(i, col)) counts.set(v, (counts.get(v) || 0) + 1);
+      return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    };
+    const select = (key, label, entries, extra = '') => `
+      <label class="fb-fl">${esc(label)}
+        <select data-b2-f="${key}">
+          <option value="">All</option>
+          ${entries.map(([v, n]) => `<option value="${attr(v)}"${b2F[key] === v ? ' selected' : ''}>${esc(v)} (${int(n)})</option>`).join('')}
+          ${extra}
+        </select>
+      </label>`;
+    const nobody = p.items.filter((x) => pass(x, 'who') && !b2People(x, C.people).length).length;
+    const filtered = b2F.status || b2F.dest || b2F.client || b2F.who || words.length;
+    const tools = `
+      <div class="b2-tools">
+        <div class="im-search"><input id="b2Q" type="search" value="${attr(b2Q)}" placeholder="Search an organisation, country, destination…" aria-label="Search the B2B CRM" autocomplete="off"></div>
+        ${C.status ? select('status', C.status.title, opts('status', C.status, (i, c) => [b2Text(i, c)].filter(Boolean))) : ''}
+        ${C.dest ? select('dest', C.dest.title, opts('dest', C.dest, b2List)) : ''}
+        ${C.client ? select('client', C.client.title, opts('client', C.client, b2List)) : ''}
+        ${C.people ? select('who', 'Owner', opts('who', C.people, (i, c) => b2People(i, c)), nobody ? `<option value="${B2_NOBODY}"${b2F.who === B2_NOBODY ? ' selected' : ''}>No one assigned (${int(nobody)})</option>` : '') : ''}
+        ${filtered ? '<button class="btn" type="button" data-b2-clear>Clear</button>' : ''}
+      </div>`;
+
+    const avatars = (i) => {
+      const ppl = b2People(i, C.people);
+      if (!ppl.length) return `<span class="mon-av" ${tipOf('Owner', [['', 'No one yet']])}><i class="none">?</i></span>`;
+      const faces = ppl.slice(0, 3).map((n) => `<i style="--who:${colorOf.get(n)}">${esc(monInitials(n))}</i>`).join('');
+      const more = ppl.length > 3 ? `<i class="more">+${ppl.length - 3}</i>` : '';
+      return `<span class="mon-av" ${tipOf('Owner', ppl.map((n) => ['', n]))}>${faces}${more}</span>`;
+    };
+    const dash = '<span class="b2-none">—</span>';
+    const row = (i) => {
+      const st = b2Text(i, C.status);
+      const r = b2Range(i, C);
+      const n = Number(b2Text(i, C.pax));
+      const sub = [b2Text(i, C.country), b2Text(i, C.theme), b2Group === 'all' ? groupName.get(i.group) : ''].filter(Boolean).join(' · ');
+      const meta = [b2Text(i, C.dest), b2Text(i, C.client), n ? `${C.pax ? C.pax.title : ''} ${int(n)}`.trim() : ''].filter(Boolean).join(' · ');
+      return `
+      <div class="b2-row">
+        <div class="b2-org"><b title="${attr(i.name)}">${esc(i.name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>
+        <div class="b2-stc">${st ? `<span class="mon-st" style="--st:${stCol(st)}">${esc(st)}</span>` : dash}</div>
+        <div class="b2-c">${b2Text(i, C.dest) ? esc(b2Text(i, C.dest)) : dash}</div>
+        <div class="b2-c">${b2Text(i, C.client) ? esc(b2Text(i, C.client)) : dash}</div>
+        <div class="b2-date${r && r.end < today ? ' past' : ''}">${r ? esc(b2Fmt(r)) : dash}</div>
+        <div class="b2-pax">${n ? int(n) : dash}</div>
+        <div class="b2-meta">${esc(meta)}</div>
+        ${avatars(i)}
+        ${i.url ? `<a class="mon-open" href="${attr(i.url)}" target="_blank" rel="noopener" title="Open in monday">↗</a>` : '<span></span>'}
+      </div>`;
+    };
+    const held = [...new Set((p.hiddenColumns || []).filter((t) => !/^sub-?items$/i.test(t)))];
+
+    $('b2bWrap').innerHTML = `
+      ${p.stale ? `<div class="msg err">Showing the last copy from monday.com — ${esc(p.error || 'monday unreachable')}</div>` : ''}
+      <div class="mon-top">
+        <div>
+          <h2>B2B CRM<small>${int(shown.length)} organisation${shown.length === 1 ? '' : 's'} · live from monday.com</small></h2>
+          <div class="mon-tabs" role="tablist" aria-label="Groups">
+            <button role="tab" data-b2-group="all" aria-pressed="${b2Group === 'all'}" aria-selected="${b2Group === 'all'}">All<span>${int(p.items.length)}</span></button>
+            ${groups.map((g) => `<button role="tab" data-b2-group="${attr(g.id)}" aria-pressed="${b2Group === g.id}" aria-selected="${b2Group === g.id}">${esc(g.title)}<span>${int(g.n)}</span></button>`).join('')}
+          </div>
+        </div>
+        ${p.board && p.board.url ? `<a class="btn" href="${attr(p.board.url)}" target="_blank" rel="noopener">Open board ↗</a>` : ''}
+      </div>
+      <div class="panel">
+        <div class="ptitle">Pipeline by ${esc(C.status ? C.status.title.toLowerCase() : 'status')}</div>
+        ${bar || '<div class="b2-none">Nothing here.</div>'}
+        <div class="b2-sum"><b>${int(upcoming.length)}</b> with a trip date coming up${pax ? ` · ${esc((C.pax && C.pax.title) || 'Total')} total on those <b>${int(pax)}</b>` : ''}</div>
+      </div>
+      ${tools}
+      ${shown.length ? `
+      <div class="b2-headrow"><span>Organisation</span><span>${esc(C.status ? C.status.title : 'Status')}</span><span>${esc(C.dest ? C.dest.title : '')}</span><span>${esc(C.client ? C.client.title : '')}</span><span>${esc(C.dates[0] ? C.dates[0].title : 'Date')}</span><span style="text-align:right">${esc(C.pax ? C.pax.title : '')}</span><span style="text-align:right">Owner</span><span></span></div>
+      <div class="b2-list">${shown.map(row).join('')}</div>` : '<div class="mon-empty">No organisation matches.</div>'}
+      ${held.length ? `<div class="b2-note">Contact details stay in monday and aren't shown here: ${esc(held.join(', '))}.</div>` : ''}`;
+
+    const w = $('b2bWrap');
+    bindHelp(w);
+    w.querySelectorAll('[data-b2-group]').forEach((b) => b.addEventListener('click', () => { b2Group = b.dataset.b2Group; renderB2b(); }));
+    w.querySelectorAll('[data-b2-st]').forEach((b) => b.addEventListener('click', () => { b2F.status = b2F.status === b.dataset.b2St ? '' : b.dataset.b2St; renderB2b(); }));
+    w.querySelectorAll('[data-b2-f]').forEach((s) => s.addEventListener('change', () => { b2F[s.dataset.b2F] = s.value; renderB2b(); }));
+    const clr = w.querySelector('[data-b2-clear]');
+    if (clr) clr.addEventListener('click', () => { Object.keys(b2F).forEach((k) => { b2F[k] = ''; }); b2Q = ''; renderB2b(); });
+    const q = $('b2Q');
+    if (q) {
+      let timer = null;
+      q.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          b2Q = q.value;
+          renderB2b();
+          const again = $('b2Q');
+          if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+        }, 250);
+      });
+    }
+  }
+
+  async function loadB2b(force) {
+    try {
+      const res = await fetch('/api/sheets?name=b2b' + (force ? '&refresh=1' : ''));
+      const p = await res.json();
+      if (!res.ok && !p.items) throw new Error(p.error || `HTTP ${res.status}`);
+      b2bData = p;
+      renderB2b();
+    } catch (err) {
+      if (!b2bData) $('b2bWrap').innerHTML = `<div class="msg err">Could not load the B2B CRM from monday.com: ${esc(err.message)}</div>`;
+    }
+  }
+
   /* ================= KPIs (Corporate) ================= */
 
   // Every sales and marketing KPI as Passed or Failed, with why and what to
@@ -6924,6 +7168,7 @@
   const CLAMP = [
     ['table.ctable:not(.kp-table):not(.fb-matrix):not(.bp-table) > tbody', ':scope > tr:not(.trp-detail)', 10],
     ['.mon-list', ':scope > .mon-row', 10],
+    ['.b2-list', ':scope > .b2-row', 15],
     ['#previousWrap .panel', ':scope > .pt-month', 3],
     ['.fb-prog', ':scope > .fb-trip', 3],
     ['.im-list', ':scope > .im-row', 10],
@@ -7013,7 +7258,7 @@
     });
   }
 
-  const pvWraps = ['overviewWrap', 'board', 'reportWrap', 'previousWrap', 'campaignsWrap', 'historyWrap', 'leadsWrap', 'engagementsWrap', 'tripsWrap', 'feedbackWrap', 'revenueWrap', 'impactWrap', 'kpisWrap', 'pendingWrap'];
+  const pvWraps = ['overviewWrap', 'board', 'reportWrap', 'previousWrap', 'campaignsWrap', 'historyWrap', 'leadsWrap', 'engagementsWrap', 'tripsWrap', 'feedbackWrap', 'revenueWrap', 'impactWrap', 'kpisWrap', 'pendingWrap', 'b2bWrap'];
   const pvQueue = new Set();
   let pvFrame = 0;
   const pvObserver = new MutationObserver((records) => {
@@ -7048,7 +7293,7 @@
   // Products (Trips & R&D), Feedback, Impact.
   const SECTIONS = [
     { key: 'overview', name: 'Dashboard', views: [['overview', 'Dashboard']] },
-    { key: 'sales', name: 'Sales', views: [['board', 'Bookings'], ['leads', 'Leads'], ['report', 'Bookings report', 'Reports'], ['previous', 'Previous Sales', 'Reports']] },
+    { key: 'sales', name: 'Sales', views: [['board', 'B2C'], ['b2b', 'B2B'], ['leads', 'Leads'], ['report', 'Bookings report', 'Reports'], ['previous', 'Previous Sales', 'Reports']] },
     { key: 'marketing', name: 'Marketing', views: [['campaigns', 'This year', 'Campaigns'], ['history', 'Past years', 'Campaigns'], ['engagements', 'Engagement']] },
     { key: 'operations', name: 'Operations', views: [['revenue', 'Performance'], ['trips', 'Products'], ['feedback', 'Feedback'], ['impact', 'Impact']] },
     { key: 'corporate', name: 'Corporate', views: [['kpis', 'KPIs'], ['pending', 'Monday Tasks']] },
@@ -7103,6 +7348,7 @@
     $('revenueWrap').hidden = view !== 'revenue';
     $('impactWrap').hidden = view !== 'impact';
     $('pendingWrap').hidden = view !== 'pending';
+    $('b2bWrap').hidden = view !== 'b2b';
     $('kpisWrap').hidden = view !== 'kpis';
     $('overviewWrap').hidden = view !== 'overview';
     // The Dashboard reads every tab's data, so opening it loads whatever
@@ -7167,6 +7413,10 @@
       if (!monData) $('pendingWrap').innerHTML = '<div class="msg">Loading pending tasks…</div>';
       loadPending(false);
     }
+    if (view === 'b2b') {
+      if (!b2bData) $('b2bWrap').innerHTML = '<div class="msg">Loading the B2B CRM…</div>';
+      loadB2b(false);
+    }
     if (view === 'kpis') {
       if (!kpiData) $('kpisWrap').innerHTML = '<div class="msg">Checking every KPI… this reads WeTravel, Meta, the sheets and monday, so it takes a few seconds.</div>';
       loadKpis(false);
@@ -7200,6 +7450,7 @@
     if (revData) loadRevenue(true);
     if (impData) loadImpact(true);
     if (monData) loadPending(true);
+    if (b2bData) loadB2b(true);
     if (kpiData) loadKpis(true);
     if (view === 'overview') renderOverview();
   });
@@ -7262,7 +7513,7 @@
 
   // A #hash beats stored state, so a wall display can be pointed straight at
   // one tab by URL and stay there through reboots, and any tab can be linked.
-  const VIEWS = ['overview', 'board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'impact', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'kpis'];
+  const VIEWS = ['overview', 'board', 'report', 'previous', 'trips', 'feedback', 'revenue', 'impact', 'campaigns', 'history', 'leads', 'engagements', 'pending', 'b2b', 'kpis'];
   const viewFromHash = () => {
     const h = String(location.hash || '').replace(/^#/, '');
     return VIEWS.includes(h) ? h : null;

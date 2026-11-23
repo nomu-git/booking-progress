@@ -52,7 +52,13 @@ no framework.
   Previous Sales (`previous`)); **Marketing** = Campaigns (This year
   (`campaigns`) | Past years (`history`)) / Engagement; **Operations** =
   Performance (`revenue`, Trip Revenue) / Products (`trips`, Trips & R&D) /
-  Feedback / Impact; Corporate unchanged. Assumptions flagged to Anton:
+  Feedback / Impact; Corporate unchanged.
+  **B2C / B2B (23 Nov 2026**, Anton: "add the B2B CRM board in Monday.com
+  ... under the Sales tab ... Name it B2B, also rename Bookings to B2C"):
+  Sales is now **B2C** (`board`, the old Bookings tab, label only) / **B2B**
+  (`b2b`, new, see "B2B tab" below) / Leads / Reports. B2B was put next to
+  B2C (assumption, flagged to Anton). The AI Adviser and connector say
+  "Sales › B2C". Assumptions flagged to Anton:
   "change its title" read as renaming the tabs (Booking → Bookings, Report →
   Reports, the old Report page = "Bookings report"); Performance = Trip
   Revenue, Products = Trips & R&D. The AI Adviser snapshot and the
@@ -1917,6 +1923,37 @@ button on the AI Adviser.
   your messages, pale teal answers. "New chat" doesn't wrap.
 - **AI Adviser New chat** (`#advNew`): clears the conversation; it doesn't
   give back the day's question count.
+
+## B2B tab (Sales, monday.com B2B CRM), 23 Nov 2026
+
+The **B2B CRM** board in monday's Sales workspace (B2B folder, board
+`5100323207`), live: `lib/tabs/b2b.js`, served as `/api/sheets?name=b2b`
+(no new function), `data-view="b2b"`, `#b2bWrap`, classes `b2-` (rows reuse
+`mon-st` / `mon-av` / `mon-open` from Monday Tasks).
+
+- **Board found by name** (a board in a workspace named Sales with B2B and
+  CRM in its name); `MONDAY_B2B_BOARD_ID` pins it. Same `MONDAY_API_TOKEN`.
+- **Contact details never leave the API** (public site): email, phone,
+  file, long-text columns and any column titled email / phone / mobile /
+  WhatsApp / contact / notes / address, **or just "Name"** (on this board
+  that's the contact person; the organisation is the item name). Their
+  titles go out as `hiddenColumns`, and the page says "Contact details stay
+  in monday: Phone, Email, Name". Organisation names, owners (Members) and
+  everything else are shown, as on Monday Tasks.
+- Board as of 23 Nov 2026: 75 organisations; groups Interested 7 / Not
+  Interested 41 / All Contacts 27 / Completed 0; columns Members, Status
+  (Cold 44, Reached out 27, Warm 2, Hot 1, Paid 1), Country, Destination,
+  Theme, Client, Trip Date (+ Trip Date 2, rarely used), Numbers (looks like
+  group size; shown under monday's own title "Numbers").
+- UI: group tabs (All + each group with items), a status bar in monday's
+  colours with chips that filter, "N with a trip date coming up · Numbers
+  total on those", then search + Status / Destination / Client / Owner
+  dropdowns (counted given the other filters) and one row per organisation
+  (Organisation with country · theme · group under it | Status |
+  Destination | Client | Trip Date | Numbers | Owner | open in monday).
+  Columns are found by title (`b2Cols()`), so a renamed column shows a dash
+  rather than breaking. Folds after 15 rows. Checked at 1400px and 390px,
+  contrast audit clean in both themes.
 
 ## Pending Task tab (monday.com)
 
