@@ -18,6 +18,7 @@ const TABS = {
   impact: require('../lib/tabs/impact'),
   manychat: require('../lib/tabs/manychat'),
   pending: require('../lib/tabs/pending'),
+  b2b: require('../lib/tabs/b2b'),
   kpis: require('../lib/tabs/kpis'),
 };
 
