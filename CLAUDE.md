@@ -2061,17 +2061,27 @@ in our SharePoint excelsheet" (Operations' per-trip Project Sheet, tab
   highest "Week N" anyone booked, one code each; **exactly one of those
   workbooks must exist** at its usual place. Found because WeTravel listed 2
   packages for "ZNZ | Building - /29 Nov - 19 Dec" (trip 3769899024) while
-  Operations filed it as `ZNZ-BL-202611-03C`; the sync looked for 02C. None
-  there: a Graph search (for the code without its week part) that must find
-  exactly one file named after one of the codes; a failing search is now a
-  reported problem, not a crash (it threw a 500 and killed the trip's run).
-  No code / no file / two files = reported, nothing written (`code` kept
-  when only one code was tried, else null).
+  Operations filed it as `ZNZ-BL-202611-03C`; the sync looked for 02C.
+  **None there: the month folder is listed** (24 Nov 2026; it was a Graph
+  search, which answered 500): `GET /drives/{drive}/root:/{month}:/children`,
+  and a folder counts if its name, after an optional prefix like `CISCO-`,
+  starts with the code's `<DEST>-<PROG>-<YYYYMM>-` and ends with the same B /
+  C letter (`folderCode()`), so any week count matches. Inside it,
+  `<folder code>.xlsx`, else the folder's only `.xlsx` (Excel `~$` lock files
+  ignored). Exactly one workbook = used, reported under the folder's code;
+  none, two folders, or a folder with several `.xlsx` = reported, nothing
+  written (`code` kept when only one code was tried, else null). Found
+  because the same trip was then **cut to one week in WeTravel** (29 Nov - 5
+  Dec), so every candidate was 01C and the new booking wasn't added.
+  Mocked tests (shortened trip found as 03C, only-.xlsx, two folders, two
+  files, B vs C, CISCO and Bali overrides, missing month folder) all pass.
 - **Overrides, in `lib/traveller-sync.js` only** (2 Nov 2026; `trip-code.js`
   is shared with the Meta campaigns, so it isn't touched). **`CODE_BY_TRIP`**
   (WeTravel trip id -> project code) for a trip whose title gives no code:
   `6048796957` -> `KE-EX-202701-01C` (Kenya Safari and Maasai Trip, 16-22
-  Jan 2027); a listed trip uses that code as is, no week-count lookup.
+  Jan 2027) and `3769899024` -> `ZNZ-BL-202611-03C` (ZNZ Building, cut to
+  one week in WeTravel, 24 Nov 2026); a listed trip uses that code as is, no
+  week-count lookup.
   **`PATH_BY_CODE`** (code -> `{ folder, file }`) where Operations named the
   folder or file differently: `ZNZ-BL-202611-01B` -> `CISCO-ZNZ-BL-202611-01B/
   ZNZ-BL-202611-01B.xlsx`, `BA-EX-202612-01C` -> `BA-EX-2026-12-01C/
